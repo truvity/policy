@@ -5,9 +5,11 @@
     "govulncheck":   "1.7.0",
     "gopls":         "latest",
 
-    "just":     "latest",
-    "just-lsp": "latest",
-    "lefthook": "latest"
+    "just":       "latest",
+    "just-lsp":   "latest",
+    "lefthook":   "latest",
+    "nodejs":     "26",
+    "yarn-berry": "4.14.1"
   },
   "env": {
     "CGO_ENABLED":  "0",

@@ -134,12 +134,10 @@ func TestAMissingFileSaysWhichFile(t *testing.T) {
 }
 
 func TestAnEmptyFileIsRefused(t *testing.T) {
-	empty := t.TempDir() + "/empty.yaml"
-	if err := os.WriteFile(empty, nil, 0o600); err != nil {
-		t.Fatal(err)
-	}
+	// The same fixture the TypeScript loader is tested against: two loaders
+	// that claim to implement one contract must refuse the same documents.
 	var cfg shortener
-	if err := config.Load(empty, schema(t), &cfg); err == nil {
+	if err := config.Load("testdata/empty.yaml", schema(t), &cfg); err == nil {
 		t.Fatal("an empty configuration file was accepted, which would start the service on defaults nobody chose")
 	}
 }

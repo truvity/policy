@@ -44,6 +44,17 @@ Nothing fetches them. The loader resolves every `$id` above from schemas
 compiled into it, so validation needs no network, and a service pins the
 shapes by pinning this repository's version.
 
+## `format` is documentation, not validation
+
+In draft 2020-12 `format` is an annotation unless a validator is told to
+assert it, and neither loader in this repository turns assertion on. A
+`format` that bit in one runtime and not the other would mean a configuration
+accepted by a chart's tests and refused by the service — the exact drift these
+schemas exist to prevent.
+
+So `format: uri` records what a value is for. Where a rule must actually bite,
+the schema says `pattern`, as `postgres.url` and the listener addresses do.
+
 ## Rules
 
 - Everything defined here is strict. A typo must fail.
