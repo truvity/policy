@@ -12,13 +12,15 @@ The index, by what you are here to do.
   talk to each other.
 - [contracts/config.md](contracts/config.md) — one typed configuration per
   binary, its schema, and how the chart is held to the same schema.
-- `guides/` — how to satisfy the above, walking the example.
+- [guides/](guides/conformance.md) — how to satisfy the above. The rest of
+  the guides walk the worked example, and arrive with it.
 
 ## Reviewing a service
 
 - [contracts/release.md](contracts/release.md) — one tag stamps every
   artifact; what a version means; what a consumer's adoption must show.
-- `guides/conformance.md` — the checklist, and what CI checks for you.
+- [guides/conformance.md](guides/conformance.md) — the checklist, and what
+  CI checks for you.
 
 ## Configuring a service
 

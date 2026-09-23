@@ -12,6 +12,10 @@ coverage.out
 node_modules/
 */node_modules/
 */dist/
+# Yarn's own state, which is not the lockfile. It reappears in the working
+# tree after any install and is not part of any change.
+.yarn/
+*/.yarn/
 
 # IDE
 .idea/

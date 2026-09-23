@@ -17,7 +17,7 @@ assertion.
 | configuration schemas (JSON Schema) | [`schemas/`](schemas/README.md) | shipped |
 | the Go configuration loader and conformance helpers | `config/`, `conformance/`, module `github.com/truvity/policy` | shipped |
 | the TypeScript loader | `ts/`, package `@truvity/policy` | shipped |
-| the shared lint configuration | `lint/` | planned |
+| the shared lint configuration | [`lint/`](lint/README.md) | shipped |
 | a local cluster recipe for the example's tests | `hack/kind/` | planned |
 | the worked example, a URL shortener | `examples/url-shortener/` | planned |
 
