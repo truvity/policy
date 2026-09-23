@@ -37,8 +37,8 @@ jobs:
       recipes: '["ts"]'
 
   # The local cluster, stood up from nothing and then asked to prove that
-  # every operator acts. About six minutes, most of it waiting for a
-  # database and for images.
+  # every operator acts. Measured at 3m21s on this runner, most of it
+  # waiting for images and for a database to become ready.
   #
   # On master and on demand rather than on every pull request, and only
   # until the worked example arrives: nothing consumes the box yet, so a
