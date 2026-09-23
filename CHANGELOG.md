@@ -79,6 +79,31 @@ Not yet released. The first version will carry:
   repositories does not mean reading a recipe file to find the linter, and
   **every toolchain entry names a version** — "latest" makes a reproducible
   build a coincidence.
+- **The leak canary no longer fires on Kubernetes' own secret path.** Its
+  parameter-store pattern matched `/var/run/secrets/`, which is where a pod's
+  own credentials are mounted and is therefore in any manifest that reads
+  one. A pattern that fires on the most common path convention in the
+  ecosystem makes nobody safer: it teaches the next person to rename their
+  mount to get past it, and the one after that to stop reading the output. It
+  still catches a real parameter path, which is proved rather than assumed.
+- **The local cluster can issue workload identities**, and asserts the one
+  thing that makes them mean anything. cert-manager, its identity driver and
+  that driver's approver, over a self-signed authority.
+
+  **cert-manager's own approver is turned off, deliberately**, and this is
+  the finding the box was built to produce. It approves every request for an
+  authority it knows, so with it on the driver's approver never gets a say
+  and any account that may create a request receives ANY identity it asks
+  for — including its neighbour's. Nothing fails: certificates mount,
+  services connect, every log line says success, and the attestation is
+  decoration.
+
+  Measured, not reasoned about: an account called `alice` submitted a request
+  naming another account by hand and was issued a certificate for it. With
+  the approver off the same request sits inert and nothing is issued. The
+  verification step now asserts the flag, because the two states are
+  indistinguishable from every other angle, and the platform contract now
+  asks a platform to demonstrate the REFUSAL rather than the issuance.
 - **Mutual TLS, with the identity the platform gives.** A new `tls` fragment
   and a `transport` package that does three things and no more: load the
   mounted certificate and reload it when it changes, present it as a server

@@ -72,6 +72,58 @@ helm upgrade --install nack nats/nack \
   --set jetstream.nats.url=nats://nats.nats.svc:4222 \
   --wait --timeout 5m
 
+step "cert-manager ${CERT_MANAGER_CHART_VERSION}"
+# The authority, and the thing that mounts an identity into a pod. Installed
+# before the driver, because the driver's approver is a cert-manager
+# extension and the custom resources have to exist first.
+helm repo add jetstack https://charts.jetstack.io >/dev/null 2>&1 || true
+#
+# THE APPROVER IS TURNED OFF HERE, AND THIS IS THE WHOLE POINT.
+#
+# cert-manager ships an approver that approves every request for an issuer it
+# knows about. Leave it on and the identity driver's own approver never gets
+# a say: an account that may create a request gets ANY identity it asks for,
+# including its neighbour's. The driver still works, the certificates still
+# mount, every log line still says success — and the attestation is
+# decoration.
+#
+# Measured in this box before it was disabled: an account called `alice`
+# submitted a request naming `bob` by hand and was issued a certificate for
+# it. Nothing anywhere reported a problem.
+helm upgrade --install cert-manager jetstack/cert-manager \
+  --version "$CERT_MANAGER_CHART_VERSION" \
+  --namespace cert-manager --create-namespace \
+  --set crds.enabled=true \
+  --set "extraArgs={--controllers=*\,-certificaterequests-approver}" \
+  --wait --timeout 5m
+
+step "the trust domain"
+kubectl apply -f identity.yaml
+# The authority signs from a secret cert-manager writes, so the issuer is not
+# usable the moment it is applied. Waiting here rather than in the driver's
+# install turns "certificate not ready" into a message about the authority.
+kubectl -n cert-manager wait certificate/policy-trust --for=condition=Ready --timeout=2m
+
+step "the identity driver ${CSI_DRIVER_SPIFFE_CHART_VERSION}"
+# THE PROPERTY THIS PROVES: the driver asks for a certificate using the POD'S
+# OWN account token, which the kubelet hands it, and the approver refuses any
+# request whose identity is not the one the requester holds. A pod cannot ask
+# for a certificate naming its neighbour's account — which is the difference
+# between an identity and a claim.
+helm upgrade --install csi-driver-spiffe jetstack/cert-manager-csi-driver-spiffe \
+  --version "$CSI_DRIVER_SPIFFE_CHART_VERSION" \
+  --namespace cert-manager \
+  --set "app.trustDomain=${TRUST_DOMAIN}" \
+  --set app.issuer.name=policy-workload \
+  --set app.issuer.kind=ClusterIssuer \
+  --set app.issuer.group=cert-manager.io \
+  --set app.driver.volumes[0].name=root-cas \
+  --set app.driver.volumes[0].secret.secretName=policy-trust \
+  --set app.driver.volumeMounts[0].name=root-cas \
+  --set app.driver.volumeMounts[0].mountPath=/var/run/secrets/cert-manager-csi-driver-spiffe \
+  --set app.driver.sourceCABundle=/var/run/secrets/cert-manager-csi-driver-spiffe/ca.crt \
+  --wait --timeout 5m
+
 step "S3"
 sed "s|LOCALSTACK_IMAGE_PLACEHOLDER|${LOCALSTACK_IMAGE}|" localstack.yaml | kubectl apply -f -
 kubectl -n object-store rollout status deployment/s3 --timeout=5m

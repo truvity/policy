@@ -142,9 +142,24 @@ minimum:
 - a way to obtain a certificate whose identity is **attested by the
   platform**, not asserted by the workload — that is, derived from the
   account the pod actually runs as, by something the pod cannot lie to;
+- **something that refuses a request for an identity other than the
+  requester's**, and nothing else that approves requests behind its back;
 - an authority that will sign that identity;
 - a trust bundle, distributed to every workload that must verify peers;
-- rotation, without restarting workloads.
+- rotation, without restarting workloads;
+- whatever in-cluster permission the workload's own account needs to ask for
+  its certificate, since the request is made **as that account**.
+
+The second item is the one that is missed, and missing it is invisible.
+Certificate machinery commonly ships with a component that approves every
+request for an authority it knows about. Left in place beside an attesting
+approver, it answers first: any account that may ask for a certificate
+receives **any identity it asks for**, including its neighbour's. Nothing
+fails. Certificates mount, services connect, every log line reports success,
+and the attestation is decoration.
+
+A platform claiming this capability should be able to demonstrate the
+refusal, not the issuance. The issuance proves nothing.
 
 Until all four exist, the setting stays off, and the chart renders exactly
 what it renders today. A platform that cannot yet do this is not
