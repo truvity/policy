@@ -14,17 +14,23 @@ check: build test lint vuln drift leak-canary
 [doc("Compile everything")]
 build:
     go build ./...
+    cd examples/url-shortener && go build ./...
 
 # The unit tests. They need no network and no services, which is the whole
 # point of the gate.
 [doc("The unit tests")]
 test:
     go test ./...
+    # The example is its own module, so `./...` at the root does not reach it.
+    # It is also the only place the contracts are proved rather than stated,
+    # which makes it the part of this repository that must not go untested.
+    cd examples/url-shortener && go test ./...
 
 # Report known vulnerabilities in what this module depends on
 [doc("Report known vulnerabilities")]
 vuln:
     govulncheck ./...
+    cd examples/url-shortener && govulncheck ./...
 
 # The local cluster the charts and the example are tested against: the same
 # operators a deployment carries. Idempotent — running it against an existing
@@ -106,6 +112,9 @@ lint:
     # setting can spend releases doing nothing.
     golangci-lint config verify || fail=1
     golangci-lint run ./... || fail=1
+    # The example carries the import ban too. A reference implementation
+    # exempt from the rules it demonstrates is a reference to nothing.
+    ( cd examples/url-shortener && golangci-lint run ./... ) || fail=1
 
     # Nothing built is committed. A binary in a public repository's history is
     # in every clone forever, and carries the build machine's paths. The
