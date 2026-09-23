@@ -4,8 +4,9 @@ The index, by what you are here to do.
 
 ## Authoring a service
 
-- `contracts/repository.md` — what a repository looks like: layout, toolchain,
-  the gate, required checks.
+- [contracts/repository.md](contracts/repository.md) — what a repository looks
+  like: layout, toolchain, the gate, required checks, and what a public
+  repository is held to on top.
 - [contracts/service.md](contracts/service.md) — the process boundary:
   configuration, probes, logs, shutdown, version, images, and how services
   talk to each other.
@@ -15,8 +16,8 @@ The index, by what you are here to do.
 
 ## Reviewing a service
 
-- `contracts/release.md` — one tag stamps every artifact; what a version
-  means; what a consumer's adoption must show.
+- [contracts/release.md](contracts/release.md) — one tag stamps every
+  artifact; what a version means; what a consumer's adoption must show.
 - `guides/conformance.md` — the checklist, and what CI checks for you.
 
 ## Choosing a library
@@ -31,5 +32,5 @@ The index, by what you are here to do.
 
 ---
 
-The tree above is being assembled; this index is written first so that every
-page has a place to land. Pages arrive with the change that fills them.
+The guides are being assembled: they walk the worked example, and arrive with
+it.
