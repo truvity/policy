@@ -40,9 +40,15 @@ the newest of that line. One owner moves all three in one change, and the
 
 | Tool | Version |
 |---|---|
-| Node | 24.x |
+| Node | 26.x |
 | TypeScript | 6.0.x |
 | Yarn | 4.x |
+
+The Node line is the newest the environment manifest can pin, not the newest
+that exists. A published library is a separate question: it declares the
+OLDEST line it supports in its `engines` field, because a consumer on an
+earlier line is a real consumer and a package that quietly requires a newer
+runtime fails at their install rather than at ours.
 
 TypeScript is pinned to a patch line, not a range, because a minor changes
 what the compiler accepts, and a compiler that changes on its own turns a

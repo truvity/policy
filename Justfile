@@ -7,7 +7,7 @@
 # say so.
 
 # Everything CI runs
-check: build test lint vuln leak-canary
+check: build test lint vuln drift leak-canary
 
 # Compile everything
 build:
@@ -21,6 +21,39 @@ test:
 # Report known vulnerabilities in what this module depends on
 vuln:
     govulncheck ./...
+
+# Regenerate what the TypeScript package carries from `schemas/`.
+ts-schemas:
+    node ts/scripts/generate-schemas.mjs
+
+# Generated code is committed. A schema changed without regenerating would
+# leave the two loaders validating different documents, which is the one
+# thing this repository exists to prevent. Needs no network: the generator
+# reads this checkout and writes into it.
+drift: ts-schemas
+    git diff --exit-code -- ts/src/schemas.generated.ts
+
+# The TypeScript package: install, typecheck, test, build, and check what a
+# publish would ship. NOT part of `check`, which needs nothing but the
+# checkout: this fetches from a registry. CI runs it as its own job.
+ts:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd ts
+    yarn install --immutable
+    yarn typecheck
+    yarn test --run
+    rm -rf dist && yarn build
+
+    # What a publish would ship: the compiled package, and no test.
+    #
+    # The listing is captured ONCE rather than piped into `grep -q`. A `-q`
+    # grep exits at the first match, the writer gets EPIPE, and under
+    # `pipefail` the whole pipeline then fails — a check that reports a
+    # failure precisely when it finds what it was looking for.
+    shipped=$(yarn pack --dry-run 2>&1)
+    grep -q 'dist/index.js' <<<"$shipped"
+    ! grep -qE 'dist/.*\.test\.' <<<"$shipped"
 
 # The rules that hold for every file in this repository.
 #

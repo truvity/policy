@@ -28,3 +28,7 @@ Not yet released. The first version will carry:
   that failed rather than the file; `config.Secret`, which reads the variable
   a configuration names and never the value it carries; and `conformance`,
   which holds a configuration type and a rendered chart to the same schema.
+- **The TypeScript loader**, `@truvity/policy`: the same three calls as the Go
+  one, carrying the same schemas, tested against the same fixtures and
+  wording its refusals the same way, so that a misconfiguration reads
+  identically whichever runtime refused it.

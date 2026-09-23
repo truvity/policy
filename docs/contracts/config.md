@@ -83,8 +83,15 @@ chose.
 | 5. secrets | review; the loader has no way to read a secret from the file |
 | 6. start-up failure | a test that starts the binary with each invalid fixture |
 
-The [Go loader](../../config) implements rules 1, 5 and 6 so that a service
-does not have to, and [`conformance`](../../conformance) is what a chart's
-tests use to be held to the same schema. They load, validate, decode, and stop. They are deliberately
+The [Go loader](../../config) and the [TypeScript loader](../../ts) implement
+rules 1, 5 and 6 so that a service does not have to, and
+[`conformance`](../../conformance) is what a chart's tests use to be held to
+the same schema.
+
+The two are tested against **the same fixtures**, in the same directory. That
+is the point rather than an economy: two loaders that claim to implement one
+contract must refuse the same documents and say something a person can act on
+when they do. A fixture only one of them sees is a contract that exists
+twice. They load, validate, decode, and stop. They are deliberately
 not a framework: no lifecycle, no dependency wiring, no HTTP, no reflection
 over the environment.
