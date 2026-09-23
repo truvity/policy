@@ -18,7 +18,7 @@ assertion.
 | the Go configuration loader and conformance helpers | `config/`, `conformance/`, module `github.com/truvity/policy` | shipped |
 | the TypeScript loader | `ts/`, package `@truvity/policy` | shipped |
 | the shared lint configuration | [`lint/`](lint/README.md) | shipped |
-| a local cluster recipe for the example's tests | `hack/kind/` | planned |
+| a local cluster recipe for the example's tests | [`hack/kind/`](hack/kind/README.md) | shipped |
 | the worked example, a URL shortener | `examples/url-shortener/` | planned |
 
 One tag stamps all of them: `vX.Y.Z` releases the documents, the schemas, the
@@ -77,6 +77,14 @@ Used in production by its maintainers once `v0.1.0` ships.
 ```sh
 devbox shell   # or direnv, which does it on cd
 just check     # the gate: exactly what CI runs
+```
+
+The deeper suite needs a container runtime and stands up a local cluster
+carrying the same operators a deployment carries:
+
+```sh
+just cluster        # about two minutes from nothing
+just cluster-smoke  # prove every operator acts
 ```
 
 A service loads its configuration in three lines:

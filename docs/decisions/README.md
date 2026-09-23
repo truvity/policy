@@ -22,3 +22,4 @@ sales pitch.
 | [0002](0002-config-file-plus-env.md) | Configuration is a file; the environment carries secrets |
 | [0003](0003-schemas-not-generators.md) | A schema and a hand-written type, not a code generator |
 | [0004](0004-policy-is-public.md) | This repository is public |
+| [0005](0005-kind-is-the-gate.md) | A local cluster is the gate; the real one is a consumer's |
