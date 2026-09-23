@@ -21,7 +21,8 @@ The index, by what you are here to do.
 
 ## Choosing a library
 
-- `canon/` — the allowed lists per ecosystem, and the scope they bind.
+- [canon/](canon/README.md) — the allowed lists per ecosystem, the pinned
+  toolchain versions, and the build tools.
 
 ## Understanding why
 
