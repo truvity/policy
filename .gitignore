@@ -1,0 +1,21 @@
+# Devbox
+.devbox/
+
+# Build output. `just lint` refuses any file large enough to be one that
+# slipped past this list: a binary in a public repository's history is in
+# every clone forever.
+bin/
+/dist/
+coverage.out
+
+# Node, for the TypeScript loader
+node_modules/
+*/node_modules/
+*/dist/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
