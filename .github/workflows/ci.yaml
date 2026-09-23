@@ -25,14 +25,14 @@ concurrency:
 
 jobs:
   recipes:
-    uses: truvity/ci-workflows/.github/workflows/check.yaml@ea3c238133634f69f0c51240ede27bb270e24dc0 # v3.0.1
+    uses: truvity/ci-workflows/.github/workflows/check.yaml@36be6b238bfb119de3ffeed9604bae5e7a3d7c8d # v3.4.0
     with:
       recipes: '["build", "test", "lint", "vuln", "drift", "leak-canary"]'
 
   # The TypeScript package installs from a registry, which is why it is not in
   # `check`: the gate must need nothing but the checkout.
   ts:
-    uses: truvity/ci-workflows/.github/workflows/check.yaml@ea3c238133634f69f0c51240ede27bb270e24dc0 # v3.0.1
+    uses: truvity/ci-workflows/.github/workflows/check.yaml@36be6b238bfb119de3ffeed9604bae5e7a3d7c8d # v3.4.0
     with:
       recipes: '["ts"]'
 
