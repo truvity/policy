@@ -19,7 +19,7 @@ assertion.
 | the TypeScript loader | `ts/`, package `@truvity/policy` | shipped |
 | the shared lint configuration | [`lint/`](lint/README.md) | shipped |
 | a local cluster recipe for the example's tests | [`hack/kind/`](hack/kind/README.md) | shipped |
-| the worked example, a URL shortener | `examples/url-shortener/` | planned |
+| the worked example, a URL shortener | [`examples/url-shortener/`](examples/url-shortener/README.md) | the Go services; chart and suite next |
 
 One tag stamps all of them: `vX.Y.Z` releases the documents, the schemas, the
 Go module, the TypeScript package and the example's charts and images

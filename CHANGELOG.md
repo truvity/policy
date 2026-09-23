@@ -44,3 +44,11 @@ Not yet released. The first version will carry:
   usable rather than merely installed, and a smoke test that proves an
   operator ACTS — a database becomes a database, a stream becomes a stream,
   a bucket becomes a bucket. About two minutes from nothing.
+- **The worked example**, first three components: a migration job, the
+  redirect service and the click counter, hand-wired against the contracts
+  with no framework behind them. Each binary has one configuration file, one
+  schema, and a test that the two describe the same fields.
+- **The `nats` fragment now describes a CONNECTION only**, and a new
+  `nats-consumer` fragment describes what a consumer binds to. The first real
+  consumer is what showed that a publisher carrying a `consumer` field it
+  never reads is a field somebody will eventually set.

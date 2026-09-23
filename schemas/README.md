@@ -12,7 +12,8 @@ tool which reads a configuration is not a special case.
 | [fragments/otel.json](fragments/otel.json) | OpenTelemetry export |
 | [fragments/bucket.json](fragments/bucket.json) | an object store addressed by the S3 API |
 | [fragments/postgres.json](fragments/postgres.json) | a PostgreSQL connection |
-| [fragments/nats.json](fragments/nats.json) | a NATS connection and its stream |
+| [fragments/nats.json](fragments/nats.json) | a NATS connection |
+| [fragments/nats-consumer.json](fragments/nats-consumer.json) | what a consumer binds to |
 
 ## How a service uses them
 
