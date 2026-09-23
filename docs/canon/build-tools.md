@@ -9,6 +9,7 @@ contributor must have working before they can change one line.
 | Go | `just` recipes over the Go toolchain | Go modules | `ko`, from the compiled binary |
 | Node and TypeScript | `just` recipes over the package manager's scripts | Yarn 4 | a `COPY` of the built bundle onto a runtime base |
 | Kotlin and the JVM | Gradle, wrapped in `just` recipes | Gradle | a `COPY` of the built artifact onto a JRE base |
+| Python | `just` recipes over `uv` | `uv`, with the lock committed | a `COPY` of the installed environment onto a minimal base |
 | Helm charts | `just` recipes over `helm` | — | — |
 
 ## Why `just` in front of everything

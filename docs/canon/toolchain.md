@@ -41,8 +41,27 @@ the newest of that line. One owner moves all three in one change, and the
 | Tool | Version |
 |---|---|
 | Node | 26.x |
-| TypeScript | 6.0.x |
+| TypeScript | 7.0.x, for type checking |
+| TypeScript | 6.0.x, where a tool needs the compiler's API |
 | Yarn | 4.x |
+
+**Two TypeScript lines, on purpose, and only for as long as it takes.** The
+7.0 compiler is a native port: it type-checks the same language several times
+faster, and it ships **no programmatic API**. Every tool that drives the
+compiler rather than invoking it — a framework's build command, a
+transpiling test runner, a type-aware linter — calls that API and cannot run
+on 7.0.
+
+So the split is by job, not by preference. **Type checking is 7.0**, invoked
+as a command against the project. **Anything that needs the API stays on the
+6.0 line**, installed in a way that does not become the package the editor
+and the tools resolve. Emit does not need either: a service's bundle is
+produced by a transpiler that reads the syntax and never type-checks, which
+is also why emit was never the slow part.
+
+A repository on 7.0 removes the settings the line dropped — a base URL for
+module resolution, the older resolution modes, and the down-level targets —
+before it flips, because they are hard errors rather than warnings.
 
 The Node line is the newest the environment manifest can pin, not the newest
 that exists. A published library is a separate question: it declares the

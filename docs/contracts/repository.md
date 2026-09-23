@@ -27,6 +27,24 @@ CI runs recipes **by name**, never by re-implementing them in a workflow. A
 check that passes locally and fails in CI is then a bug in a recipe rather
 than a difference nobody can reproduce.
 
+**The names are fixed**, because a person moving between repositories — and
+anything automating across them — should not have to read a recipe file to
+find out what the linter is called here:
+
+| Recipe | Does |
+|---|---|
+| `check` | the gate: depends on everything below that needs nothing |
+| `build` | compiles everything |
+| `test` | the tests that need nothing |
+| `lint` | every static check, including the ones that are not a linter |
+| `vuln` | known vulnerabilities in what this depends on |
+| `charts` | renders and validates every chart |
+| `golden` | regenerates committed renders; fails if they moved |
+| `leak-canary` | refuses a particular that must never be published |
+
+A repository without one of these jobs does not have the recipe. A
+repository that has the job under another name has made every caller special.
+
 ## 3. The toolchain is declared
 
 One manifest names every tool and its version, with a lock file committed,
@@ -34,6 +52,12 @@ and one command materialises it. The same versions on a laptop and in CI.
 
 A missing tool is a line added to the manifest. Never a fetch in a shell, and
 never a PATH someone exported.
+
+**Every entry names a version.** "Latest" in a manifest means the toolchain
+differs between two checkouts of the same commit, which turns a reproducible
+build into a coincidence and makes a failure that only happens on one machine
+impossible to argue about. A version that should move is moved by the bot of
+rule 6, in a pull request, where the move is visible and revertable.
 
 ## 4. Documentation has fixed paths
 
@@ -43,6 +67,7 @@ never a PATH someone exported.
 | `CHANGELOG.md` | one heading per released version, newest first, written for a consumer |
 | `CONTRIBUTING.md` | the rules that are not obvious from the code |
 | `SECURITY.md` | where to report a vulnerability, and what is in scope |
+| `AGENTS.md` | how to work in this repository, and how to bring another one to its shape, written for a reader with no other context. Mirrored under whatever filename a particular tool looks for |
 | `docs/` | everything else, indexed by `docs/README.md` |
 
 A reader who has read one repository knows where to look in the next. The
