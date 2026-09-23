@@ -7,7 +7,20 @@
 # say so.
 
 # Everything CI runs
-check: lint leak-canary
+check: build test lint vuln leak-canary
+
+# Compile everything
+build:
+    go build ./...
+
+# The unit tests. They need no network and no services, which is the whole
+# point of the gate.
+test:
+    go test ./...
+
+# Report known vulnerabilities in what this module depends on
+vuln:
+    govulncheck ./...
 
 # The rules that hold for every file in this repository.
 #
@@ -19,6 +32,12 @@ lint:
     #!/usr/bin/env bash
     set -uo pipefail
     fail=0
+
+    # `config verify` FIRST: a settings block in the wrong place is accepted
+    # silently by `run` and rejected only here, so without this a lint
+    # setting can spend releases doing nothing.
+    golangci-lint config verify || fail=1
+    golangci-lint run ./... || fail=1
 
     # Nothing built is committed. A binary in a public repository's history is
     # in every clone forever, and carries the build machine's paths. The

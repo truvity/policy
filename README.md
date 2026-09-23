@@ -14,8 +14,8 @@ assertion.
 | Artifact | Where | Status |
 |---|---|---|
 | the contracts, canons, guides and decisions | `docs/` | being assembled |
-| configuration schemas (JSON Schema) | `schemas/` | planned |
-| the Go configuration loader and conformance helpers | `go/`, module `github.com/truvity/policy/go` | planned |
+| configuration schemas (JSON Schema) | [`schemas/`](schemas/README.md) | shipped |
+| the Go configuration loader and conformance helpers | `config/`, `conformance/`, module `github.com/truvity/policy` | shipped |
 | the TypeScript loader | `ts/`, package `@truvity/policy` | planned |
 | the shared lint configuration | `lint/` | planned |
 | a local cluster recipe for the example's tests | `hack/kind/` | planned |
@@ -77,6 +77,15 @@ Used in production by its maintainers once `v0.1.0` ships.
 ```sh
 devbox shell   # or direnv, which does it on cd
 just check     # the gate: exactly what CI runs
+```
+
+A service loads its configuration in three lines:
+
+```go
+var cfg Config
+if err := config.Load(path, schemaBytes, &cfg); err != nil {
+    return err // names the file and every failing key
+}
 ```
 
 `just check` needs nothing but this checkout — no network, no containers, no

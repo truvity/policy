@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/truvity/policy/schemas/fragments/otel.json",
+  "title": "otel",
+  "description": "OpenTelemetry export. Absent means no export, which is a valid configuration and the default for a local run.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "endpoint": {
+      "type": "string",
+      "format": "uri",
+      "description": "The collector's OTLP endpoint. Unset disables export."
+    },
+    "serviceName": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The service name reported with every span and metric. Defaults to the binary's name."
+    },
+    "sampleRatio": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 1,
+      "description": "Head sampling ratio for traces."
+    }
+  }
+}
