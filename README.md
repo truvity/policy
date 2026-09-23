@@ -100,6 +100,13 @@ if err := config.Load(path, schemaBytes, &cfg); err != nil {
 cluster. Recipes that need more will be added as their own CI jobs and named
 as such.
 
+## Working here
+
+[AGENTS.md](AGENTS.md) is the entry point for anyone — or anything — arriving
+without context: what to read first, what the gate checks that surprises
+people, and the separate set of rules for bringing another repository to this
+shape.
+
 ## Releasing
 
 Manual tags for now: every first release, minor and major is a tag pushed by

@@ -17,12 +17,12 @@ itself.
 | CLI | `urfave/cli/v3` | |
 | HTTP server | `gofiber/fiber/v3`, with `huma/v2` on top where an OpenAPI surface is wanted | |
 | HTTP client | stdlib `net/http` | |
-| RPC | `connectrpc.com/connect` | one handler serves Connect, gRPC and gRPC-Web. `google.golang.org/grpc` is tolerated as the transport inside a third-party SDK, never for a server of our own |
+| RPC | `connectrpc.com/connect` | one handler serves Connect, gRPC and gRPC-Web; in the cluster a client speaks gRPC ([service.md §8](../contracts/service.md)). `google.golang.org/grpc` is tolerated as the transport inside a third-party SDK, never for a server of our own |
 | YAML | `go.yaml.in/yaml/v3` | the maintained continuation of the archived `gopkg.in/yaml.v3`; a drop-in |
 | JSON Schema | `santhosh-tekuri/jsonschema/v6` for validation, `invopop/jsonschema` to derive a schema from a type in a drift test | the second is a test dependency, not a run-time one |
 | JWT and JOSE | the HTTP framework's own middleware where it fits; `lestrrat-go/jwx` underneath and everywhere else | `golang-jwt` and direct `go-jose` retire at next touch |
-| Logging | stdlib `log/slog` | with the framework's bridge where one exists |
-| Telemetry | OpenTelemetry Go SDK | `prometheus/client_golang` only where a third-party component bakes it in |
+| Logging | stdlib `log/slog` | JSON to stderr at one level. Every library that logs is wired to it at the composition root ([service.md §4](../contracts/service.md)) — the ORM in particular has its own format, its own colours and its own level, and ignores the one the configuration set |
+| Telemetry | OpenTelemetry Go SDK | configured by its own environment ([0006](../decisions/0006-telemetry-is-the-sdk-environment.md)). `prometheus/client_golang` only where a third-party component bakes it in |
 | Retry and backoff | `cenkalti/backoff/v5` | |
 | Circuit breaking, bulkheads, rate limiting | **no canon yet** | see below |
 | Testing | `stretchr/testify`, `neilotoole/slogt/v2`, `pgregory.net/rapid` | rapid where the property is the point |

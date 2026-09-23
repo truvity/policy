@@ -23,6 +23,7 @@ and it survives every later reader who assumes it was a decision.
 | Go | [go.md](go.md) |
 | Node and TypeScript | [node.md](node.md) |
 | Kotlin and the JVM | [kotlin.md](kotlin.md) |
+| Python | [python.md](python.md) |
 
 | Cross-cutting | |
 |---|---|

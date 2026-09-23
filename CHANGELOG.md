@@ -53,6 +53,32 @@ Not yet released. The first version will carry:
   validates against at start-up, so the two cannot drift in the direction
   that matters. Five negative fixtures, one per refusal, each failing for its
   own reason.
+- **`AGENTS.md`**, the entry point for a reader with no other context:
+  what to read first, the four gate checks that surprise people, the writing
+  rules, and a second set of instructions for bringing another repository to
+  this shape — the survey-before-you-change order, what a survey of real
+  services usually finds, and what never to do. Mirrored under whatever
+  filename a particular tool looks for.
+- **A Python canon**, starting from nothing because there was nothing to
+  inherit. Deliberately short: no web framework, no RPC row and no ORM until
+  a component needs one, and one weakness written down in advance — a Python
+  server cannot swap a certificate underneath a running listener, so it
+  recycles its workers or takes the proxy.
+- **The Kotlin canon is no longer a stub.** It inherits the JVM stack the
+  adopting estate already runs rather than choosing a lighter one, because
+  the alternative is two JVM stacks and the newer one wins every later
+  argument. The Kubernetes shape is not inherited; it comes from the service
+  contract.
+- **TypeScript is two lines, split by job.** The 7.0 compiler type-checks
+  several times faster and ships no programmatic API, so type checking is
+  7.0 and anything that drives the compiler stays on 6.0. Emit was never the
+  compiler's job anyway. The framework's build command and its
+  code-generating plugins are out of the canon, with the workaround for the
+  first and the reason there is none for the second.
+- **Fixed recipe names** in the repository contract, so that moving between
+  repositories does not mean reading a recipe file to find the linter, and
+  **every toolchain entry names a version** — "latest" makes a reproducible
+  build a coincidence.
 - **A platform contract**, `docs/contracts/platform.md`: the other side of
   the seam. What a service asks of whatever runs it — names never values, an
   account and its annotations rather than a grant mechanism, secrets as
