@@ -79,6 +79,29 @@ Not yet released. The first version will carry:
   repositories does not mean reading a recipe file to find the linter, and
   **every toolchain entry names a version** — "latest" makes a reproducible
   build a coincidence.
+- **The example proves the rollout rule instead of violating it.** Two
+  instances of everything routed, a disruption budget, `maxUnavailable: 0`,
+  spread across machines, and ONE drain number used three times — the
+  service's own timeout in its configuration file, the grace period
+  Kubernetes grants, and a pre-stop delay. A new `drain` fragment carries
+  the first of those, so the number the chart renders is the number the
+  process uses.
+- **The example names the account it runs as**, and names two: the migration
+  creates tables and grants rights, the services read and write rows, and
+  one account for both puts the migration's rights on the request path. The
+  chart still grants nothing — it names accounts and leaves their
+  annotations open, so a platform binds them by whichever mechanism that
+  cluster uses.
+- **The route's rule is named**, because a policy attaches to a rule by name
+  and a policy whose target names no rule is not refused — it is simply not
+  attached, and the route keeps serving without it.
+- **Six new chart tests**, each mutation-checked: a rollout with no gap, a
+  grace period that outlasts the drain, every route rule named, every
+  workload naming an account, the migration and the services on different
+  accounts, and — the third instance of one trap — everything a pre-install
+  hook references being a hook itself. The first version of that last test
+  passed while the install hung, because the account and the job share a
+  name and it keyed on the name alone.
 - **A platform contract**, `docs/contracts/platform.md`: the other side of
   the seam. What a service asks of whatever runs it — names never values, an
   account and its annotations rather than a grant mechanism, secrets as
