@@ -12,6 +12,9 @@ The index, by what you are here to do.
   talk to each other.
 - [contracts/config.md](contracts/config.md) — one typed configuration per
   binary, its schema, and how the chart is held to the same schema.
+- [contracts/platform.md](contracts/platform.md) — the other side of the
+  seam: what a service asks of whatever runs it, and what that platform owes
+  back. Read it before writing a chart.
 - [guides/](guides/conformance.md) — how to satisfy the above. The rest of
   the guides walk the worked example, and arrive with it.
 

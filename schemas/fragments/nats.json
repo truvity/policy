@@ -12,10 +12,10 @@
       "minLength": 1,
       "description": "The server URL, for example nats://nats:4222."
     },
-    "credentialsFile": {
+    "tokenFile": {
       "type": "string",
       "minLength": 1,
-      "description": "Path to a credentials file the platform mounts. Unset means no authentication, which is a test configuration and not a deployment."
+      "description": "Path to a file holding the token the client authenticates with, mounted by the platform and re-read on every reconnect so that a rotated token is picked up without a restart. It is the workload's own account token: the broker asks an authorisation service who the bearer is, and that service answers from the account rather than from anything the client claims. Unset means no authentication, which is a test configuration and not a deployment."
     }
   }
 }
