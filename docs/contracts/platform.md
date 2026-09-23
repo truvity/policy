@@ -100,9 +100,19 @@ lifecycle. Those belong to the infrastructure release, where they can outlive
 any one version of the application and be reasoned about by whoever operates
 the estate.
 
-The ordering consequence is real and is stated in
-[repository.md](repository.md): a migration that runs as part of a release
+The ordering consequence is real: a migration that runs as part of a release
 cannot create the database that release also creates.
+
+There is a sharper version of the same rule, which has now cost three
+debugging sessions on one chart. **Whatever runs before a release must only
+reference things that also run before it.** A task that runs first and names
+an ordinary resource of the same release does not fail on the task — it fails
+on the *pod*, which is never created, with a message about a missing
+reference in an event nobody is watching, while the install sits at "in
+progress" until it times out. The database was the first instance, a
+configuration file the second, and the account the workload runs as the
+third. It is worth a test, because every instance looks like a hang rather
+than an error.
 
 ## 7. Exposure is a route with a parent the chart is given
 
