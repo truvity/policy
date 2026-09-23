@@ -1,0 +1,22 @@
+{
+  "packages": {
+    "go":            "1.27.0",
+    "golangci-lint": "2.13.1",
+    "govulncheck":   "1.7.0",
+    "gopls":         "latest",
+
+    "just":     "latest",
+    "just-lsp": "latest",
+    "lefthook": "latest"
+  },
+  "env": {
+    "CGO_ENABLED":  "0",
+    "GOEXPERIMENT": "jsonv2"
+  },
+  "shell": {
+    "init_hook": [
+      "lefthook install >/dev/null 2>&1 || true"
+    ],
+    "scripts": {}
+  }
+}
