@@ -97,7 +97,10 @@ Not yet released. The first version will carry:
   builds the chain against the trust bundle and reads the identity out of the
   leaf itself. That means turning the standard library's own verification
   off, which looks alarming and is not: the comment sits next to the flag,
-  because the next reader's first instinct will be to delete it.
+  because the next reader's first instinct will be to delete it. Two tests
+  hold the property the flag would otherwise destroy — a server outside the
+  trust bundle is refused, and so is one that chains correctly but runs as an
+  account the client was not told to trust.
 - **A pod security context, and the group is the point.** A driver writes
   what it mounts owned by root, so a process running as anyone else cannot
   read its own certificate. It surfaces as a permission error on a
