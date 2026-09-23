@@ -18,6 +18,8 @@ build:
     # Resolving and installing is this package's build: it is what proves the
     # lock still describes something that exists.
     cd python && uv sync --frozen --quiet
+    # The example's Python component, for the same reason.
+    cd examples/url-shortener/log && uv sync --frozen --quiet
 
 # The unit tests. They need no network and no services, which is the whole
 # point of the gate.
@@ -36,6 +38,11 @@ test:
     # gate because it needs nothing but this checkout: the interpreter and
     # the package manager are declared, and the lock is committed.
     cd python && uv run --frozen pytest -q
+    # The archiver: what it decides about batching, keys and ordering, and
+    # what its probes answer. No broker and no store — the one call it makes
+    # against a store is a five-line double, which is what the one-method
+    # protocol in archive.py is for.
+    cd examples/url-shortener/log && uv run --frozen pytest -q
 
 # Report known vulnerabilities in what this module depends on
 [doc("Report known vulnerabilities")]
@@ -77,6 +84,14 @@ example-images:
     for c in migrate redirect stat; do
         ko build -B --platform linux/amd64 --tags latest "./cmd/$c"
     done
+
+    # The Python component. ko builds an image around a static binary and
+    # has no equivalent here, so the same property — nothing executes while
+    # the image is assembled — is kept by doing the install OUTSIDE it and
+    # leaving the Dockerfile with a COPY and nothing else.
+    bash log/hack/build.sh
+    docker build --quiet --tag kind.local/log:latest log >/dev/null
+    kind load docker-image kind.local/log:latest --name policy
 
 # Install the example: the infrastructure release, then the application.
 [doc("Install the example into the local cluster")]
@@ -164,10 +179,12 @@ lint:
     # The Python loader: one tool for lint and formatting, so formatting is
     # never a second opinion, and a type checker, because an annotation
     # nothing checks is a comment that rots.
-    ( cd python \
-        && uv run --frozen ruff check . \
-        && uv run --frozen ruff format --check . \
-        && uv run --frozen mypy ) || fail=1
+    for py in python examples/url-shortener/log; do
+        ( cd "$py" \
+            && uv run --frozen ruff check . \
+            && uv run --frozen ruff format --check . \
+            && uv run --frozen mypy ) || fail=1
+    done
     # The example carries the import ban too. A reference implementation
     # exempt from the rules it demonstrates is a reference to nothing.
     ( cd examples/url-shortener && golangci-lint run ./... ) || fail=1

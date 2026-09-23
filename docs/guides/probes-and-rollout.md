@@ -18,7 +18,7 @@ throughout.
 | Go | `runtime.Probes` and `runtime.Serve` in [`internal/runtime/runtime.go`](../../examples/url-shortener/internal/runtime/runtime.go) | `runtime.Drain`, and `signal.NotifyContext` in each `main` |
 | TypeScript | follows | follows |
 | Kotlin | follows | the framework's graceful shutdown |
-| Python | follows | follows |
+| Python | `Probes` in [`runtime.py`](../../examples/url-shortener/log/src/url_shortener_log/runtime.py), on the standard library's server | the consume loop in `__main__.py`: stop fetching, write what is held, acknowledge, bounded by the same number the chart gives the platform |
 
 The chart side is
 [`examples/url-shortener/charts/url-shortener/templates/`](../../examples/url-shortener/charts/url-shortener/templates/):
