@@ -15,8 +15,8 @@ The index, by what you are here to do.
 - [contracts/platform.md](contracts/platform.md) — the other side of the
   seam: what a service asks of whatever runs it, and what that platform owes
   back. Read it before writing a chart.
-- [guides/](guides/conformance.md) — how to satisfy the above. The rest of
-  the guides walk the worked example, and arrive with it.
+- [guides/](guides/README.md) — how to satisfy the above, one guide per
+  aspect, each pointing at the file in the worked example where it is done.
 
 ## Reviewing a service
 
@@ -47,5 +47,7 @@ The index, by what you are here to do.
 
 ---
 
-The guides are being assembled: they walk the worked example, and arrive with
-it.
+A few guides are still to come — object storage, keys, RPC and schemas,
+transport security, and migrating off a framework. Each arrives with the
+component that proves it, because writing one earlier means describing code
+nobody has run. [guides/README.md](guides/README.md) says which is which.
