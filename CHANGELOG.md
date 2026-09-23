@@ -104,6 +104,14 @@ Not yet released. The first version will carry:
   verification step now asserts the flag, because the two states are
   indistinguishable from every other angle, and the platform contract now
   asks a platform to demonstrate the REFUSAL rather than the issuance.
+
+  The consequence, found by CI rather than by thinking: turning that approver
+  off turns it off for **everything**, including the authority's own
+  bootstrap. A self-signed root expressed as a certificate needs its request
+  approved like any other, and nothing was left to approve it, so the box
+  never finished standing up. The box's root is a generated fixture now. A
+  real deployment answers this with a policy engine; a throwaway root does
+  not need one.
 - **Mutual TLS, with the identity the platform gives.** A new `tls` fragment
   and a `transport` package that does three things and no more: load the
   mounted certificate and reload it when it changes, present it as a server

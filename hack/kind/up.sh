@@ -98,11 +98,23 @@ helm upgrade --install cert-manager jetstack/cert-manager \
   --wait --timeout 5m
 
 step "the trust domain"
+# The root is generated here rather than asked of cert-manager, because the
+# line above turned off the only thing that would have approved it. See
+# identity.yaml for why that is a consequence rather than a workaround.
+#
+# Idempotent: an existing root is kept, so re-running the box does not
+# invalidate every identity it has already issued.
+if ! kubectl -n cert-manager get secret policy-trust >/dev/null 2>&1; then
+  root=$(mktemp -d)
+  trap 'rm -rf "$root"' EXIT
+  openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 \
+    -keyout "$root/tls.key" -out "$root/tls.crt" \
+    -days 30 -nodes -subj "/CN=policy-trust" >/dev/null 2>&1
+  kubectl -n cert-manager create secret tls policy-trust \
+    --cert="$root/tls.crt" --key="$root/tls.key" >/dev/null
+fi
+
 kubectl apply -f identity.yaml
-# The authority signs from a secret cert-manager writes, so the issuer is not
-# usable the moment it is applied. Waiting here rather than in the driver's
-# install turns "certificate not ready" into a message about the authority.
-kubectl -n cert-manager wait certificate/policy-trust --for=condition=Ready --timeout=2m
 
 step "the identity driver ${CSI_DRIVER_SPIFFE_CHART_VERSION}"
 # THE PROPERTY THIS PROVES: the driver asks for a certificate using the POD'S
@@ -120,8 +132,8 @@ helm upgrade --install csi-driver-spiffe jetstack/cert-manager-csi-driver-spiffe
   --set app.driver.volumes[0].name=root-cas \
   --set app.driver.volumes[0].secret.secretName=policy-trust \
   --set app.driver.volumeMounts[0].name=root-cas \
-  --set app.driver.volumeMounts[0].mountPath=/var/run/secrets/cert-manager-csi-driver-spiffe \
-  --set app.driver.sourceCABundle=/var/run/secrets/cert-manager-csi-driver-spiffe/ca.crt \
+  --set app.driver.volumeMounts[0].mountPath=/var/run/cert-manager-csi-driver-spiffe \
+  --set app.driver.sourceCABundle=/var/run/cert-manager-csi-driver-spiffe/tls.crt \
   --wait --timeout 5m
 
 step "S3"
