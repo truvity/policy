@@ -16,9 +16,11 @@
 package transport
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
+	"log/slog"
 	"net/url"
 	"os"
 	"strings"
@@ -51,6 +53,7 @@ type Peer struct {
 // Config is the `tls` fragment, decoded.
 type Config struct {
 	Mode        Mode   `json:"mode"`
+	Address     string `json:"address"`
 	CertFile    string `json:"certFile"`
 	KeyFile     string `json:"keyFile"`
 	CAFile      string `json:"caFile"`
@@ -62,6 +65,7 @@ type Config struct {
 type Identity struct {
 	cfg   Config
 	roots *x509.CertPool
+	log   *slog.Logger
 
 	// The certificate, and what it was loaded from. A rotation replaces the
 	// files in place, so the modification time is what says it is stale.
@@ -73,7 +77,15 @@ type Identity struct {
 // Load reads the mounted identity. It returns nil when the mode is off,
 // which callers treat as "serve cleartext" rather than as an error: a chart
 // whose default is off must produce a service that runs.
-func Load(cfg Config) (*Identity, error) {
+//
+// The logger is where REFUSALS go, and passing one is not optional in
+// spirit. A caller is told only that it was refused — telling it which rule
+// rejected it describes the allow-list to whoever is probing — so the
+// server's log is the only place the reason exists. A service that refuses
+// everyone for an unrelated reason and a service that is working look
+// identical without it. A nil logger is accepted for a test and discards
+// them.
+func Load(cfg Config, log *slog.Logger) (*Identity, error) {
 	if cfg.Mode == "" {
 		cfg.Mode = Off
 	}
@@ -84,6 +96,10 @@ func Load(cfg Config) (*Identity, error) {
 	case Permissive, Strict:
 	default:
 		return nil, fmt.Errorf("transport mode %q is not off, permissive or strict", cfg.Mode)
+	}
+
+	if cfg.Mode == Permissive && cfg.Address == "" {
+		return nil, fmt.Errorf("permissive needs an address for the authenticated listener: one listener cannot be both")
 	}
 
 	if cfg.TrustDomain == "" {
@@ -100,7 +116,11 @@ func Load(cfg Config) (*Identity, error) {
 		return nil, fmt.Errorf("the trust bundle at %s holds no certificate", cfg.CAFile)
 	}
 
-	id := &Identity{cfg: cfg, roots: roots}
+	if log == nil {
+		log = slog.New(slog.DiscardHandler)
+	}
+
+	id := &Identity{cfg: cfg, roots: roots, log: log}
 	if _, err := id.certificate(); err != nil {
 		return nil, err
 	}
@@ -180,12 +200,20 @@ func (i *Identity) Server() *tls.Config {
 }
 
 // Client is the configuration for connections this service makes: it
-// presents the same certificate, and checks the server's identity as well as
-// its name.
+// presents the same certificate and checks the server's IDENTITY.
 //
-// Both checks, not either. The hostname check answers "did I reach the
-// address I meant to"; the identity check answers "is the thing there the
-// one I was told to trust". An address resolves to whoever holds it today.
+// It does not check the server's name, and `InsecureSkipVerify` is how that
+// is expressed — which reads alarming and is not, because the chain and the
+// identity are both verified below instead. The name is skipped because a
+// platform's workload certificates carry no name: they carry an identity,
+// which is a stronger statement. "I reached the address I meant to" is a
+// weaker question than "the thing answering is the account I was told to
+// trust", and the second one is the one being asked.
+//
+// The library's own verification has to be turned off to ask it, because it
+// insists on the name. So this does the library's job by hand: build the
+// chain against the trust bundle, then read the identity out of the leaf.
+// Skipping either half would be the mistake the flag's name warns about.
 func (i *Identity) Client() *tls.Config {
 	if i == nil {
 		return nil
@@ -196,9 +224,48 @@ func (i *Identity) Client() *tls.Config {
 		GetClientCertificate: func(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
 			return i.certificate()
 		},
-		RootCAs:               i.roots,
-		VerifyPeerCertificate: i.verifyPeer,
+		//nolint:gosec // The chain and the identity are verified in
+		// VerifyPeerCertificate below; only the NAME check is skipped, and
+		// the comment above says why.
+		InsecureSkipVerify:    true,
+		VerifyPeerCertificate: i.verifyChainAndPeer,
 	}
+}
+
+// verifyChainAndPeer does what the library would have done, plus the part it
+// cannot: verify the chain against the trust bundle, then check the peer's
+// identity. It is used where the name check had to be turned off.
+func (i *Identity) verifyChainAndPeer(rawCerts [][]byte, _ [][]*x509.Certificate) error {
+	if len(rawCerts) == 0 {
+		return fmt.Errorf("the peer presented no certificate")
+	}
+
+	certs := make([]*x509.Certificate, 0, len(rawCerts))
+
+	for _, raw := range rawCerts {
+		cert, err := x509.ParseCertificate(raw)
+		if err != nil {
+			return fmt.Errorf("parse the peer's certificate: %w", err)
+		}
+
+		certs = append(certs, cert)
+	}
+
+	intermediates := x509.NewCertPool()
+	for _, cert := range certs[1:] {
+		intermediates.AddCert(cert)
+	}
+
+	chains, err := certs[0].Verify(x509.VerifyOptions{
+		Roots:         i.roots,
+		Intermediates: intermediates,
+		KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
+	})
+	if err != nil {
+		return fmt.Errorf("the peer's certificate does not chain to the trust bundle: %w", err)
+	}
+
+	return i.verifyPeer(nil, chains)
 }
 
 // verifyPeer runs after the library has verified the chain. It reads the
@@ -218,6 +285,15 @@ func (i *Identity) verifyPeer(_ [][]byte, chains [][]*x509.Certificate) error {
 			return nil
 		}
 	}
+
+	// Said HERE, because the caller will not be told. The refusal it
+	// receives is a bare alert; this line is the only record that the
+	// service made a decision rather than breaking.
+	// Background, because there is none: this runs inside a TLS handshake,
+	// before any request exists to carry one.
+	i.log.WarnContext(context.Background(), "refused a peer",
+		slog.String("namespace", peer.Namespace),
+		slog.String("serviceAccount", peer.ServiceAccount))
 
 	return fmt.Errorf("%s/%s is not a peer this service admits", peer.Namespace, peer.ServiceAccount)
 }

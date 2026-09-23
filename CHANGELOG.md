@@ -79,6 +79,31 @@ Not yet released. The first version will carry:
   repositories does not mean reading a recipe file to find the linter, and
   **every toolchain entry names a version** — "latest" makes a reproducible
   build a coincidence.
+- **The transport is provable on the cluster, both ways.** The chart takes a
+  `tls` block: an ephemeral volume the platform mounts an identity into, the
+  in-cluster permission a workload needs to ASK for its own certificate, and
+  a second port under `permissive` because one listener cannot be both. With
+  the default `off`, the render carries no trace of any of it, which a test
+  asserts by name rather than by golden.
+
+  A new cluster step proves what only a cluster can: a caller on the list is
+  served, a caller holding a REAL identity that is not on the list is closed
+  at the handshake, and the service says which account it refused. All three
+  halves are asserted — the second alone would pass for a service that
+  refuses everyone, and without the third a refusal is indistinguishable from
+  a service that is simply broken.
+- **Verification is by identity, not by name.** A platform's workload
+  certificate carries an identity and usually no host name, so a client
+  builds the chain against the trust bundle and reads the identity out of the
+  leaf itself. That means turning the standard library's own verification
+  off, which looks alarming and is not: the comment sits next to the flag,
+  because the next reader's first instinct will be to delete it.
+- **A pod security context, and the group is the point.** A driver writes
+  what it mounts owned by root, so a process running as anyone else cannot
+  read its own certificate. It surfaces as a permission error on a
+  certificate authority file, or a complaint that a certificate is malformed
+  — neither of which mentions identity, and both only once the transport is
+  on.
 - **The leak canary no longer fires on Kubernetes' own secret path.** Its
   parameter-store pattern matched `/var/run/secrets/`, which is where a pod's
   own credentials are mounted and is therefore in any manifest that reads

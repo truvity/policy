@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"log/slog"
 	"math/big"
 	"net"
 	"net/http"
@@ -183,7 +184,7 @@ func (l *serverLog) String() string {
 // default is off is installed by someone whose platform provides none of
 // this, and an error here would be a chart nobody outside can use.
 func TestOffLoadsNothingAndIsNotAnError(t *testing.T) {
-	id, err := transport.Load(transport.Config{})
+	id, err := transport.Load(transport.Config{}, nil)
 	must(t, err)
 	mustBeNil(t, id, "expected nil")
 	if id.Mode() != transport.Off {
@@ -199,11 +200,11 @@ func TestAnAdmittedPeerIsServed(t *testing.T) {
 	ca := newAuthority(t)
 
 	server, err := transport.Load(ca.issue(t, "server", "shop", "api",
-		transport.Peer{Namespace: "shop", ServiceAccount: "web"}))
+		transport.Peer{Namespace: "shop", ServiceAccount: "web"}), nil)
 	must(t, err)
 
 	client, err := transport.Load(ca.issue(t, "client", "shop", "web",
-		transport.Peer{Namespace: "shop", ServiceAccount: "api"}))
+		transport.Peer{Namespace: "shop", ServiceAccount: "api"}), nil)
 	must(t, err)
 
 	url, httpClient, _ := serve(t, server, client)
@@ -227,13 +228,16 @@ func TestAnAdmittedPeerIsServed(t *testing.T) {
 func TestAPeerNotOnTheListIsClosedAtTheHandshake(t *testing.T) {
 	ca := newAuthority(t)
 
+	refusals := &serverLog{}
+
 	server, err := transport.Load(ca.issue(t, "server", "shop", "api",
-		transport.Peer{Namespace: "shop", ServiceAccount: "web"}))
+		transport.Peer{Namespace: "shop", ServiceAccount: "web"}),
+		slog.New(slog.NewJSONHandler(refusals, nil)))
 	must(t, err)
 
 	// A real workload, properly issued, simply not granted.
 	stranger, err := transport.Load(ca.issue(t, "stranger", "shop", "batch",
-		transport.Peer{Namespace: "shop", ServiceAccount: "api"}))
+		transport.Peer{Namespace: "shop", ServiceAccount: "api"}), nil)
 	must(t, err)
 
 	url, httpClient, serverErrs := serve(t, server, stranger)
@@ -251,6 +255,14 @@ func TestAPeerNotOnTheListIsClosedAtTheHandshake(t *testing.T) {
 	if !strings.Contains(serverErrs.String(), "shop/batch is not a peer this service admits") {
 		t.Errorf("the server did not say why it refused; it logged: %s", serverErrs.String())
 	}
+
+	// And it says so through the service's OWN logger, which is where an
+	// operator looks — not only in whatever the HTTP server happens to
+	// print. A refusal nobody can find is a refusal nobody can tell from a
+	// service that is simply broken.
+	if !strings.Contains(refusals.String(), `"serviceAccount":"batch"`) {
+		t.Errorf("the refusal did not reach the service's logger; it holds: %s", refusals.String())
+	}
 }
 
 // A certificate from another trust domain is refused even if its account
@@ -259,7 +271,7 @@ func TestAnIdentityFromAnotherTrustDomainIsRefused(t *testing.T) {
 	ours, theirs := newAuthority(t), newAuthority(t)
 
 	server, err := transport.Load(ours.issue(t, "server", "shop", "api",
-		transport.Peer{Namespace: "shop", ServiceAccount: "web"}))
+		transport.Peer{Namespace: "shop", ServiceAccount: "web"}), nil)
 	must(t, err)
 
 	// Same namespace, same account, different authority: the chain check
@@ -268,7 +280,7 @@ func TestAnIdentityFromAnotherTrustDomainIsRefused(t *testing.T) {
 	other := theirs.issue(t, "client", "shop", "web",
 		transport.Peer{Namespace: "shop", ServiceAccount: "api"})
 
-	client, err := transport.Load(other)
+	client, err := transport.Load(other, nil)
 	must(t, err)
 
 	url, httpClient, _ := serve(t, server, client)
@@ -284,7 +296,7 @@ func TestARotatedCertificateIsPickedUpWithoutRestarting(t *testing.T) {
 	ca := newAuthority(t)
 	cfg := ca.issue(t, "server", "shop", "api", transport.Peer{Namespace: "shop", ServiceAccount: "web"})
 
-	id, err := transport.Load(cfg)
+	id, err := transport.Load(cfg, nil)
 	must(t, err)
 
 	first, err := id.Server().GetCertificate(&tls.ClientHelloInfo{})
@@ -313,7 +325,7 @@ func TestAHalfWrittenRotationKeepsServing(t *testing.T) {
 	ca := newAuthority(t)
 	cfg := ca.issue(t, "server", "shop", "api", transport.Peer{Namespace: "shop", ServiceAccount: "web"})
 
-	id, err := transport.Load(cfg)
+	id, err := transport.Load(cfg, nil)
 	must(t, err)
 
 	_, err = id.Server().GetCertificate(&tls.ClientHelloInfo{})
@@ -337,14 +349,14 @@ func TestLoadRefuses(t *testing.T) {
 	ca := newAuthority(t)
 
 	t.Run("an unknown mode", func(t *testing.T) {
-		_, err := transport.Load(transport.Config{Mode: "mutual"})
+		_, err := transport.Load(transport.Config{Mode: "mutual"}, nil)
 		mustFailWith(t, err, "not off, permissive or strict")
 	})
 
 	t.Run("no trust domain", func(t *testing.T) {
 		cfg := ca.issue(t, "s1", "shop", "api")
 		cfg.TrustDomain = ""
-		_, err := transport.Load(cfg)
+		_, err := transport.Load(cfg, nil)
 		mustFailWith(t, err, "no trust domain")
 	})
 
@@ -352,14 +364,14 @@ func TestLoadRefuses(t *testing.T) {
 		cfg := ca.issue(t, "s2", "shop", "api")
 		cfg.CAFile = filepath.Join(t.TempDir(), "empty.pem")
 		must(t, os.WriteFile(cfg.CAFile, []byte("not a certificate"), 0o600))
-		_, err := transport.Load(cfg)
+		_, err := transport.Load(cfg, nil)
 		mustFailWith(t, err, "holds no certificate")
 	})
 
 	t.Run("a certificate that is not there", func(t *testing.T) {
 		cfg := ca.issue(t, "s3", "shop", "api")
 		cfg.CertFile = filepath.Join(t.TempDir(), "absent.crt")
-		_, err := transport.Load(cfg)
+		_, err := transport.Load(cfg, nil)
 		mustFail(t, err)
 	})
 }
@@ -369,11 +381,11 @@ func TestLoadRefuses(t *testing.T) {
 func TestAnEmptyPeerListAdmitsNobody(t *testing.T) {
 	ca := newAuthority(t)
 
-	server, err := transport.Load(ca.issue(t, "server", "shop", "api"))
+	server, err := transport.Load(ca.issue(t, "server", "shop", "api"), nil)
 	must(t, err)
 
 	client, err := transport.Load(ca.issue(t, "client", "shop", "web",
-		transport.Peer{Namespace: "shop", ServiceAccount: "api"}))
+		transport.Peer{Namespace: "shop", ServiceAccount: "api"}), nil)
 	must(t, err)
 
 	url, httpClient, _ := serve(t, server, client)

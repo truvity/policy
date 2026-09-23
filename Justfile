@@ -83,9 +83,18 @@ example-install:
 example-smoke:
     bash examples/url-shortener/hack/smoke.sh
 
+# Prove the transport rule on the cluster: the platform attests an identity,
+# the service checks it, and a caller holding a REAL identity that is not on
+# the list is closed at the handshake. The second half is the one worth
+# having — issuing identities correctly while admitting anyone who asks is
+# the failure that looks like success from every other angle.
+[doc("Prove transport identity end to end")]
+example-identity:
+    bash examples/url-shortener/hack/identity-smoke.sh
+
 # The whole cluster tier, from nothing.
 [doc("The whole cluster tier, from nothing")]
-cluster-all: cluster cluster-verify cluster-smoke example-images example-install example-smoke
+cluster-all: cluster cluster-verify cluster-smoke example-images example-install example-smoke example-identity
 
 # Remove it
 [doc("Remove the local cluster")]
