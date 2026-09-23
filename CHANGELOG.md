@@ -79,6 +79,23 @@ Not yet released. The first version will carry:
   repositories does not mean reading a recipe file to find the linter, and
   **every toolchain entry names a version** — "latest" makes a reproducible
   build a coincidence.
+- **Mutual TLS, with the identity the platform gives.** A new `tls` fragment
+  and a `transport` package that does three things and no more: load the
+  mounted certificate and reload it when it changes, present it as a server
+  and as a client, and admit a peer by the ACCOUNT it runs as rather than by
+  the address it calls from. It never fetches or mints a certificate, because
+  a workload that did would be asserting an identity rather than presenting
+  one it was given.
+
+  Three modes. `off` is the default and always will be, so a chart stays
+  installable by someone whose platform provides none of this. `permissive`
+  serves both on two ports, so an edge migrates one side at a time. `strict`
+  serves only the authenticated port.
+
+  Eleven tests over real handshakes, including the two that matter: an
+  unlisted peer is closed at the handshake with the reason on the SERVER and
+  a bare refusal to the caller, and a rotated certificate is picked up
+  without a restart. Both mutation-checked.
 - **A guide per aspect**, each with the rule, why it is that way, a table of
   where to look per language, and the traps — the failures that look like
   something else. Configuration, identity and secrets, events, probes and

@@ -19,6 +19,7 @@ that look like something else.
 | [exposure.md](exposure.md) | the route, its parent, and why its rules are named |
 | [releases-and-images.md](releases-and-images.md) | one tag, every platform, no build step in the image |
 | [testing.md](testing.md) | what the gate proves, and what only a cluster can |
+| [transport-security.md](transport-security.md) | mutual TLS, whose identity, and the three modes |
 | [twelve-factor.md](twelve-factor.md) | the factors mapped, and the two deviations argued |
 | [conformance.md](conformance.md) | the checklist, and what CI checks for you |
 
@@ -33,7 +34,6 @@ nobody has run.
 | object storage | the log component, which is the first to read a bucket |
 | keys and signing | the first component that signs something |
 | RPC and schemas | the service that owns the tables, and the front end that calls it |
-| transport security | the identity work, on every component at once |
 | migrating from a framework | written from the change that removes one |
 
 ## The languages
