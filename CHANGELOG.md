@@ -53,6 +53,16 @@ Not yet released. The first version will carry:
   validates against at start-up, so the two cannot drift in the direction
   that matters. Five negative fixtures, one per refusal, each failing for its
   own reason.
+- **The example runs.** Two releases, because a migration hook cannot wait
+  for a database its own release creates: one for the database and the
+  stream, one for the application. Two database roles with two credentials,
+  because the migration creates tables and the services must not be able
+  to. And a smoke test that asks the only question rendering cannot: a
+  redirect is served, an event crosses the broker, and a counter another
+  service owns moves by exactly the number of requests made.
+- **The cluster tier is now a pull-request gate**, which is what decision
+  0005 said it would become once something consumed it. Five defects it
+  caught while the example was built are listed there.
 - **The `nats` fragment now describes a CONNECTION only**, and a new
   `nats-consumer` fragment describes what a consumer binds to. The first real
   consumer is what showed that a publisher carrying a `consumer` field it

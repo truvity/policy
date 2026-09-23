@@ -49,6 +49,23 @@ carry.
 - A chart is proved against the controller that will act on it. The failures
   that matter — a resource nothing reconciles, a hook that never runs — are
   the ones a renderer cannot see.
+- It earned this on the first product put through it. Building the worked
+  example, with a green hermetic gate throughout, the box caught five
+  defects a renderer accepts:
+  - a migration hook that ran before the database its own chart created, so
+    the chart had to become two;
+  - the same fault one level down, a hook mounting a ConfigMap the release
+    had not applied yet;
+  - a migration that never created the schemas its tables name, because
+    something outside it had always created them before;
+  - one credential shared by the migration and the services, which put the
+    right to drop a table on the request path;
+  - a library writing its own coloured log format past the service's
+    logger, which is a broken log contract that every local run looks fine
+    with.
+
+  Each is now held by a test. Three of them are impossible to state as a
+  rendering assertion at all.
 - One environment, so nothing has to be kept in step, and the thing a
   contributor runs is the thing that gates the merge.
 - It needs nothing but a container runtime, so a stranger can run it and a

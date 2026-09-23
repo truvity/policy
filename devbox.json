@@ -12,7 +12,8 @@
     "yarn-berry":      "4.14.1",
     "kind":            "latest",
     "kubectl":         "latest",
-    "kubernetes-helm": "latest"
+    "kubernetes-helm": "latest",
+    "ko":              "latest"
   },
   "env": {
     "CGO_ENABLED":  "0",
