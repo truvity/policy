@@ -224,9 +224,14 @@ func (i *Identity) Client() *tls.Config {
 		GetClientCertificate: func(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
 			return i.certificate()
 		},
-		//nolint:gosec // The chain and the identity are verified in
-		// VerifyPeerCertificate below; only the NAME check is skipped, and
-		// the comment above says why.
+		// codeql[go/disabled-certificate-check] The certificate IS checked,
+		// by verifyChainAndPeer below: it builds the chain against the trust
+		// bundle and then reads the peer's identity. Only the NAME check is
+		// skipped, because a platform's workload certificates carry no name.
+		// Two tests hold the property this flag would otherwise destroy:
+		// TestAClientRefusesAServerOutsideItsTrustBundle and
+		// TestAClientRefusesAServerItWasNotToldToTrust.
+		//nolint:gosec // see above
 		InsecureSkipVerify:    true,
 		VerifyPeerCertificate: i.verifyChainAndPeer,
 	}

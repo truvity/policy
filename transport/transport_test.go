@@ -434,3 +434,52 @@ func mustBeNil(t *testing.T, v any, why string) {
 		t.Fatalf("%s: got %v", why, v)
 	}
 }
+
+// The client turns the library's verification off so that it can ignore the
+// server's NAME — a platform's certificates carry none. This proves it does
+// not ignore anything else: a server whose certificate does not chain to the
+// client's trust bundle is refused by the client, at the handshake.
+//
+// It is the test that justifies the flag. Without it, "we verify by hand"
+// is a claim rather than a property, and the flag means what its name says.
+func TestAClientRefusesAServerOutsideItsTrustBundle(t *testing.T) {
+	ours, theirs := newAuthority(t), newAuthority(t)
+
+	// A server with a perfectly good certificate — from the wrong
+	// authority, and naming an account the client would otherwise admit.
+	server, err := transport.Load(theirs.issue(t, "server", "shop", "api",
+		transport.Peer{Namespace: "shop", ServiceAccount: "web"}), nil)
+	must(t, err)
+
+	client, err := transport.Load(ours.issue(t, "client", "shop", "web",
+		transport.Peer{Namespace: "shop", ServiceAccount: "api"}), nil)
+	must(t, err)
+
+	url, httpClient, _ := serve(t, server, client)
+
+	_, err = httpClient.Get(url)
+	mustFail(t, err)
+	mustFailWith(t, err, "does not chain to the trust bundle")
+}
+
+// And the identity is checked on the client's side too: a server that chains
+// correctly but runs as an account the client was not told to trust is
+// refused. Together with the test above, the two halves the library would
+// have done are both accounted for.
+func TestAClientRefusesAServerItWasNotToldToTrust(t *testing.T) {
+	ca := newAuthority(t)
+
+	server, err := transport.Load(ca.issue(t, "server", "shop", "somebody-else",
+		transport.Peer{Namespace: "shop", ServiceAccount: "web"}), nil)
+	must(t, err)
+
+	client, err := transport.Load(ca.issue(t, "client", "shop", "web",
+		transport.Peer{Namespace: "shop", ServiceAccount: "api"}), nil)
+	must(t, err)
+
+	url, httpClient, _ := serve(t, server, client)
+
+	_, err = httpClient.Get(url)
+	mustFail(t, err)
+	mustFailWith(t, err, "shop/somebody-else is not a peer this service admits")
+}
