@@ -32,3 +32,10 @@ Not yet released. The first version will carry:
   one, carrying the same schemas, tested against the same fixtures and
   wording its refusals the same way, so that a misconfiguration reads
   identically whichever runtime refused it.
+- **The import ban**, as a block a repository copies into its own lint
+  configuration: no dependency-injection container, no configuration-mapping
+  library, and the libraries the canon retired. Each entry names what to use
+  instead, because a lint error that only says "no" gets suppressed rather
+  than fixed.
+- **A conformance guide**: what CI checks for you, what a reviewer checks,
+  and the two rules that are checked by eye.
