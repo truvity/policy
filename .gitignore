@@ -17,6 +17,10 @@ node_modules/
 .yarn/
 */.yarn/
 
+# What the Python component's image copies. Assembled by hack/build.sh from
+# the committed lock, so it is a build output like any other.
+examples/url-shortener/log/build/
+
 # Python, for the third loader. The lock IS committed — `uv sync --frozen`
 # is what makes the gate hermetic — but nothing the interpreter or the
 # tools write is.

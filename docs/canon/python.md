@@ -22,7 +22,7 @@ component needs it, not in anticipation.
 | Telemetry | the OpenTelemetry Python SDK, configured by its own environment | [0006](../decisions/0006-telemetry-is-the-sdk-environment.md) |
 | HTTP client | `httpx` | |
 | Object store and cloud | the cloud vendor's Python SDK | the S3 API, not the vendor: an endpoint is configuration ([platform.md §4](../contracts/platform.md)) |
-| Events | the broker's own Python client | |
+| Events | the broker's own Python client | a pull consumer, durable by name, acknowledged only after the work is stored |
 | Wiring | a hand-written composition root | no container. [0001](../decisions/0001-no-di-containers.md) |
 
 ## What is deliberately absent
@@ -30,8 +30,17 @@ component needs it, not in anticipation.
 **No web framework.** The first Python component held to these contracts is a
 stream consumer: it reads from a broker, writes objects to a store, and
 serves only its probes, which is a handful of lines on the standard library's
-server. Naming a framework before a component needs one is how a canon
-acquires an entry nobody chose.
+server — [`runtime.py`](../../examples/url-shortener/log/src/url_shortener_log/runtime.py).
+Naming a framework before a component needs one is how a canon acquires an
+entry nobody chose.
+
+**No `pydantic` yet either**, although the row above names it. It is for
+values that cross a boundary at RUN time, and the first component has none:
+its configuration is validated against a JSON Schema by this repository's
+loader, and the events it archives are not its to describe — an archiver that
+imposed a shape on what it stores would drop whatever the publisher added
+next. The row stays because the rule is decided; the dependency arrives with
+the component that needs it.
 
 **No RPC row yet.** The Connect ecosystem's Python support is younger than
 its Go and TypeScript support. When a Python component owns or consumes an
@@ -63,6 +72,26 @@ A runtime image copies an installed environment onto a minimal base and runs
 the interpreter directly. No build step in the image, no package manager in
 the image, no shell in the image where the base can avoid one
 ([service.md §7](../contracts/service.md)).
+
+The Go components get this from `ko`, which lays an image around a static
+binary. Python has no equivalent, so the equivalent is a script: the
+dependency tree is resolved from the committed lock and installed into a
+directory, the first-party wheels are built and installed beside it, and the
+Dockerfile is a `COPY` and an `ENTRYPOINT`. It is worth keeping honestly
+rather than by moving the build into an earlier stage of the same file — a
+multi-stage build still executes a package manager while the image is
+assembled, which is what makes a cross-architecture build need emulation.
+
+See [`hack/build.sh`](../../examples/url-shortener/log/hack/build.sh) and
+[`Dockerfile`](../../examples/url-shortener/log/Dockerfile).
+
+**The base is pinned by tag, not by digest**, which is the same choice the Go
+components' base makes, and for a reason worth writing down: the registry's
+free tier keeps only the current build, so a pinned digest stops resolving
+and breaks every fork's build with a failure whose cause is invisible. What
+must not move is the interpreter's MINOR version, and that is pinned where it
+can be — the toolchain declares the interpreter that resolves the lock and
+builds the wheels, and a mismatch fails the build rather than the deployment.
 
 ## Exceptions
 

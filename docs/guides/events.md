@@ -18,7 +18,7 @@ retention is an operational decision.
 | Go | [`internal/events/publisher.go`](../../examples/url-shortener/internal/events/publisher.go), called from the redirect service | the durable consumer in the counter's `main` |
 | TypeScript | follows | follows |
 | Kotlin | | the counter, once rewritten |
-| Python | | the log component |
+| Python | | the pull consumer in [`__main__.py`](../../examples/url-shortener/log/src/url_shortener_log/__main__.py): durable by name, acknowledged only after the batch is stored |
 
 The connection helper, including authentication, is
 [`internal/runtime/natstoken.go`](../../examples/url-shortener/internal/runtime/natstoken.go).

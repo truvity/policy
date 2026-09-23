@@ -21,7 +21,7 @@ else.
 | Go | [`transport/`](../../transport/) | `Load`, then `Server()` and `Client()` give `*tls.Config` |
 | TypeScript | follows | a secure context, replaced on rotation |
 | Kotlin | follows, with the counter | the framework's SSL bundles, reload on update |
-| Python | follows, with the log component | a context rebuilt per connection; see the canon's note on servers |
+| Python | follows | a context rebuilt per connection; see the canon's note on servers. The archiver makes only outbound calls, so it is unaffected |
 
 The configuration is the [`tls`](../../schemas/fragments/tls.json) fragment.
 

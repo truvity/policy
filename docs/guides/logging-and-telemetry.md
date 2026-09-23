@@ -19,7 +19,7 @@ lost, because the runtime captures both streams and tags each line.
 | Go | `slog` with a JSON handler on stderr, in [`internal/runtime/runtime.go`](../../examples/url-shortener/internal/runtime/runtime.go) | each `main`, before anything else is constructed |
 | TypeScript | a JSON logger to stderr | the composition root; the framework's own logger replaced at start-up |
 | Kotlin | the framework's binding, configured for JSON on stderr | |
-| Python | `structlog`, JSON to stderr | |
+| Python | `structlog`, JSON to stderr, in [`runtime.py`](../../examples/url-shortener/log/src/url_shortener_log/runtime.py) | `run`, before anything else is constructed |
 
 ## Every library that logs is wired to your logger
 

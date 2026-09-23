@@ -26,7 +26,7 @@ property a release exists to remove.
 | Go | the compiled binary on a minimal base | a tool that cross-compiles and pushes, with no daemon and no emulation |
 | TypeScript | a copy of the built bundle onto a runtime base | the bundler, then a copy |
 | Kotlin | a copy of the built artifact onto a JRE base | the build tool, then a copy |
-| Python | a copy of the installed environment onto a minimal base | the package manager, then a copy |
+| Python | a copy of the installed environment onto a minimal base | [`hack/build.sh`](../../examples/url-shortener/log/hack/build.sh) resolves from the lock and installs OUTSIDE the image, leaving [a Dockerfile](../../examples/url-shortener/log/Dockerfile) with a COPY and no RUN |
 
 The pattern is the same in all four: **something else builds, the image
 copies.** No compiler, no package manager and no shell in the runtime image
