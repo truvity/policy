@@ -38,16 +38,24 @@ identity is not the one the requester holds. The workload is never asked what
 it is. [platform.md §8](../contracts/platform.md) lists what a platform must
 provide before any of this can be turned on.
 
-## Two identities, one certificate
+## The identity is not a name
 
-| Carried as | Says | Checked by |
-|---|---|---|
-| a name | **where** a service answers | whoever dials it, the ordinary way |
-| an identity URI | **who** it is | the allow-list in the configuration |
+A platform's workload certificate carries an **identity** and usually no host
+name at all. So service-to-service verification asks "is the thing answering
+the account I was told to trust", and does not ask "did I reach the address I
+meant to". The second is the weaker question: an address resolves to whoever
+holds it today, and the first makes it redundant.
 
-Both, not either. The name check answers "did I reach the address I meant
-to"; the identity check answers "is the thing there the one I was told to
-trust".
+This has a consequence that looks alarming in code and is not. The standard
+library insists on checking the name, so a client that verifies by identity
+has to turn the library's verification **off** and do both halves by hand:
+build the chain against the trust bundle, then read the identity out of the
+leaf. Skipping either half would be the mistake the flag's name warns about;
+skipping the name is the point.
+
+See `Client` in [`transport/`](../../transport/), where the comment says
+exactly this next to the flag, because the next reader's first instinct will
+be to delete it.
 
 ## The three modes
 
@@ -93,6 +101,13 @@ nothing pointing at the line that read it. Re-read when the file changes.
 **A rotation is not atomic across two files.** A read that catches it
 half-done must keep serving the previous certificate, which is still valid,
 rather than refusing every connection for the moment it takes to finish.
+
+**The group owns the mount, and forgetting it costs an afternoon.** A driver
+writes what it mounts owned by root; a process running as anyone else cannot
+read its own certificate. The symptom is a permission error on a certificate
+authority file, or a complaint that a certificate is malformed — neither of
+which mentions identity, and both of which appear only once the transport is
+turned on. Set the pod's group to the user the image runs as.
 
 **Refuse loudly on the server, quietly to the caller.** The caller is told
 that it was refused and nothing more; telling it *which* rule rejected it

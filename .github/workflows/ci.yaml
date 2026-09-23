@@ -64,6 +64,8 @@ jobs:
         run: devbox run -- just example-install
       - name: the example works
         run: devbox run -- just example-smoke
+      - name: identity is attested, checked, and refused when it should be
+        run: devbox run -- just example-identity
       - name: what the cluster saw, if it did not
         if: failure()
         run: |
