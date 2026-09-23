@@ -16,12 +16,19 @@ set -uo pipefail
 # that carries it, for a value that is neither a particular nor secret.
 # `\b` keeps every real shape (bare, in an ARN, as an ECR host: each is
 # bounded by a non-word character) and drops the hex-embedded ones.
+#
+# The parameter-store pattern excludes `/var/run/secrets/`, which is where
+# Kubernetes mounts a pod's own credentials and is therefore in any manifest
+# that reads one. A pattern that fires on the single most common path
+# convention in the ecosystem does not make anyone safer: it teaches the next
+# person to rename their mount to get past it, and the one after that to stop
+# reading the output.
 patterns=(
   '\b[0-9]{12}\b'                          # AWS account id
   'arn:aws'                            # any ARN
   '\b[0-9]{12}\.dkr\.ecr\.'              # ECR registry host
   '\.svc\.cluster\.local'              # in-cluster DNS
-  '/secrets/'                          # SSM parameter paths
+  '(?<!/var/run)/secrets/'             # parameter-store paths, but not Kubernetes' own
   'truvity-[a-z0-9-]*-(ci-cache|artifacts|state)'   # S3 buckets
   '\.truvity\.(xyz|com|co)'            # internal hostnames
   'glpat-|ghp_|github_pat_'            # tokens, in case of an accident
@@ -46,7 +53,7 @@ for p in "${patterns[@]}"; do
   # Exclude this script: it necessarily contains the patterns it bans.
   if hits=$(printf '%s\0' "${tracked[@]}" \
               | grep -zZv '^hack/leak-canary\.sh$' \
-              | xargs -0 -r grep -InE "$p" 2>/dev/null); then
+              | xargs -0 -r grep -InP "$p" 2>/dev/null); then
     echo "LEAK: pattern /$p/ matched — particulars belong in caller inputs or org variables:"
     echo "$hits" | head -5 | sed 's/^/    /'
     fail=1

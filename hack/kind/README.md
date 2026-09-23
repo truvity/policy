@@ -69,3 +69,25 @@ Both are the reason `smoke.sh` exists. Neither is visible from a manifest.
 That last absence is the honest boundary of this box: it proves the charts
 and the code, and it cannot prove the identity plane. What can only be proved
 against a real deployment is run by whoever has one, against their own.
+
+## Workload identity
+
+cert-manager, its SPIFFE driver and that driver's approver, over a
+self-signed authority. The trust domain is in `versions.env`.
+
+The driver asks for a certificate using the **pod's own account token**,
+which the kubelet hands it, and the approver refuses any request whose
+identity is not the one the requester holds. That is what makes an identity
+here an identity rather than a claim.
+
+**cert-manager's own approver is turned off, deliberately.** It approves
+every request for an authority it knows, so with it on the driver's approver
+never gets a say and any account that may create a request receives any
+identity it asks for. Nothing fails when this is wrong: certificates mount,
+services connect, every log line says success.
+
+Measured here before it was disabled: an account called `alice` submitted a
+request naming another account by hand and was issued a certificate for it.
+With the approver off, the same request sits inert and nothing is issued.
+`verify.sh` asserts the flag, because the two states are indistinguishable
+from any other angle.

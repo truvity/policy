@@ -104,6 +104,25 @@ halves, or a service refusing everyone for an unrelated reason looks correct.
 service nobody has been granted, and it is the one default that has to fail
 closed.
 
+**Prove the refusal, never the issuance.** The dangerous failure is a
+platform where identities are issued correctly *and anyone can ask for
+anyone's*. Certificate tooling commonly ships a component that approves every
+request for an authority it knows; leave it beside an attesting approver and
+it answers first. Everything works, and the identity means nothing.
+
+This was measured rather than imagined. In the local cluster, before the
+blanket approver was turned off, an account called `alice` submitted a
+request naming another account's identity by hand and was issued a certificate for it,
+with no error anywhere. With it off, the same request sits inert and no
+certificate is produced. The box asserts the approver is off, because the
+difference between the two is invisible from every other angle.
+
+**The workload's own account needs permission to ask.** The request is made
+*as* the workload's account — that is the attestation — so that account needs
+whatever in-cluster permission creating the request requires. A pod that
+cannot ask simply never starts, with the reason in an event nobody is
+watching.
+
 **Trust domain before account.** Two clusters can each have a `shop`
 namespace and an `api` account. The account alone is not the identity; the
 trust domain is what makes it one.

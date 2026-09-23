@@ -48,6 +48,32 @@ else
   bad "s3 endpoint"
 fi
 
+# THE CHECK THIS BOX EXISTS FOR, in its purest form.
+#
+# cert-manager ships an approver that approves every request for an issuer it
+# knows. With it left on, the identity driver's own approver never gets a
+# say, and any account that may create a request receives ANY identity it
+# asks for — including its neighbour's. Everything still works: certificates
+# mount, services connect, every log line says success. The attestation is
+# decoration and nothing reports it.
+#
+# Measured here before it was disabled: an account called `alice` submitted a
+# request naming `bob` by hand and was issued a certificate for it.
+if kubectl -n cert-manager get deployment cert-manager \
+    -o jsonpath='{.spec.template.spec.containers[0].args}' 2>/dev/null |
+    grep -q -- '-certificaterequests-approver'; then
+  ok "identity is attested (cert-manager's blanket approver is off)"
+else
+  bad "cert-manager's blanket approver is ON — every account can obtain any identity it asks for"
+fi
+
+if kubectl -n cert-manager get daemonset cert-manager-csi-driver-spiffe-driver \
+    -o jsonpath='{.status.numberReady}' 2>/dev/null | grep -qE '^[1-9]'; then
+  ok "identity driver"
+else
+  bad "identity driver — no pod can be given an identity"
+fi
+
 if [ "$fail" != 0 ]; then
   echo "the box is not usable: something above installed but is not there"
   exit 1
