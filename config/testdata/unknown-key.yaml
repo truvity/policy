@@ -1,0 +1,7 @@
+probes:
+  address: ":7070"
+baseURL: https://example.com
+database:
+  url: postgres://shortener@db:5432/shortener
+databse:
+  url: postgres://typo@db:5432/typo

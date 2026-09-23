@@ -46,7 +46,7 @@ schema — stay open, and say in the schema description who validates them.
 ## 4. Shared shapes are shared
 
 Configuration that means the same thing in more than one service is a
-fragment in `schemas/fragments/`, referenced with `$ref`: how a listener is
+fragment in [`schemas/fragments/`](../../schemas), referenced with `$ref`: how a listener is
 described, how a log level is set, how an object store is addressed, how a
 database is reached. A service that invents its own spelling of a shared
 shape makes every tool that reads configuration into a special case.
@@ -83,7 +83,8 @@ chose.
 | 5. secrets | review; the loader has no way to read a secret from the file |
 | 6. start-up failure | a test that starts the binary with each invalid fixture |
 
-The loaders in `go/` and `ts/` implement rules 1, 5 and 6 so that a service
-does not have to. They load, validate, decode, and stop. They are deliberately
+The [Go loader](../../config) implements rules 1, 5 and 6 so that a service
+does not have to, and [`conformance`](../../conformance) is what a chart's
+tests use to be held to the same schema. They load, validate, decode, and stop. They are deliberately
 not a framework: no lifecycle, no dependency wiring, no HTTP, no reflection
 over the environment.

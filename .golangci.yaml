@@ -1,0 +1,28 @@
+version: "2"
+
+# Settings live under `linters:`, not at the top level. A misplaced block is
+# accepted silently by `run` and rejected only by `golangci-lint config
+# verify`, which is why the lint recipe runs verify first — otherwise a
+# setting in the wrong place spends releases doing nothing.
+linters:
+  default: standard
+  enable:
+    - errorlint
+    - gocritic
+    - misspell
+    - revive
+    - sloglint
+    - usetesting
+  settings:
+    sloglint:
+      context: all
+      static-msg: true
+    revive:
+      rules:
+        - name: exported
+    lll:
+      line-length: 120
+formatters:
+  enable:
+    - gofmt
+    - goimports

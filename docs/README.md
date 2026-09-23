@@ -20,6 +20,11 @@ The index, by what you are here to do.
   artifact; what a version means; what a consumer's adoption must show.
 - `guides/conformance.md` — the checklist, and what CI checks for you.
 
+## Configuring a service
+
+- [schemas/](../schemas/README.md) — the shared shapes, and how a service
+  references them from its own schema.
+
 ## Choosing a library
 
 - [canon/](canon/README.md) — the allowed lists per ecosystem, the pinned

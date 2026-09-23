@@ -1,0 +1,11 @@
+listen:
+  address: ":8080"
+probes:
+  address: ":7070"
+log:
+  level: info
+baseURL: https://example.com
+database:
+  url: postgres://shortener@db:5432/shortener
+  passwordEnv: DATABASE_PASSWORD
+  maxConnections: 20

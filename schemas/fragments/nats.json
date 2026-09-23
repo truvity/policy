@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/truvity/policy/schemas/fragments/nats.json",
+  "title": "nats",
+  "description": "A NATS connection, and the stream this service publishes to or consumes from.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["url"],
+  "properties": {
+    "url": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The server URL, for example nats://nats:4222."
+    },
+    "credentialsFile": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Path to a credentials file the platform mounts. Unset means no authentication, which is a test configuration."
+    },
+    "stream": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The stream name."
+    },
+    "subject": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The subject published to, or consumed from."
+    },
+    "consumer": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The durable consumer name. Set on a consumer, unset on a publisher."
+    }
+  }
+}
