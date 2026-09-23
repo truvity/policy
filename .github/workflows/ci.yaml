@@ -36,19 +36,19 @@ jobs:
     with:
       recipes: '["ts"]'
 
-  # The local cluster, stood up from nothing and then asked to prove that
-  # every operator acts. Measured at 3m21s on this runner, most of it
-  # waiting for images and for a database to become ready.
+  # The local cluster, stood up from nothing, asked to prove that every
+  # operator acts, and then made to run the example end to end.
   #
-  # On master and on demand rather than on every pull request, and only
-  # until the worked example arrives: nothing consumes the box yet, so a
-  # pull request that broke it would break nothing else. The moment the
-  # example's suite runs here, this becomes the gate it was built to be
-  # (docs/decisions/0005-kind-is-the-gate.md).
+  # This is the gate decision 0005 describes. It runs on pull requests
+  # because it is now the only place several things are checked at all: that
+  # a migration can create what it owns, that the two database roles are
+  # actually separate, that an event crosses a broker, and that a consumer
+  # bound to a subject moves a counter it has rights on. Every one of those
+  # was broken here at some point while the example was built, and not one
+  # of them is visible to a renderer.
   cluster:
-    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: jetify-com/devbox-install-action@22b0f5500b14df4ea357ce673fbd4ced940ed6a1 # v0.13.0
@@ -58,10 +58,18 @@ jobs:
         run: devbox run -- just cluster
       - name: every operator acts
         run: devbox run -- just cluster-smoke
+      - name: the example's images
+        run: devbox run -- just example-images
+      - name: the example installs
+        run: devbox run -- just example-install
+      - name: the example works
+        run: devbox run -- just example-smoke
       - name: what the cluster saw, if it did not
         if: failure()
         run: |
           kubectl get pods -A || true
+          kubectl -n shortener describe pods || true
+          kubectl -n shortener logs -l app.kubernetes.io/name=url-shortener --all-containers --tail=50 || true
           kubectl -n nats logs deploy/nack --tail=50 || true
           kubectl -n cnpg-system logs deploy/cnpg-cloudnative-pg --tail=50 || true
 

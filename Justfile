@@ -58,6 +58,35 @@ cluster-verify:
 cluster-smoke:
     bash hack/kind/smoke.sh
 
+# Build the example's three images straight into the cluster's nodes. No
+# registry: ko loads them, and the chart is installed with `Never` as the
+# pull policy, so nothing is fetched and nothing is pushed.
+[doc("Build the example's images into the local cluster")]
+example-images:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd examples/url-shortener
+    export KO_DOCKER_REPO=kind.local KIND_CLUSTER_NAME=policy
+    for c in migrate redirect stat; do
+        ko build -B --platform linux/amd64 --tags latest "./cmd/$c"
+    done
+
+# Install the example: the infrastructure release, then the application.
+[doc("Install the example into the local cluster")]
+example-install:
+    bash examples/url-shortener/hack/install.sh
+
+# Prove the example WORKS. This is the question the whole box exists to
+# answer: a redirect is served, an event crosses the broker, and a counter a
+# different service owns moves. Rendering a chart cannot ask it.
+[doc("Prove the example works end to end")]
+example-smoke:
+    bash examples/url-shortener/hack/smoke.sh
+
+# The whole cluster tier, from nothing.
+[doc("The whole cluster tier, from nothing")]
+cluster-all: cluster cluster-verify cluster-smoke example-images example-install example-smoke
+
 # Remove it
 [doc("Remove the local cluster")]
 cluster-down:
