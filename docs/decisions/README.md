@@ -21,3 +21,4 @@ sales pitch.
 | [0001](0001-no-di-containers.md) | Application graphs are hand-wired; dependency-injection containers are not used |
 | [0002](0002-config-file-plus-env.md) | Configuration is a file; the environment carries secrets |
 | [0003](0003-schemas-not-generators.md) | A schema and a hand-written type, not a code generator |
+| [0004](0004-policy-is-public.md) | This repository is public |
