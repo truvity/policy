@@ -12,6 +12,7 @@ just cluster-down   # remove it
 
 About two minutes to stand up from nothing, and seconds when it already
 exists. The smoke test adds two or three, most of it waiting for a database.
+Measured end to end on a hosted runner with nothing cached: 3m21s.
 
 ## What is in it, and why
 
