@@ -79,6 +79,13 @@ Not yet released. The first version will carry:
   repositories does not mean reading a recipe file to find the linter, and
   **every toolchain entry names a version** — "latest" makes a reproducible
   build a coincidence.
+- **A guide per aspect**, each with the rule, why it is that way, a table of
+  where to look per language, and the traps — the failures that look like
+  something else. Configuration, identity and secrets, events, probes and
+  rollout, logging and telemetry, exposure, releases and images, and testing,
+  indexed by [`docs/guides/README.md`](docs/guides/README.md). The remaining
+  five arrive with the components that prove them, and the index says which,
+  because a guide written before the code is a description of nothing.
 - **The example proves the rollout rule instead of violating it.** Two
   instances of everything routed, a disruption budget, `maxUnavailable: 0`,
   spread across machines, and ONE drain number used three times — the
