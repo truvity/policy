@@ -6,10 +6,11 @@ The index, by what you are here to do.
 
 - `contracts/repository.md` — what a repository looks like: layout, toolchain,
   the gate, required checks.
-- `contracts/service.md` — the process boundary: configuration, probes, logs,
-  shutdown, version, images, and how services talk to each other.
-- `contracts/config.md` — one typed configuration per binary, its schema, and
-  how the chart is held to the same schema.
+- [contracts/service.md](contracts/service.md) — the process boundary:
+  configuration, probes, logs, shutdown, version, images, and how services
+  talk to each other.
+- [contracts/config.md](contracts/config.md) — one typed configuration per
+  binary, its schema, and how the chart is held to the same schema.
 - `guides/` — how to satisfy the above, walking the example.
 
 ## Reviewing a service
@@ -24,7 +25,8 @@ The index, by what you are here to do.
 
 ## Understanding why
 
-- `decisions/` — the decision records behind the contracts.
+- [decisions/](decisions/README.md) — the decision records behind the
+  contracts.
 
 ---
 
