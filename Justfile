@@ -24,6 +24,10 @@ test:
     # The example is its own module, so `./...` at the root does not reach it.
     # It is also the only place the contracts are proved rather than stated,
     # which makes it the part of this repository that must not go untested.
+    #
+    # Its chart tests shell out to helm, which devbox supplies — so they are
+    # part of the hermetic gate rather than a separate job: rendering a chart
+    # needs no network and no cluster.
     cd examples/url-shortener && go test ./...
 
 # Report known vulnerabilities in what this module depends on

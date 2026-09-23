@@ -48,6 +48,11 @@ Not yet released. The first version will carry:
   redirect service and the click counter, hand-wired against the contracts
   with no framework behind them. Each binary has one configuration file, one
   schema, and a test that the two describe the same fields.
+- **The example's chart**, and the test that makes the configuration contract
+  real: what the chart renders is validated with the schema the BINARY
+  validates against at start-up, so the two cannot drift in the direction
+  that matters. Five negative fixtures, one per refusal, each failing for its
+  own reason.
 - **The `nats` fragment now describes a CONNECTION only**, and a new
   `nats-consumer` fragment describes what a consumer binds to. The first real
   consumer is what showed that a publisher carrying a `consumer` field it
