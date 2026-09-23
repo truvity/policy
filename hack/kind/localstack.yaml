@@ -1,0 +1,51 @@
+# S3 for the cluster, as a plain Deployment: there is no operator to prove
+# here, and a chart would be a dependency for one image and one port.
+#
+# The image is substituted from versions.env, so the digest has one home.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: object-store
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: s3
+  namespace: object-store
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: s3 }
+  template:
+    metadata:
+      labels: { app: s3 }
+    spec:
+      containers:
+        - name: s3
+          image: LOCALSTACK_IMAGE_PLACEHOLDER
+          env:
+            - name: SERVICES
+              value: s3
+            # Loud, so that a container which exits for a licensing reason
+            # says so in its own logs rather than as a readiness timeout.
+            - name: DEBUG
+              value: "0"
+          ports:
+            - containerPort: 4566
+          readinessProbe:
+            httpGet: { path: /_localstack/health, port: 4566 }
+            periodSeconds: 5
+            failureThreshold: 30
+          resources:
+            requests: { cpu: 100m, memory: 512Mi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: s3
+  namespace: object-store
+spec:
+  selector: { app: s3 }
+  ports:
+    - port: 4566
+      targetPort: 4566

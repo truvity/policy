@@ -22,6 +22,11 @@ The index, by what you are here to do.
 - [guides/conformance.md](guides/conformance.md) — the checklist, and what
   CI checks for you.
 
+## Testing a service
+
+- [hack/kind/](../hack/kind/README.md) — the local cluster the charts are
+  tested against, what is in it and what deliberately is not.
+
 ## Configuring a service
 
 - [schemas/](../schemas/README.md) — the shared shapes, and how a service

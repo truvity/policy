@@ -7,22 +7,54 @@
 # say so.
 
 # Everything CI runs
+[doc("Everything CI runs")]
 check: build test lint vuln drift leak-canary
 
 # Compile everything
+[doc("Compile everything")]
 build:
     go build ./...
 
 # The unit tests. They need no network and no services, which is the whole
 # point of the gate.
+[doc("The unit tests")]
 test:
     go test ./...
 
 # Report known vulnerabilities in what this module depends on
+[doc("Report known vulnerabilities")]
 vuln:
     govulncheck ./...
 
+# The local cluster the charts and the example are tested against: the same
+# operators a deployment carries. Idempotent — running it against an existing
+# cluster upgrades in place, which is what makes it a development loop rather
+# than only a CI step. NOT part of `check`, which needs nothing but the
+# checkout; this needs a container runtime.
+[doc("Create or upgrade the local cluster")]
+cluster:
+    bash hack/kind/up.sh
+
+# Ask whether each thing in the box is usable, which is not the same question
+# as whether it installed.
+[doc("Ask whether the box is usable")]
+cluster-verify:
+    bash hack/kind/verify.sh
+
+# Prove an operator ACTS: a database becomes a database, a stream becomes a
+# stream, a bucket becomes a bucket. This is the question a renderer cannot
+# answer and the reason the box is a cluster.
+[doc("Prove every operator acts")]
+cluster-smoke:
+    bash hack/kind/smoke.sh
+
+# Remove it
+[doc("Remove the local cluster")]
+cluster-down:
+    kind delete cluster --name policy
+
 # Regenerate what the TypeScript package carries from `schemas/`.
+[doc("Regenerate the schemas the TypeScript package carries")]
 ts-schemas:
     node ts/scripts/generate-schemas.mjs
 
@@ -30,12 +62,14 @@ ts-schemas:
 # leave the two loaders validating different documents, which is the one
 # thing this repository exists to prevent. Needs no network: the generator
 # reads this checkout and writes into it.
+[doc("Fail if generated code was not regenerated")]
 drift: ts-schemas
     git diff --exit-code -- ts/src/schemas.generated.ts
 
 # The TypeScript package: install, typecheck, test, build, and check what a
 # publish would ship. NOT part of `check`, which needs nothing but the
 # checkout: this fetches from a registry. CI runs it as its own job.
+[doc("The TypeScript package: install, typecheck, test, build")]
 ts:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -61,6 +95,7 @@ ts:
 # under `set -e` with `pipefail` that ends the recipe silently — a gate that
 # reports nothing and fails is worse than no gate. Each check sets `fail`
 # itself.
+[doc("The rules that hold for every file")]
 lint:
     #!/usr/bin/env bash
     set -uo pipefail
@@ -116,5 +151,6 @@ lint:
 # changes the SHAs but not what was already fetched. So the rule (mechanism
 # only; particulars are the consuming estate's) is enforced mechanically
 # rather than remembered.
+[doc("Refuse a particular that must never be published")]
 leak-canary:
     hack/leak-canary.sh

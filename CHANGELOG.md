@@ -39,3 +39,8 @@ Not yet released. The first version will carry:
   than fixed.
 - **A conformance guide**: what CI checks for you, what a reviewer checks,
   and the two rules that are checked by eye.
+- **The local cluster**: a recipe that stands up Kubernetes with the same
+  operators a deployment carries, a check that asks whether each thing is
+  usable rather than merely installed, and a smoke test that proves an
+  operator ACTS — a database becomes a database, a stream becomes a stream,
+  a bucket becomes a bucket. About two minutes from nothing.
