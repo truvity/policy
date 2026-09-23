@@ -13,7 +13,8 @@
     "kind":            "latest",
     "kubectl":         "latest",
     "kubernetes-helm": "latest",
-    "ko":              "latest"
+    "ko":              "latest",
+    "openssl":         "3.6.0"
   },
   "env": {
     "CGO_ENABLED":  "0",
