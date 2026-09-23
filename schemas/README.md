@@ -9,11 +9,15 @@ tool which reads a configuration is not a special case.
 | [fragments/listen.json](fragments/listen.json) | a TCP listener |
 | [fragments/probes.json](fragments/probes.json) | the health listener |
 | [fragments/log.json](fragments/log.json) | one level for the whole service |
-| [fragments/otel.json](fragments/otel.json) | OpenTelemetry export |
 | [fragments/bucket.json](fragments/bucket.json) | an object store addressed by the S3 API |
 | [fragments/postgres.json](fragments/postgres.json) | a PostgreSQL connection |
 | [fragments/nats.json](fragments/nats.json) | a NATS connection |
 | [fragments/nats-consumer.json](fragments/nats-consumer.json) | what a consumer binds to |
+
+**Telemetry is deliberately absent.** It is configured by OpenTelemetry's own
+environment variables, in every language, which is the one exception to
+"configuration is a file" — see
+[decision 0006](../docs/decisions/0006-telemetry-is-the-sdk-environment.md).
 
 ## How a service uses them
 

@@ -53,6 +53,43 @@ Not yet released. The first version will carry:
   validates against at start-up, so the two cannot drift in the direction
   that matters. Five negative fixtures, one per refusal, each failing for its
   own reason.
+- **A platform contract**, `docs/contracts/platform.md`: the other side of
+  the seam. What a service asks of whatever runs it — names never values, an
+  account and its annotations rather than a grant mechanism, secrets as
+  Kubernetes Secrets, a store as an endpoint, a key operation with more than
+  one provider, streams it finds rather than makes, a route whose parent it
+  is given and whose rules are named — and what a platform owes back. Written
+  so that a second platform, run by someone else, can satisfy it without a
+  patch to any chart.
+- **Logs move to stderr.** stdout is the program's product and stderr its
+  commentary, which is the same split for a service, a job and a
+  command-line tool, so a binary that grows a subcommand does not have to
+  move its logs. The rule that follows is that a service writes nothing to
+  stdout, and that every library which logs is wired to the service's logger.
+- **The RPC rule says which protocol, not just which library.** The server is
+  one Connect handler serving all three protocols; a client in the cluster
+  speaks gRPC over cleartext HTTP/2, and speaks Connect over HTTP/1.1 or
+  gRPC-Web only where HTTP/2 trailers cannot survive the path. A schema with
+  nothing configured to generate from it is a client somebody hand-wrote.
+- **Two new rules in the service contract.** A rollout replaces instances
+  without a gap — two instances, a disruption budget, no unavailable
+  replicas, and one drain constant used by the code, the grace period and a
+  pre-stop delay alike. And transport identity belongs to the platform: a
+  service presents an identity it is given, reloads it, and checks its peers,
+  while the probes listener is exempt and the chart's default is off.
+- **Three decisions.** Telemetry is configured by OpenTelemetry's own
+  environment, which is the one exception to "configuration is a file" and
+  removes the `otel` fragment nothing ever read. There is no service mesh:
+  identity is the account a workload runs as, attested by the runtime rather
+  than asserted by the workload, and terminated in process. And the twelve
+  factors are a map to read these contracts by rather than a label to claim,
+  with the two deviations argued instead of footnoted.
+- **`nats` takes a `tokenFile`, not a credentials file.** It is the
+  workload's own account token, re-read on every reconnect so a rotation
+  needs no restart, and the broker asks an authorisation service who the
+  bearer is rather than trusting what the client claims.
+- **`bucket` takes a `ca`**, because a store inside somebody's own network is
+  the ordinary case and is not signed by a public root.
 - **The example runs.** Two releases, because a migration hook cannot wait
   for a database its own release creates: one for the database and the
   stream, one for the application. Two database roles with two credentials,

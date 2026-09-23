@@ -7,8 +7,7 @@
   "properties": {
     "listen": { "$ref": "https://github.com/truvity/policy/schemas/fragments/listen.json" },
     "probes": { "$ref": "https://github.com/truvity/policy/schemas/fragments/probes.json" },
-    "log": { "$ref": "https://github.com/truvity/policy/schemas/fragments/log.json" },
-    "otel": { "$ref": "https://github.com/truvity/policy/schemas/fragments/otel.json" }
+    "log": { "$ref": "https://github.com/truvity/policy/schemas/fragments/log.json" }
   },
   "required": ["probes"]
 }

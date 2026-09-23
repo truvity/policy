@@ -23,3 +23,6 @@ sales pitch.
 | [0003](0003-schemas-not-generators.md) | A schema and a hand-written type, not a code generator |
 | [0004](0004-policy-is-public.md) | This repository is public |
 | [0005](0005-kind-is-the-gate.md) | A local cluster is the gate; the real one is a consumer's |
+| [0006](0006-telemetry-is-the-sdk-environment.md) | Telemetry is configured by OpenTelemetry's own environment |
+| [0007](0007-no-mesh-identity-in-process.md) | No service mesh; identity is the account, terminated in process |
+| [0008](0008-twelve-factor-is-a-map-not-a-label.md) | The twelve factors are a map to read this by, not a label to claim |
