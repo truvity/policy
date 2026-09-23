@@ -17,6 +17,15 @@ node_modules/
 .yarn/
 */.yarn/
 
+# Python, for the third loader. The lock IS committed — `uv sync --frozen`
+# is what makes the gate hermetic — but nothing the interpreter or the
+# tools write is.
+.venv/
+*/.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+
 # IDE
 .idea/
 .vscode/

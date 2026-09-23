@@ -14,7 +14,9 @@
     "kubectl":         "latest",
     "kubernetes-helm": "latest",
     "ko":              "latest",
-    "openssl":         "3.6.0"
+    "openssl":         "3.6.0",
+    "python":          "3.14.4",
+    "uv":              "0.12.5"
   },
   "env": {
     "CGO_ENABLED":  "0",

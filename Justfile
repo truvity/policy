@@ -15,6 +15,9 @@ check: build test lint vuln drift leak-canary
 build:
     go build ./...
     cd examples/url-shortener && go build ./...
+    # Resolving and installing is this package's build: it is what proves the
+    # lock still describes something that exists.
+    cd python && uv sync --frozen --quiet
 
 # The unit tests. They need no network and no services, which is the whole
 # point of the gate.
@@ -29,6 +32,10 @@ test:
     # part of the hermetic gate rather than a separate job: rendering a chart
     # needs no network and no cluster.
     cd examples/url-shortener && go test ./...
+    # The Python loader, against the SAME fixtures. It is in the hermetic
+    # gate because it needs nothing but this checkout: the interpreter and
+    # the package manager are declared, and the lock is committed.
+    cd python && uv run --frozen pytest -q
 
 # Report known vulnerabilities in what this module depends on
 [doc("Report known vulnerabilities")]
@@ -101,18 +108,18 @@ cluster-all: cluster cluster-verify cluster-smoke example-images example-install
 cluster-down:
     kind delete cluster --name policy
 
-# Regenerate what the TypeScript package carries from `schemas/`.
-[doc("Regenerate the schemas the TypeScript package carries")]
-ts-schemas:
-    node ts/scripts/generate-schemas.mjs
+# Regenerate what every loader carries from `schemas/`.
+[doc("Regenerate the schemas the loaders carry")]
+schemas:
+    node hack/generate-schemas.mjs
 
 # Generated code is committed. A schema changed without regenerating would
 # leave the two loaders validating different documents, which is the one
 # thing this repository exists to prevent. Needs no network: the generator
 # reads this checkout and writes into it.
 [doc("Fail if generated code was not regenerated")]
-drift: ts-schemas
-    git diff --exit-code -- ts/src/schemas.generated.ts
+drift: schemas
+    git diff --exit-code -- ts/src/schemas.generated.ts python/src/truvity_policy/schemas.py
 
 # The TypeScript package: install, typecheck, test, build, and check what a
 # publish would ship. NOT part of `check`, which needs nothing but the
@@ -154,6 +161,13 @@ lint:
     # setting can spend releases doing nothing.
     golangci-lint config verify || fail=1
     golangci-lint run ./... || fail=1
+    # The Python loader: one tool for lint and formatting, so formatting is
+    # never a second opinion, and a type checker, because an annotation
+    # nothing checks is a comment that rots.
+    ( cd python \
+        && uv run --frozen ruff check . \
+        && uv run --frozen ruff format --check . \
+        && uv run --frozen mypy ) || fail=1
     # The example carries the import ban too. A reference implementation
     # exempt from the rules it demonstrates is a reference to nothing.
     ( cd examples/url-shortener && golangci-lint run ./... ) || fail=1
