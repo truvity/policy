@@ -90,6 +90,12 @@ example-images:
     set -euo pipefail
     cd examples/url-shortener
     export KO_DOCKER_REPO=kind.local KIND_CLUSTER_NAME=policy
+    # HOST ARCHITECTURE ONLY, and that is a local optimisation rather than a
+    # different rule: these images are loaded straight into the local box's
+    # single node, so a second architecture would be built and discarded. A
+    # RELEASE always publishes every architecture — see
+    # examples/url-shortener/hack/publish-images.sh, which does not take an
+    # option to do otherwise.
     for c in migrate redirect urls; do
         ko build -B --platform linux/amd64 --tags latest "./cmd/$c"
     done
