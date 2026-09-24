@@ -1,0 +1,27 @@
+# Tag-triggered release through truvity/ci-workflows release-public.yaml.
+#
+# No binaries and no charts. This repository ships three libraries and a
+# worked example: the Go module needs no build step at all (a tag IS the
+# release, as far as the module proxy is concerned), and the TypeScript and
+# Python packages are published by the caller's own job because neither is
+# something goreleaser builds.
+#
+# So goreleaser's job here is exactly one thing: cut the GitHub Release with
+# the changelog, which is what the other two artifacts attach to. `skip: true`
+# is its documented shape for a library project.
+version: 2
+
+builds:
+  - skip: true
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^chore"
+      - "^ci"
+      - "^docs"
+      - "^test"
+
+release:
+  github: {}
