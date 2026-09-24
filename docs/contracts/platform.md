@@ -181,6 +181,74 @@ A chart's defaults are the ones that let a stranger install it on an empty
 cluster and get something that runs. Every value above has a default that
 asks for nothing.
 
+## 10. What a platform passes, by name
+
+Rules 1 to 9 say what a chart may ask for. This says what a platform hands
+it, because those are not the same document and the gap between them is
+where a repository ends up conforming completely and still being
+undeployable.
+
+That is not hypothetical. A chart interface can be satisfied in two ways: a
+platform passes the values, or a chart derives them from a naming
+convention the platform happens to use. The second renders perfectly and
+installs on exactly one platform, and nothing says so until the second
+platform tries.
+
+The example in this repository is two charts, and the split is load-bearing
+— the application's migration runs as a pre-install hook, and a chart that
+created its own database could never migrate it. So the interface is two
+interfaces.
+
+### To the infrastructure chart
+
+| Value | The decision it answers | §9 row |
+|---|---|---|
+| `postgres.instances`, `postgres.storage` | how much database | how many instances |
+| `postgres.labels` | what reads labels here | — |
+| `postgres.scheduling` | which pool a database is allowed on | how many instances |
+| `postgres.backup.objectStoreName`, `.serverName` | which archive, and who this is inside it | which object store |
+| `postgres.serverTLS.secretName`, `.caSecretName` | what the server presents | whether transport identity is on |
+| `postgres.runtimePasswordSecret` | where the service's password is | how secrets arrive |
+| `events.storage`, `.replicas`, `.maxAge` | how durable the stream is | — |
+| `events.account` **or** `events.url` | who this is to the broker, or which broker | — |
+
+`events.account` and `events.url` are alternatives, not a pair. An account
+carries both the broker and the identity; a server list beside one is the
+chart arguing with the broker about an answer the broker already has, and
+the argument is resolved silently.
+
+### To the application chart
+
+| Value | The decision it answers | §9 row |
+|---|---|---|
+| `database.host` | where the database the other chart made is | — |
+| `database.owner.passwordSecret`, `database.app.passwordSecret` | where the two credentials are | how secrets arrive |
+| `events.url` | which broker | — |
+| `archive.bucket.*` | which store, as an endpoint | which object store |
+| `serviceAccount.app.name`, `.annotations` | who the workload is to the cloud | which mechanism binds an account |
+| `route.enabled`, `.hostname`, `.parentRef` | what serves this, and under what | what a route's parent is |
+| `tls.*` | whether transport identity is on | whether transport identity is on |
+| `replicas`, `resources`, `disruption`, `drain` | how much, and how it is replaced | how many instances |
+| `log.level` | how loud | — |
+| `image.digests` | which build | image tags and digests |
+
+`image.digests` is the one row a platform does not fill: a release stamps
+it into the published chart, per component. A platform that supplied it
+would be choosing a build, which is the release's decision and nobody
+else's.
+
+### What a platform must NOT pass
+
+A name it made up from a convention. `{installName}-pg-rw` is a correct
+host on one platform and a wrong one everywhere else, and a chart that
+computes it has hard-coded a platform it cannot name.
+
+The test is the same as rule 1's: hand the whole table to a second platform
+that shares no naming convention with the first. If it can fill every row,
+the interface is an interface. If any row can only be filled by knowing how
+the first platform names things, that row is a convention wearing a
+value's clothes.
+
 ## Conformance
 
 | Rule | Mechanism |
@@ -190,11 +258,15 @@ asks for nothing.
 | 3. secrets as Secrets | review; lint (no store SDK in an application) |
 | 4. object store | schema |
 | 5. key providers | the local provider runs in the gate |
-| 6. found, not made | review; the install order in the example |
+| 6. found, not made | chart test: neither chart renders the other's kinds |
 | 7. exposure | chart golden; a negative fixture for an unattached policy |
 | 8. transport | the default render is byte-identical without it |
+| 10. what a platform passes | the `everything` chart goldens: a value nothing reads shows as a diff |
 
-Rules 3 and 6 are checked by review today. Both are mechanically checkable —
-an import ban for the first, and for the second a test that the application
-chart renders no resource whose kind belongs to the infrastructure one — and
-both should be.
+Rule 6 is checked mechanically now: the example's chart tests render both
+charts and assert that neither produces the other's kinds — no workload from
+the chart with a separate lifetime, and nothing the application chart should
+be finding rather than making.
+
+Rule 3 is still review. It is mechanically checkable — an import ban on
+secret-store SDKs in an application — and should be.
