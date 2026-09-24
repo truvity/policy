@@ -36,6 +36,16 @@ jobs:
     with:
       recipes: '["ts"]'
 
+  # The committed renders, against the Kubernetes API's own schemas. It asks
+  # a question the chart tests do not: they check that a rendered file is one
+  # the BINARY accepts, and would pass just as happily for a Deployment with
+  # a misspelled field — because the API server ignores one rather than
+  # refusing it.
+  kubeconform:
+    uses: truvity/ci-workflows/.github/workflows/check.yaml@36be6b238bfb119de3ffeed9604bae5e7a3d7c8d # v3.4.0
+    with:
+      recipes: '["kubeconform"]'
+
   # The local cluster, stood up from nothing, asked to prove that every
   # operator acts, and then made to run the example end to end.
   #
@@ -79,11 +89,12 @@ jobs:
   # and so on, so a required context called "check" would never arrive and
   # every pull request would hang waiting for it.
   check:
-    needs: [recipes, ts]
+    needs: [recipes, ts, kubeconform]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - run: |
           [ "${{ needs.recipes.result }}" = "success" ] &&
-          [ "${{ needs.ts.result }}" = "success" ]
+          [ "${{ needs.ts.result }}" = "success" ] &&
+          [ "${{ needs.kubeconform.result }}" = "success" ]

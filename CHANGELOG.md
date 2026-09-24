@@ -6,6 +6,22 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **Chart goldens, and the second one is the one that earns its keep.** A
+  `minimal` render records what the defaults produce, so a changed default is
+  a diff in a review rather than a surprise in a cluster. An `everything`
+  render sets every value to something other than its default, so a template
+  that stopped READING one shows up — which nothing else in the package would
+  catch, because a test that asserts a particular key says nothing about the
+  other four hundred lines. The failure names the first line that moved,
+  rather than printing a thousand.
+
+- **The renders are validated against the Kubernetes API's own schemas.**
+  That is a question the chart tests do not ask: they check that a rendered
+  file is one the BINARY accepts, and would pass just as happily for a
+  Deployment with a misspelled field — because the API server ignores one
+  rather than refusing it. Proved by misspelling one. It reads the committed
+  goldens, so what is validated is the render a reviewer actually read.
+
 - **The example has a front end, and it is the fourth language.** It serves a
   page and asks the service that owns the tables; it writes nothing and holds
   no database credential, which is the ownership rule seen from the consuming

@@ -153,7 +153,22 @@ cluster-all: cluster cluster-verify cluster-smoke example-images example-install
 cluster-down:
     kind delete cluster --name policy
 
-# Regenerate what every loader carries from `schemas/`.
+# Validate the committed renders against the Kubernetes API's own schemas.
+#
+# NOT part of `check`: it fetches the schema for a custom resource, and the
+# gate needs nothing but the checkout. It sits beside `ts` for the same
+# reason — both are real checks that happen to need the network.
+[doc("Validate the rendered charts against the Kubernetes schemas")]
+kubeconform:
+    bash hack/kubeconform.sh
+
+# Regenerate the chart goldens. Read the diff BEFORE running this: a golden
+# updated without being read is a golden that records whatever happened.
+[doc("Regenerate the chart goldens")]
+golden:
+    cd examples/url-shortener && UPDATE_GOLDEN=1 go test ./charts/... -run TestWhatTheChartRenders -count=1
+
+# Regenerate the RPC code from the schema.
 [doc("Regenerate the RPC code from the schema")]
 protos:
     cd examples/url-shortener && buf lint && buf generate
