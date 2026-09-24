@@ -4,7 +4,7 @@ What changed for someone consuming this repository, newest first. A version
 missing from this file changed nothing a consumer can see — a dependency bump
 and nothing else — and its GitHub Release lists the commits.
 
-## Unreleased
+## v0.4.2 — 2026-09-24
 
 - **The release is two tools and no scripts of ours.** GoReleaser builds
   and pushes every image and records what it pushed; helmctl reads that
