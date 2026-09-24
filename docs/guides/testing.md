@@ -25,6 +25,25 @@ a real cluster with an identity plane, provisioning and cloud services. It is
 deliberately not here, because the public repository must be runnable by
 someone with none of that.
 
+**Which cluster a repository uses is not a preference, and the two kinds of
+repository should answer it differently.**
+
+A **public** repository stands up a local cluster. That is forced rather than
+chosen: a fork's pull request must never reach your own infrastructure, and a
+contributor has none of it.
+
+A **private** repository has no such constraint, and taking the local cluster
+anyway costs it the thing it actually needs. Its CI can reach a shared
+development cluster, which has the identity plane, the provisioning and the
+network policy that a local one cannot have — exactly the third tier above.
+Standing up a throwaway cluster to avoid one that is already there trades a
+better test for a slower one.
+
+The suite does not change either way. That is the point of writing it against
+a chart and a set of probes rather than against an environment: the same
+`install`, `smoke` and `identity` steps run in both, and only the cluster
+they are pointed at differs.
+
 ## What the gate proves
 
 Unit tests, and the two that are really contract tests: the schema and the
