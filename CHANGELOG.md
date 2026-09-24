@@ -4,7 +4,14 @@ What changed for someone consuming this repository, newest first. A version
 missing from this file changed nothing a consumer can see — a dependency bump
 and nothing else — and its GitHub Release lists the commits.
 
-## Unreleased
+## v0.3.0 — 2026-09-24
+
+- **The charts are published.** The image repository has pointed at ghcr
+  since the first commit and the images have been published since v0.2.0;
+  the charts that install them were published nowhere, so nothing could
+  install this. Both of them, because they are a pair: Helm runs every hook
+  before anything else in the same release, so the chart that migrates a
+  database cannot be the chart that creates it.
 
 - **The chart check is called `charts`, which is what the repository
   contract says it is called.** It shipped as `kubeconform` — an accurate
