@@ -35,6 +35,34 @@ and nothing else — and its GitHub Release lists the commits.
   custom resources some operator reconciles, while "bucket" is one
   cloud's word, and this chart has to install on a laptop too.
 
+## v0.4.5 — 2026-09-24
+
+- **Every component exports telemetry**, in all four languages, read from
+  OpenTelemetry's own environment (decision 0006). The chart carries an
+  `otel` block in its values and renders `OTEL_*`; nothing reads
+  telemetry from a configuration file and no schema changed.
+
+  **No endpoint means export nothing** — not "export to localhost and
+  retry forever", which is what an SDK left to its defaults does. The
+  chart sets the exporters to `none`, so a laptop, a test and a cluster
+  with no collector all do the same thing, and no component carries an
+  enable flag. That flag is the failure 0006 records: a service that
+  exported to a console in production because nothing set the
+  environment name its code tested.
+
+  **OTLP logs are off.** A node agent already collects stdout into the
+  same store under the same namespace, so an exporter buys a second copy
+  of what is there — and logs that exist only over OTLP vanish exactly
+  when the exporter is what broke.
+
+  In Python and TypeScript the starter is an **optional extra**: the
+  loader is what every consumer takes, and a service reading a
+  configuration file should not be made to carry an SDK it never starts.
+
+  Go also exports **runtime metrics**, which cost nothing and make an
+  empty store unambiguous — without a series that is always present,
+  "nothing is arriving" and "this service is quiet" look identical.
+
 ## v0.4.4 — 2026-09-24
 
 - **A route can name its parent's KIND.** It could only ever attach to a
