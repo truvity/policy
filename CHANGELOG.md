@@ -35,6 +35,31 @@ and nothing else — and its GitHub Release lists the commits.
   custom resources some operator reconciles, while "bucket" is one
   cloud's word, and this chart has to install on a laptop too.
 
+## Unreleased — packaging
+
+- **v0.4.6's `url-shortener-infra` chart cannot be installed. Use v0.4.7.**
+  It reached the registry carrying a top-level `images:` map it never
+  declares, and its schema sets `additionalProperties: false` — which
+  Helm checks before any template runs. So the chart refuses *every*
+  install, including one that passes no values at all:
+
+  ```
+  - at '': additional properties 'images' not allowed
+  ```
+
+  The chart source was never wrong. The packaging tool gave every chart
+  in a release every image the build produced, which a repository
+  publishing one chart never notices and this one, publishing two, did.
+  Fixed upstream in the tool, so nothing here changed but the version of
+  it that CI runs.
+
+  Worth keeping as an example of the shape: the release packaged, pushed
+  and went green, and the only signal was somebody trying to install the
+  result. Rule 7 — *a published artifact is tested as published* — is in
+  `contracts/release.md` because of this class, and the test that now
+  guards it renders the **packaged** artifact, since rendering the
+  source tree cannot see a defect that packaging introduces.
+
 ## v0.4.6 — 2026-09-24
 
 - **A client can authenticate to the broker.** The configuration contract
