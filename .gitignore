@@ -36,3 +36,16 @@ __pycache__/
 
 # OS
 .DS_Store
+
+# Gradle's own state and output. The wrapper is deliberately absent: the
+# environment manifest declares gradle, so a second copy downloaded by a
+# checked-in wrapper script would be the same "which one actually runs"
+# question the Node toolchain already answered.
+kotlin/build/
+kotlin/.gradle/
+
+# Written by the environment manifest's JDK plugin, pinning Gradle's daemon
+# to an absolute nix store path. Machine-specific by construction, and inert
+# anyway — the Gradle project is in kotlin/, and a properties file outside a
+# project directory is not read for it.
+/gradle.properties

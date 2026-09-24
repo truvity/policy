@@ -21,7 +21,7 @@ committed.
 |---|---|---|
 | Go | `config.Load(path, schema, &cfg)` in [`config/`](../../config/) | the types in [`examples/url-shortener/internal/config/config.go`](../../examples/url-shortener/internal/config/config.go), one per binary |
 | TypeScript | `load(path, schema)` in [`ts/src/config.ts`](../../ts/src/config.ts) | the front end follows |
-| Kotlin | follows, with the counter | |
+| Kotlin | `load(path, schema)` in [`kotlin/src/main/kotlin/com/truvity/policy/Config.kt`](../../kotlin/src/main/kotlin/com/truvity/policy/Config.kt) | a data class per binary, with the counter |
 | Python | `load(path, schema)` in [`python/src/truvity_policy/config.py`](../../python/src/truvity_policy/config.py) | a `TypedDict` per binary, with the log component |
 
 The schemas are in [`examples/url-shortener/schemas/`](../../examples/url-shortener/schemas/),
