@@ -101,6 +101,15 @@ example-images:
     docker build --quiet --tag kind.local/stat:latest stat >/dev/null
     kind load docker-image kind.local/stat:latest --name policy
 
+    # The TypeScript component: the page is built and the server is bundled
+    # into one file, so the image carries no node_modules — which is not
+    # only tidiness, because the dependency on this repository's own loader
+    # is a symlink in a checkout and a symlink cannot be copied into a
+    # container.
+    ( cd web && yarn install --immutable && yarn build )
+    docker build --quiet --tag kind.local/web:latest web >/dev/null
+    kind load docker-image kind.local/web:latest --name policy
+
     # The Python component. ko builds an image around a static binary and
     # has no equivalent here, so the same property — nothing executes while
     # the image is assembled — is kept by doing the install OUTSIDE it and
@@ -184,6 +193,17 @@ ts:
     shipped=$(yarn pack --dry-run 2>&1)
     grep -q 'dist/index.js' <<<"$shipped"
     ! grep -qE 'dist/.*\.test\.' <<<"$shipped"
+
+    # The front end, which depends on the package just built. LAST, because
+    # everything above is about the package itself and runs in its
+    # directory — a `cd` before the publish check above would run it against
+    # a different package, which is exactly what the first version of this
+    # did: `yarn pack --dry-run` in a private package with no dist, and a
+    # recipe that failed after every step had succeeded.
+    cd ../examples/url-shortener/web
+    yarn install --immutable
+    yarn typecheck
+    yarn build
 
 # The rules that hold for every file in this repository.
 #

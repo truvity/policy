@@ -6,6 +6,25 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **The example has a front end, and it is the fourth language.** It serves a
+  page and asks the service that owns the tables; it writes nothing and holds
+  no database credential, which is the ownership rule seen from the consuming
+  side. Its deployment has no password block at all while the two Go services
+  do — the difference is visible in the chart, which is where it should be.
+
+- **One code generator for TypeScript, not two.** connect-es v2 builds a
+  client from the service descriptor `protoc-gen-es` already emits, so the
+  separate Connect plugin the earlier line needed is gone.
+
+- **The runtime image carries no `node_modules`.** The server is bundled into
+  one file, which is not only tidiness: the dependency on this repository's
+  own loader is a symlink in a checkout, and a symlink is not a thing that
+  can be copied into a container. Two things had to be got right for the
+  bundle to run — a dependency reached through its CommonJS build calls
+  `require` for a Node builtin and an ES module has none, so the bundle
+  starts with one; and generated imports must end in `.ts`, because the
+  server runs TypeScript directly and Node resolves the path it is given.
+
 - **A fourth loader, in Kotlin**, read against the same fixtures as the other
   three. An empty file parses to a MISSING node on the JVM rather than a null
   one, and checking only the second let it reach the validator — which

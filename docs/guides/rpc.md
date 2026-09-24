@@ -38,7 +38,7 @@ assume is a mistake.
 | Language | Server | Client |
 |---|---|---|
 | Go | [`cmd/urls/main.go`](../../examples/url-shortener/cmd/urls/main.go), one handler in [`internal/business/urls/`](../../examples/url-shortener/internal/business/urls/) | the generated client in `internal/gen/`; no Go component consumes this boundary today |
-| TypeScript | — | arrives with the front end |
+| TypeScript | — | [`server/urls.ts`](../../examples/url-shortener/web/src/server/urls.ts); **one plugin**, because connect-es v2 builds a client from the descriptor `protoc-gen-es` already emits |
 | Python | not yet; the ecosystem's support is younger. See [canon/python.md](../canon/python.md) | |
 | Kotlin | **client-only by design** — the library generates no servers | [`Stat.kt`](../../examples/url-shortener/stat/src/main/kotlin/com/truvity/example/stat/Stat.kt), over the same schema the Go server is generated from |
 
