@@ -101,10 +101,9 @@ charts: the infrastructure one and the application one. The reasons are in
   cannot install.
 - **Does anything need a credential somebody has to generate?** If so, a
   test install has no provider for it. Prefer a client certificate — but
-  check what your operator actually offers first. The one here issues no
-  certificate per role, so it comes from a certificate issuer signing
-  from the operator's client CA, which is a dependency a primary install
-  now has and a test install does not.
+  check what your operator actually offers first, because the one here
+  mints none for a managed role. `contracts/platform.md` has what that
+  costs and which of the two CA arrangements is cheaper.
 - **Does it name a vendor's kinds?** It may, if they are objects the
   install owns. The bar is that the chart RENDERS without that cloud, not
   that it installs on one — so those kinds belong behind the tier, and
