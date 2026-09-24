@@ -189,6 +189,12 @@ lint:
     # exempt from the rules it demonstrates is a reference to nothing.
     ( cd examples/url-shortener && golangci-lint run ./... ) || fail=1
 
+    # The toolchain is declared once and resolves to what it declares.
+    # Node is the case that needs saying: corepack's shims take precedence
+    # over anything devbox installed and fetch their own yarn, so a pin can
+    # be correct, unused, and silently overridden all at once.
+    python3 hack/toolchain-check.py || fail=1
+
     # The two package manifests still hold the placeholder the release
     # stamps over. A version edited by hand here ships as itself — and a
     # package published at 0.0.0 cannot be taken back.

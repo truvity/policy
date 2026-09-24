@@ -1,26 +1,28 @@
 {
   "packages": {
-    "go":            "1.27.0",
+    "go": "1.27.0",
     "golangci-lint": "2.13.1",
-    "govulncheck":   "1.7.0",
-    "gopls":         "latest",
-
-    "just":            "latest",
-    "just-lsp":        "latest",
-    "lefthook":        "latest",
-    "nodejs":          "26",
-    "yarn-berry":      "4.14.1",
-    "kind":            "latest",
-    "kubectl":         "latest",
+    "govulncheck": "1.7.0",
+    "gopls": "latest",
+    "just": "latest",
+    "just-lsp": "latest",
+    "lefthook": "latest",
+    "nodejs": {
+      "version": "26",
+      "disable_plugin": true
+    },
+    "yarn-berry": "4.14.1",
+    "kind": "latest",
+    "kubectl": "latest",
     "kubernetes-helm": "latest",
-    "ko":              "latest",
-    "openssl":         "3.6.0",
-    "python":          "3.14.4",
-    "uv":              "0.12.5",
-    "goreleaser":      "2.17.1"
+    "ko": "latest",
+    "openssl": "3.6.0",
+    "python": "3.14.4",
+    "uv": "0.12.5",
+    "goreleaser": "2.17.1"
   },
   "env": {
-    "CGO_ENABLED":  "0",
+    "CGO_ENABLED": "0",
     "GOEXPERIMENT": "jsonv2"
   },
   "shell": {

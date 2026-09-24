@@ -77,6 +77,32 @@ Node's types and the runtime's HTTP client vendor a shared package between
 them; when one moves ahead, request and body types stop unifying and every
 fetch call fails to typecheck. They are bumped together or not at all.
 
+**Yarn is installed by the environment manifest, and node's plugin has to be
+turned off for that to be true.** A manifest that pins Node gets a set of
+corepack shims alongside it, and those shims go on the PATH *ahead* of
+everything the manifest installed. So `yarn` resolves to a shim, the shim
+reads `packageManager` out of the nearest `package.json`, and it downloads
+whatever version that names — while the pinned yarn sits unused in the store
+a directory away.
+
+Nothing fails. Every command succeeds, the lockfile is honoured, and the
+version that ran is simply not the version that was pinned. It is worth
+stating because all three declarations can disagree at once and the only way
+to find out is to ask `yarn --version` and then ask where it came from:
+
+    $ yarn --version
+    4.18.0
+    $ command -v yarn
+    .../virtenv/nodejs/corepack-bin/yarn      # not the pin
+    $ .../nix/profile/default/bin/yarn --version
+    4.14.1                                    # the pin, never run
+
+Disabling the plugin makes the pinned yarn the one that runs, and removes a
+download from every environment. `packageManager` stays in the manifest —
+somebody not using this toolchain reads it — and the two are checked against
+each other, because a repository that declares its yarn twice will
+eventually declare it differently.
+
 ## The environment is declared, not installed
 
 Every repository declares its toolchain in a manifest that a single command
