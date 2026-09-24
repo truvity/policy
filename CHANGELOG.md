@@ -35,6 +35,20 @@ and nothing else — and its GitHub Release lists the commits.
   custom resources some operator reconciles, while "bucket" is one
   cloud's word, and this chart has to install on a laptop too.
 
+## v0.4.4 — 2026-09-24
+
+- **A route can name its parent's KIND.** It could only ever attach to a
+  Gateway, which is the API's default and silently wrong on a cluster
+  that serves routes from something else. `route.parentRef.kind` and
+  `.group` are the platform's to set, like the name and namespace beside
+  them.
+
+  Silently, because there is no good signal: a route whose parent does
+  not exist is **Accepted** — the status says so and goes on saying so —
+  and the service answers 404 with every pod healthy. The only other tell
+  is the listener reporting zero attached routes, which nobody watches.
+  Found in a cluster, by the 404.
+
 ## v0.4.3 — 2026-09-24
 
 - **v0.4.2 did not publish.** Its Go images went to `ghcr.io/truvity`
