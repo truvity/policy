@@ -41,6 +41,18 @@ Four things the gate checks that surprise people:
   you change a schema, run `just ts-schemas` and commit the result.
 - **Nothing over a megabyte** may be committed. This repository is public and
   its history cannot be unpublished.
+- **Green is not installed.** The artifact a consumer gets is not the one
+  in the tree, and every test here supplies values a consumer would not.
+  A chart was published from this repository that could not render a single
+  Deployment; the whole suite passed. Before calling a release done, render
+  or install the PUBLISHED thing with nothing supplied. `docs/contracts/
+  release.md` §7 is the rule; the kind lane is the mechanism.
+- **Green is not installed.** The artifact a consumer gets is not the one
+  in the tree, and every test here supplies values a consumer would not.
+  A chart was published from this repository that could not render a single
+  Deployment; the whole suite passed. Before calling a release done, render
+  or install the PUBLISHED thing with nothing supplied. `docs/contracts/
+  release.md` §7 is the rule; the kind lane is the mechanism.
 - **The leak canary runs on every commit**, not just in CI, via a hook.
 
 ### Writing rules

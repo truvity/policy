@@ -69,6 +69,15 @@ produced by one person's machine is a release nobody else can reproduce.
 Images are referenced by digest in everything the release publishes, so what
 a consumer installs cannot be moved under them by a tag being repointed.
 
+That is an ORDERING requirement before it is a preference. A digest exists
+only once the image is built, so anything that embeds one — a chart, a
+manifest, a lockfile — is produced **after** the images and **from** them.
+A release that publishes a chart first publishes one with the field empty.
+
+And it is enforced rather than intended: the release refuses to publish a
+chart whose image entries are not all digest-pinned. An intention that
+nothing checks is how the field came to be empty in the first place.
+
 ## 6. Adoption is proved, not asserted
 
 A consumer adopts a release only when the output it produces is
@@ -83,6 +92,36 @@ its diff visible.
 This is the rule that makes the rest of the contract worth anything: without
 it, "no rendered output changes" in a patch is a claim rather than a fact.
 
+## 7. A published artifact is tested AS PUBLISHED
+
+The artifact a consumer installs is not the one in the tree, and the
+difference is invisible from inside the repository.
+
+This repository published a chart that could not render a single
+Deployment. Its image values were empty, because the release built the
+images in a later job than the one that packaged the chart. Every test
+passed — each supplied images of its own, as a test naturally does — and
+the release was green. It was found by installing the published chart onto
+a cluster, which is the only place the two versions of the artifact differ.
+
+So, for every artifact this repository publishes:
+
+- **There is a test for the as-published case** — the chart with no values
+  supplied, the package imported by nothing but its own name, the binary
+  run with no flags. That case is the only one every consumer has, and it
+  is the one a fixture-driven suite never covers.
+- **A test that supplies what a consumer would not supply proves nothing
+  about the artifact.** It is still worth having; it is not evidence that
+  the thing installs.
+- **A check that reads a shape is checked against the shape in use.** A
+  guard looking for `images:` in a chart that spells them `image:` finds
+  nothing, passes, and reports that it verified something. A guard that
+  silently does not guard is worse than no guard, because it is believed.
+
+The gate for this is rule 6 of the repository contract: the example is
+installed on a real cluster, from the published artifacts, and that install
+is what a release is measured by.
+
 ## Conformance
 
 | Rule | Mechanism |
@@ -91,5 +130,6 @@ it, "no rendered output changes" in a patch is a claim rather than a fact.
 | 2. versioning | review |
 | 3. changelog | review; a version with no heading is a deliberate statement |
 | 4. who cuts | automation is armed for patches only |
-| 5. built in CI | the release runs only from a tag, in CI |
+| 5. built in CI | the release runs only from a tag, in CI; the chart publish refuses an unpinned image |
+| 7. tested as published | a chart test renders with NO values supplied; the kind lane installs the published artifacts |
 | 6. adoption | the consumer's pin bump carries the diff |
