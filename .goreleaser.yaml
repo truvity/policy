@@ -63,25 +63,29 @@ builds:
 
 # The Go components need no Dockerfile at all: ko builds the image from the
 # package, cross-compiling rather than emulating.
+#
+# The destination is KO_DOCKER_REPO and `base_import_paths` appends the
+# command's own name, so these become <repo>/migrate, <repo>/redirect and
+# <repo>/urls. NOT `repositories:` with `bare` — ko reads KO_DOCKER_REPO
+# from the environment and it SILENTLY WINS over a repository named here.
+# A release published all three to the bare default that way and only
+# failed afterwards, writing an SBOM to a repository nobody meant to use.
 kos:
   - id: migrate
     build: migrate
-    repositories: ["{{ .Env.IMAGE_REPO }}/migrate"]
     platforms: [linux/amd64, linux/arm64]
     tags: ["{{ .Env.IMAGE_TAG }}"]
-    bare: true
+    base_import_paths: true
   - id: redirect
     build: redirect
-    repositories: ["{{ .Env.IMAGE_REPO }}/redirect"]
     platforms: [linux/amd64, linux/arm64]
     tags: ["{{ .Env.IMAGE_TAG }}"]
-    bare: true
+    base_import_paths: true
   - id: urls
     build: urls
-    repositories: ["{{ .Env.IMAGE_REPO }}/urls"]
     platforms: [linux/amd64, linux/arm64]
     tags: ["{{ .Env.IMAGE_TAG }}"]
-    bare: true
+    base_import_paths: true
 
 # The other three carry a runtime somebody else builds, so they have a
 # Dockerfile — one FROM and one COPY each.

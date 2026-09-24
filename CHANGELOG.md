@@ -4,6 +4,20 @@ What changed for someone consuming this repository, newest first. A version
 missing from this file changed nothing a consumer can see — a dependency bump
 and nothing else — and its GitHub Release lists the commits.
 
+## v0.4.3 — 2026-09-24
+
+- **v0.4.2 did not publish.** Its Go images went to `ghcr.io/truvity`
+  rather than to this example's repository, because `KO_DOCKER_REPO`
+  silently overrides a `repositories:` named in the release
+  configuration — and it failed only afterwards, on an SBOM written to a
+  repository nobody meant to use. The images are built the way the old
+  script built them now: the destination in `KO_DOCKER_REPO`, the
+  command's own name appended.
+
+  Neither `goreleaser check` nor a snapshot build can see this: a
+  snapshot publishes those images to `ko.local` whatever repository is
+  named. It is the rule in `release.md` §7 catching its own author.
+
 ## v0.4.2 — 2026-09-24
 
 - **The release is two tools and no scripts of ours.** GoReleaser builds

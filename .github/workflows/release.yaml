@@ -31,7 +31,7 @@ jobs:
     permissions:
       contents: write
       packages: write
-    uses: truvity/ci-workflows/.github/workflows/release-public.yaml@58251ffc69d445228f57cfdc3a7d94d513b597f4 # v3.12.0
+    uses: truvity/ci-workflows/.github/workflows/release-public.yaml@d2ee68415ccb1523a21504598dcce0e0c1e39c68 # v3.12.1
     with:
       # ONE job builds and pushes the images, then packages the charts
       # from the digests it produced. The charts cannot be published
