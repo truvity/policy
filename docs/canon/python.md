@@ -64,7 +64,19 @@ within the certificate's lifetime — which is ordinary for a process-per-worker
 server and needs no new machinery — or sits behind the terminating proxy
 [0007](../decisions/0007-no-mesh-identity-in-process.md) provides for exactly
 this case. A component that only makes outbound calls, which the first one
-does, is unaffected.
+does, is unaffected: `client_context()` builds a fresh context per connection,
+so rotation needs no machinery at all.
+
+**And one more, which is the one to remember.** Python's `ssl` module has no
+verification callback, so a peer cannot be admitted or refused DURING the
+handshake the way Go does it. The chain is verified by OpenSSL; the account
+is checked immediately afterwards, by the caller, with `verify_peer`. A
+connection is therefore refused a moment later — after the handshake
+completes, before anything is read or written. Forgetting that call leaves a
+service that verifies a certificate chain and admits anybody who holds one,
+which is the failure that looks like success from every other angle. There is
+a test for exactly it: a stranger holding a genuine certificate from the same
+authority, for an account nobody granted.
 
 ## Images
 
