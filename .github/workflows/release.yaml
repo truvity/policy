@@ -31,7 +31,23 @@ jobs:
     permissions:
       contents: write
       packages: write
-    uses: truvity/ci-workflows/.github/workflows/release-public.yaml@36be6b238bfb119de3ffeed9604bae5e7a3d7c8d # v3.4.0
+    uses: truvity/ci-workflows/.github/workflows/release-public.yaml@900eedd3c32305efa543ced069f190de80f12143 # v3.10.0
+    with:
+      # BOTH charts, and they are a pair rather than a chart and an extra.
+      #
+      # The split is an ordering requirement: Helm runs every hook before
+      # anything else in the same release, so the chart that migrates a
+      # database cannot be the chart that creates it. A consumer installing
+      # only the application would get a migration hook waiting on a
+      # database nobody made.
+      #
+      # They release under ONE version, which is what lets a deployment
+      # track a single number for the pair.
+      #
+      # They live with the components they deploy rather than at this
+      # repository's root — `chart-root` exists so that they can.
+      charts: '["url-shortener", "url-shortener-infra"]'
+      chart-root: examples/url-shortener/charts
 
   # The example's images, for every architecture, in one job and with no
   # emulation. Every one of the six Dockerfiles is a COPY and nothing else —
