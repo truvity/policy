@@ -25,6 +25,16 @@ and nothing else — and its GitHub Release lists the commits.
 - **`guides/conformance.md`** gains the checklist that follows from it,
   for a repository whose service owns a database or a stream.
 
+- **§11 places every resource this example has**, in a table, by scope —
+  because the abstract rule is easy to agree with and hard to apply. Two
+  entries answer questions that kept coming back: the **store is at
+  namespace scope** even though each install writes to its own prefix
+  (which is what lets one namespace serve an engineer's copy and a CI run
+  without either provisioning anything), and **nothing in the
+  infrastructure chart names a vendor** — a database and a stream are
+  custom resources some operator reconciles, while "bucket" is one
+  cloud's word, and this chart has to install on a laptop too.
+
 ## v0.4.3 — 2026-09-24
 
 - **v0.4.2 did not publish.** Its Go images went to `ghcr.io/truvity`

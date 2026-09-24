@@ -291,6 +291,41 @@ The line that works:
 | **the infrastructure chart, per install** | the database, the stream, the objects this install owns, and the policies that describe its own flows |
 | **the application chart** | nothing it can find |
 
+### Every resource this example has, and where it belongs
+
+The abstract rule is easy to agree with and hard to apply, so here is the
+whole example placed. A platform may call these layers *rings*; the names
+do not matter, the **scope** does.
+
+| resource | scope | who | why there |
+|---|---|---|---|
+| namespace | namespace | platform | one per tenant, not per install |
+| baseline network policy | namespace | platform | the wall around the namespace, identical for every install in it |
+| who may act in the namespace | namespace | platform | an authorisation decision, never a chart's |
+| the namespace's standing identity | namespace | platform | what installs that mint nothing run as |
+| the store the namespace may write to | namespace | platform | a shared one with a prefix per install, or a dedicated one where the install owns it |
+| **database** | **install** | **infrastructure chart** | one per install; the application migrates it, so it cannot create it |
+| **stream** | **install** | **infrastructure chart** | one per install; its name and subjects are the project's |
+| **the install's own policies** | **install** | **infrastructure chart** | they describe *this release's* flows, by its own labels |
+| the database role's credential | install | the database operator | issued for a role it already manages; see below |
+| deployments, services, routes, config | install | application chart | the thing being deployed |
+| image digests | release | the release | see §10 |
+
+Two entries are worth reading twice.
+
+**The store is at NAMESPACE scope, not install scope**, even though each
+install writes to its own prefix. That is what lets one namespace serve an
+engineer's copy and a CI run without either provisioning anything. Where
+an install genuinely owns a dedicated store, the platform still provides
+it — the chart is handed a name either way, and does not know which it
+got.
+
+**Nothing in the infrastructure chart names a vendor.** A database and a
+stream are custom resources some operator reconciles; a bucket is not,
+because "bucket" is one cloud's word. Rule 4 is why: a chart that creates
+cloud objects is a chart that installs on one cloud, and this one has to
+install on a laptop too.
+
 ### Tiers, and the thing that surprises people
 
 An install that is not the deployment should provision *less*, and say so:
