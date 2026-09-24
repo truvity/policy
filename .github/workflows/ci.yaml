@@ -41,10 +41,10 @@ jobs:
   # the BINARY accepts, and would pass just as happily for a Deployment with
   # a misspelled field — because the API server ignores one rather than
   # refusing it.
-  kubeconform:
+  charts:
     uses: truvity/ci-workflows/.github/workflows/check.yaml@36be6b238bfb119de3ffeed9604bae5e7a3d7c8d # v3.4.0
     with:
-      recipes: '["kubeconform"]'
+      recipes: '["charts"]'
 
   # The local cluster, stood up from nothing, asked to prove that every
   # operator acts, and then made to run the example end to end.
@@ -89,7 +89,7 @@ jobs:
   # and so on, so a required context called "check" would never arrive and
   # every pull request would hang waiting for it.
   check:
-    needs: [recipes, ts, kubeconform]
+    needs: [recipes, ts, charts]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -97,4 +97,4 @@ jobs:
       - run: |
           [ "${{ needs.recipes.result }}" = "success" ] &&
           [ "${{ needs.ts.result }}" = "success" ] &&
-          [ "${{ needs.kubeconform.result }}" = "success" ]
+          [ "${{ needs.charts.result }}" = "success" ]

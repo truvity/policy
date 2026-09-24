@@ -4,6 +4,22 @@ What changed for someone consuming this repository, newest first. A version
 missing from this file changed nothing a consumer can see — a dependency bump
 and nothing else — and its GitHub Release lists the commits.
 
+## Unreleased
+
+- **The chart check is called `charts`, which is what the repository
+  contract says it is called.** It shipped as `kubeconform` — an accurate
+  name for the tool and the wrong name for the recipe. The contract fixes
+  these names precisely so that a person moving between repositories, and
+  anything automating across them, does not have to read a recipe file to
+  find out what the chart check is called here; a repository that has the
+  job under another name has made every caller special.
+
+  Found by reading the contract back against the repository that publishes
+  it. The failure is invisible from the inside — everything runs, the gate
+  is green, and only a caller from outside notices — so the conformance
+  guide now says to list the fixed names against `just --list` rather than
+  assume them.
+
 ## v0.2.0 — 2026-09-24
 
 - **Which cluster a repository tests against is not a preference.** A public
