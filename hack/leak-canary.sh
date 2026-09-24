@@ -23,9 +23,27 @@ set -uo pipefail
 # convention in the ecosystem does not make anyone safer: it teaches the next
 # person to rename their mount to get past it, and the one after that to stop
 # reading the output.
+#
+# `arn:aws` has one exception, and it is a narrow one. The example's
+# infrastructure chart renders AWS resources, so it necessarily writes the
+# ARN GRAMMAR -- `arn:aws:s3:::<bucket>/*` with the bucket supplied as an
+# input. That is mechanism, which this repository publishes on purpose; the
+# particular is the bucket's name, and it arrives from a caller like every
+# other one.
+#
+# The exception is by PATH and covers only that chart, its fixture and the
+# render of it. Everywhere else a literal ARN is still a leak.
+#
+# The account-id pattern is deliberately NOT excepted anywhere, including
+# there. It is the one that would actually publish something, so the
+# fixture uses a placeholder that is not twelve digits and the guard stays
+# absolute -- an exception for the grammar must not become a hiding place
+# for the particular it usually carries.
+arn_allow='^examples/url-shortener/charts/(url-shortener-infra/templates/cloud\.yaml|testdata/(infra-everything\.yaml|golden/infra-everything\.yaml)|infra_chart_test\.go)$'
+
 patterns=(
   '\b[0-9]{12}\b'                          # AWS account id
-  'arn:aws'                            # any ARN
+  'arn:aws'                            # any ARN (see arn_allow)
   '\b[0-9]{12}\.dkr\.ecr\.'              # ECR registry host
   '\.svc\.cluster\.local'              # in-cluster DNS
   '(?<!/var/run)/secrets/'             # parameter-store paths, but not Kubernetes' own
@@ -51,8 +69,11 @@ mapfile -d '' tracked < <(git ls-files -z)
 
 for p in "${patterns[@]}"; do
   # Exclude this script: it necessarily contains the patterns it bans.
+  allow='^$'
+  if [ "$p" = 'arn:aws' ]; then allow="$arn_allow"; fi
   if hits=$(printf '%s\0' "${tracked[@]}" \
               | grep -zZv '^hack/leak-canary\.sh$' \
+              | grep -zZvP "$allow" \
               | xargs -0 -r grep -InP "$p" 2>/dev/null); then
     echo "LEAK: pattern /$p/ matched — particulars belong in caller inputs or org variables:"
     echo "$hits" | head -5 | sed 's/^/    /'
