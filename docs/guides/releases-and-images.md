@@ -19,6 +19,31 @@ property a release exists to remove.
 | how the chart pins an image | the image helper in `charts/url-shortener/templates/_helpers.tpl` |
 | what the toolchain pins | [`canon/toolchain.md`](../canon/toolchain.md), [`canon/build-tools.md`](../canon/build-tools.md) |
 
+## A release is always every architecture
+
+Not because of what a cluster runs today — that is a fact about this week —
+but because a published artifact is consumed by machines whose architecture
+the publisher does not know and should not have to ask about. An image
+carrying one architecture fails for half its consumers, and it fails at
+install time in somebody else's cluster, which is the worst place to learn
+it.
+
+This is not a cost to be weighed, and the image shape is why. A runtime
+image with no build step in it has nothing that can execute while it is
+assembled, so building for another architecture copies files: one job, one
+machine, no emulation, no second runner. That is the *reason* for the
+RUN-less rule rather than a happy consequence of it.
+
+**A local build is host-only, and that is a different question.** The local
+cluster loads images into one node of one architecture, so a second would be
+built and discarded. Relaxing the release to match would be the mistake;
+they are answering different things.
+
+Worth enforcing rather than intending: the publish path here takes no option
+to build fewer architectures, and asserts the manifest it produced carries
+the ones it promised. A release that quietly shipped one is
+indistinguishable from a correct one until somebody else pulls it.
+
 ## Per language
 
 | Language | Image is | Built by |
