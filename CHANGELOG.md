@@ -4,6 +4,27 @@ What changed for someone consuming this repository, newest first. A version
 missing from this file changed nothing a consumer can see — a dependency bump
 and nothing else — and its GitHub Release lists the commits.
 
+## Unreleased
+
+- **`platform.md` §11: two charts, and who installs each.** The split
+  between the infrastructure chart and the application one has a second
+  consequence that rule 6 does not state — the infrastructure chart is
+  **per install**, so anything running per *cluster* cannot supply what
+  it supplies. There is no "the install" at that level, and a store
+  minted there serves the deployment while leaving every test install
+  with nothing.
+
+  Written down because it was got wrong: an attempt to move those
+  resources to a per-cluster provisioning stack covered one tier and
+  silently broke the other two. The section also records why a chart
+  takes a **tier** (an engineer's namespace often cannot create custom
+  resources at all, so a chart that always mints them is one they cannot
+  install), and why generating a password is the wrong instinct — it
+  invents a provider that only the deployment has.
+
+- **`guides/conformance.md`** gains the checklist that follows from it,
+  for a repository whose service owns a database or a stream.
+
 ## v0.4.3 — 2026-09-24
 
 - **v0.4.2 did not publish.** Its Go images went to `ghcr.io/truvity`

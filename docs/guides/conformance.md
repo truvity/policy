@@ -80,3 +80,29 @@ shipped the chart check as `kubeconform` — an accurate name for the tool and
 the wrong name for the recipe — and did not notice until the contract was
 read back against it.
 
+## The two charts, and the tier
+
+A repository whose service owns a database or a stream ships **two**
+charts: the infrastructure one and the application one. The reasons are in
+`contracts/platform.md` rules 6 and 11, and the checklist is short.
+
+- **Does the infrastructure chart provision per INSTALL?** Its resources
+  are functions of this release in this namespace. If any of them is
+  really per cluster, it belongs to the platform instead, and putting it
+  here means every test install gets a copy it should not have.
+- **Can something that runs per cluster supply any of it?** If you are
+  tempted to move a resource into a provisioning stack, check that a test
+  install still gets one. Those stacks run per cluster; there is no
+  "install" at that level, so the answer is usually no.
+- **Does it take a tier?** An install that is not the deployment should
+  provision less: a shared store with its own prefix, and the namespace's
+  standing identity. An engineer's namespace often cannot create custom
+  resources at all, so a chart that always mints them is a chart they
+  cannot install.
+- **Does anything need a credential somebody has to generate?** If so, a
+  test install has no provider for it. Prefer one the operator issues for
+  a role it already manages.
+- **Is there more than one installer?** There will be: a deployment
+  installs it, and so does whatever installs a copy per engineer and per
+  CI run. Both pass the same values. If one of them needs a different
+  chart, the interface is wrong.

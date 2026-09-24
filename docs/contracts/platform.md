@@ -259,6 +259,67 @@ the interface is an interface. If any row can only be filled by knowing how
 the first platform names things, that row is a convention wearing a
 value's clothes.
 
+## 11. Two charts, and who installs each
+
+The example is two charts, and rule 6 is why: the application's migration
+runs as a pre-install hook, so a chart that created its own database could
+never migrate it. That split has a second consequence worth stating,
+because getting it wrong is easy and quiet.
+
+**The infrastructure chart is PER INSTALL.** Its database, its stream and
+whatever cloud objects the install owns are functions of *this release in
+this namespace* — not of the cluster. So it is installed by whoever
+installs the application, once per install, with the same release name.
+
+That is not one caller. A platform installs the deployment; a test harness
+installs a copy per engineer and per CI run, in their own namespaces. Both
+pass the same values, and neither is special.
+
+### What this means for anything that provisions
+
+Something that runs **per cluster** — a provisioning stack, a
+configuration pass — cannot supply what the infrastructure chart supplies,
+because there is no such thing as "the install" at that level. A store
+minted per cluster serves the deployment and leaves every test install
+with nothing.
+
+The line that works:
+
+| | owns |
+|---|---|
+| **the platform, per namespace** | the namespace, its baseline policy, who may act in it, and the identity the namespace's workloads run as |
+| **the infrastructure chart, per install** | the database, the stream, the objects this install owns, and the policies that describe its own flows |
+| **the application chart** | nothing it can find |
+
+### Tiers, and the thing that surprises people
+
+An install that is not the deployment should provision *less*, and say so:
+a shared store with a prefix of its own rather than a store of its own, and
+the namespace's standing identity rather than one it mints.
+
+That is not only tidier. An engineer's namespace typically grants the
+built-in `admin` role, which covers **no custom resources at all** — so a
+chart that mints cloud objects through custom resources is a chart that
+engineer cannot install, and the failure is a permissions error naming a
+kind rather than a tier.
+
+So the chart takes a **tier**, and provisions accordingly. One chart, one
+interface, three kinds of install.
+
+### Credentials, and why generating one is the wrong instinct
+
+A role needs a credential, and the obvious answer — have something
+generate a password and put it in a secret — creates a provider the chart
+now depends on. The platform can do it for the deployment; nothing does it
+for a test install, and the install fails with a secret that is simply
+absent.
+
+Prefer a credential the database operator issues for the role it already
+manages: a client certificate. Nothing generates it, nothing rotates it by
+hand, no tier needs a provider, and there is no password to leak. Where a
+connection string carries the certificate's paths, this costs the
+application nothing at all.
+
 ## Conformance
 
 | Rule | Mechanism |
@@ -271,6 +332,7 @@ value's clothes.
 | 6. found, not made | chart test: neither chart renders the other's kinds |
 | 7. exposure | chart golden; a negative fixture for an unattached policy |
 | 8. transport | the default render is byte-identical without it |
+| 11. two charts, two scopes | a chart test renders each tier; the example installs from a test harness as well as a deployment |
 | 10. what a platform passes | the `everything` chart goldens: a value nothing reads shows as a diff |
 
 Rule 6 is checked mechanically now: the example's chart tests render both
