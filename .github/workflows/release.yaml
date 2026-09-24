@@ -31,8 +31,22 @@ jobs:
     permissions:
       contents: write
       packages: write
-    uses: truvity/ci-workflows/.github/workflows/release-public.yaml@900eedd3c32305efa543ced069f190de80f12143 # v3.10.0
+    # AFTER the images, because a chart is packaged from what they
+    # produced. A digest only exists once the image is built, and this
+    # repository published the charts first -- so they reached the
+    # registry with empty image values and could not render a Deployment.
+    # Nothing here could see it; it was found by installing the artifact.
+    needs: [images]
+    uses: truvity/ci-workflows/.github/workflows/release-public.yaml@fc78dcd76544edd999e1afe028ac90f41b468f88 # v3.11.0
     with:
+      # One `<chart>.yaml` per chart that needs one. url-shortener-infra
+      # deploys no images and has none, so it is packaged from the tag.
+      chart-manifests: chart-manifests
+      # And the release REFUSES to package a chart whose images.* entries
+      # are not all digest-pinned. That is the half that matters: the
+      # failure this whole change is about becomes unpublishable rather
+      # than merely fixed once.
+      require-image-digests: true
       # BOTH charts, and they are a pair rather than a chart and an extra.
       #
       # The split is an ordering requirement: Helm runs every hook before
@@ -59,7 +73,6 @@ jobs:
   # It is not academic. The chart's own default repository points here, and
   # until this job existed it pointed at images nobody published.
   images:
-    needs: [release]
     runs-on: ubuntu-latest
     timeout-minutes: 40
     permissions:
@@ -101,6 +114,21 @@ jobs:
             sed 's/^/    /; s/=/: /' /tmp/digests.txt
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
+          # The chart's half of the same facts. The summary above is for a
+          # person; this is what the release packages from.
+          mkdir -p "$RUNNER_TEMP/chart-manifests"
+          devbox run -- python3 examples/url-shortener/hack/chart-manifest.py \
+            --version "$version" \
+            --repository truvity/policy/url-shortener \
+            --output "$RUNNER_TEMP/chart-manifests/url-shortener.yaml" \
+            < /tmp/digests.txt
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: chart-manifests
+          path: ${{ runner.temp }}/chart-manifests
+          if-no-files-found: error
 
   packages:
     needs: [release]

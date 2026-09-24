@@ -230,15 +230,22 @@ the argument is resolved silently.
 | `tls.*` | whether transport identity is on | whether transport identity is on |
 | `replicas`, `resources`, `disruption`, `drain` | how much, and how it is replaced | how many instances |
 | `log.level` | how loud | — |
-| `image.digests` | which build | image tags and digests |
+| `images.<component>` | which build | image tags and digests |
 
-`image.digests` is the one row a platform does not fill. A published chart
-carries the version its release stamped, and resolves its images from that
-by default; a platform that supplied a tag or a digest would be choosing a
-build, which is the release's decision and nobody else's. A *deployment*
-may pin digests, and should where a rollback has to reach an exact image —
-that is a different actor from the platform, making a stronger promise
-about one install.
+`images.<component>` is the one row a platform does not fill. The RELEASE
+stamps it — a build writes down the digest of every image it pushed, and
+the chart is packaged from that — and a platform supplying a tag or a
+digest would be choosing a build, which is the release's decision and
+nobody else's.
+
+That stamping has to be *enforced*, not merely intended. The obvious
+failure is a chart published before its images exist: the values reach the
+registry empty, every render succeeds, and the artifact cannot install.
+Nothing inside the repository can see it, because every test supplies
+images of its own. So the release refuses to package a chart whose image
+entries are not all digest-pinned, and the shape above is the shape that
+check reads — a chart that spelled its images differently would pass it
+with nothing to check.
 
 ### What a platform must NOT pass
 

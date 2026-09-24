@@ -6,6 +6,20 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## v0.4.1 — 2026-09-24
 
+- **The release pins every image by digest, and refuses to publish a chart
+  that is not.** The build writes down what it pushed, the chart is
+  packaged from that file, and `--require-image-digests` rejects a chart
+  with an entry left blank. The image values changed shape to
+  `images.<component>.{registry,repository,tag,digest}` — the shape that
+  check reads. A chart spelling them any other way passes the check with
+  nothing to check, which is worse than not running it.
+
+  The jobs are in the other order now: images first, then the charts
+  packaged from their digests. A digest exists only once the image is
+  built, so a release that published charts first was always going to
+  publish empty ones.
+
+
 - **The published chart could not render a single Deployment.** Its own
   values said *the release stamps a digest per component here*, and the
   release does not: it publishes the charts and the images in the same run,
