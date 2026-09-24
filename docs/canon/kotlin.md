@@ -73,6 +73,25 @@ reaches through a gateway's gRPC-Web filter.
 That is a real constraint on where a JVM service sits in a topology, and it
 is better known before the first one is written than after.
 
+## What building the first one cost
+
+Three things, all of them the framework rather than the language, and all of
+them wrong on the first attempt:
+
+**A framework that serves no traffic still has to stay running.** Turning the
+web application off entirely gives a process that starts, does its work once
+and exits — and no probe listener either. Disable the application's own
+listener and leave the management one alone.
+
+**Read the configuration file once, in the composition root.** A bean that
+reads it has no access to the arguments the path arrived in, so it looks in
+the environment, finds nothing, and fails in a way that names a bean rather
+than a file.
+
+**Refuse before the framework starts.** A configuration the service will not
+accept is one line on stderr. The same refusal raised inside a bean is a
+stack trace with the answer buried in it.
+
 ## Exceptions
 
 A service that needs something not on this list adds a row here first, with

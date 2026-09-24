@@ -23,6 +23,9 @@ build:
     # The Kotlin loader. `assemble` rather than `build`, so this stays a
     # build: the tests are the test recipe's job.
     cd kotlin && gradle assemble --console=plain --quiet
+    # The example's Kotlin component, which builds the RPC client from the
+    # same schema the Go server is generated from.
+    cd examples/url-shortener/stat && gradle assemble --console=plain --quiet
 
 # The unit tests. They need no network and no services, which is the whole
 # point of the gate.
@@ -48,6 +51,7 @@ test:
     cd examples/url-shortener/log && uv run --frozen pytest -q
     # The Kotlin loader, against the SAME fixtures as the other three.
     cd kotlin && gradle test --console=plain --quiet
+    cd examples/url-shortener/stat && gradle test --console=plain --quiet
 
 # Report known vulnerabilities in what this module depends on
 [doc("Report known vulnerabilities")]
@@ -86,9 +90,16 @@ example-images:
     set -euo pipefail
     cd examples/url-shortener
     export KO_DOCKER_REPO=kind.local KIND_CLUSTER_NAME=policy
-    for c in migrate redirect stat urls; do
+    for c in migrate redirect urls; do
         ko build -B --platform linux/amd64 --tags latest "./cmd/$c"
     done
+
+    # The Kotlin component. Like the Python one, the artifact is built
+    # OUTSIDE the image and the Dockerfile copies it — a jar on a JRE base,
+    # no RUN line, nothing that executes while the image is assembled.
+    ( cd stat && gradle bootJar --console=plain --quiet )
+    docker build --quiet --tag kind.local/stat:latest stat >/dev/null
+    kind load docker-image kind.local/stat:latest --name policy
 
     # The Python component. ko builds an image around a static binary and
     # has no equivalent here, so the same property — nothing executes while
@@ -197,7 +208,9 @@ lint:
     # The Kotlin compiler with warnings as errors, which is where a JVM
     # project's lint lives: there is no separate linter to run, and a
     # warning nobody fails on is a warning nobody reads.
-    ( cd kotlin && gradle compileKotlin compileTestKotlin --console=plain --quiet ) || fail=1
+    for jvm in kotlin examples/url-shortener/stat; do
+        ( cd "$jvm" && gradle compileKotlin compileTestKotlin --console=plain --quiet ) || fail=1
+    done
 
     for py in python examples/url-shortener/log; do
         ( cd "$py" \

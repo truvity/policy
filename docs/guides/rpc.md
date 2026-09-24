@@ -37,10 +37,10 @@ assume is a mistake.
 
 | Language | Server | Client |
 |---|---|---|
-| Go | [`cmd/urls/main.go`](../../examples/url-shortener/cmd/urls/main.go), one handler in [`internal/business/urls/`](../../examples/url-shortener/internal/business/urls/) | [`internal/business/stat/remote.go`](../../examples/url-shortener/internal/business/stat/remote.go) |
+| Go | [`cmd/urls/main.go`](../../examples/url-shortener/cmd/urls/main.go), one handler in [`internal/business/urls/`](../../examples/url-shortener/internal/business/urls/) | the generated client in `internal/gen/`; no Go component consumes this boundary today |
 | TypeScript | — | arrives with the front end |
 | Python | not yet; the ecosystem's support is younger. See [canon/python.md](../canon/python.md) | |
-| Kotlin | client-only by design | arrives with the counter's rewrite |
+| Kotlin | **client-only by design** — the library generates no servers | [`Stat.kt`](../../examples/url-shortener/stat/src/main/kotlin/com/truvity/example/stat/Stat.kt), over the same schema the Go server is generated from |
 
 The schema is [`proto/urlshortener/v1/`](../../examples/url-shortener/proto/urlshortener/v1/),
 the generation is configured in `buf.gen.yaml`, and the output is committed
