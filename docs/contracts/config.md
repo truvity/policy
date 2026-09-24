@@ -66,6 +66,18 @@ error says which key was wrong, not what it contained.
 
 ## 6. Failure is at start-up, and says where
 
+**The shared envelope holds what EVERY component has** — somewhere to report
+health, a log level, a shutdown budget — and nothing else. A listener is not
+one of those: a job exits, and a consumer answers nothing. Neither is a
+transport identity, for the same reason.
+
+That line is easy to put in the wrong place, and putting it wrong is cheap
+to do and expensive to notice: a field every component carries and only some
+can use is a field a deployment sets and watches do nothing. This repository
+has put it wrong twice — once with a telemetry block that was deleted, and
+once with a listener that the counter carried for no reason but to satisfy a
+test. A component declares what it actually has.
+
 A service validates its whole configuration before it opens a listener or
 connects to anything, and refuses to start on the first failure, naming the
 path that failed (`store.endpoint`, not "invalid config"). Half-starting with

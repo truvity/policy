@@ -160,6 +160,17 @@ Three shapes, and the rule is which to reach for:
   One consequence worth keeping: a Connect unary call is an ordinary HTTP
   POST with a JSON body, so any edge reachable that way can be exercised with
   a command-line HTTP client, which matters more often than it sounds.
+
+  **The generated code is committed**, and a gate fails on a diff against a
+  regeneration. The alternative is a build step between a checkout and a
+  compiler, which has to keep working on every machine forever — and the
+  first thing it breaks is the editor, which cannot resolve a symbol that
+  does not exist yet.
+
+  **A caller holds an address and nothing else.** Which protocol it speaks is
+  a decision in its code, and whether the connection is authenticated is the
+  transport block's business. A configuration field per transport option is a
+  second place to describe the same thing, and the two disagree eventually.
 - **Fan-out is an event.** When several unrelated things must happen after a
   fact, the fact is published and the consumers are none of the publisher's
   business.
