@@ -100,8 +100,16 @@ charts: the infrastructure one and the application one. The reasons are in
   resources at all, so a chart that always mints them is a chart they
   cannot install.
 - **Does anything need a credential somebody has to generate?** If so, a
-  test install has no provider for it. Prefer one the operator issues for
-  a role it already manages.
+  test install has no provider for it. Prefer a client certificate — but
+  check what your operator actually offers first. The one here issues no
+  certificate per role, so it comes from a certificate issuer signing
+  from the operator's client CA, which is a dependency a primary install
+  now has and a test install does not.
+- **Does it name a vendor's kinds?** It may, if they are objects the
+  install owns. The bar is that the chart RENDERS without that cloud, not
+  that it installs on one — so those kinds belong behind the tier, and
+  the tier that renders none of them is the default. A chart whose cloud
+  objects render unconditionally is a chart for one cloud.
 - **Is there more than one installer?** There will be: a deployment
   installs it, and so does whatever installs a copy per engineer and per
   CI run. Both pass the same values. If one of them needs a different
