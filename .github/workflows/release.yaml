@@ -68,34 +68,20 @@ jobs:
           echo "VERSION=$version" >> "$GITHUB_ENV"
           python3 hack/stamp-version.py "$version"
 
-      # The token is read from the environment by ts/.yarnrc.yml, which
-      # interpolates it and never stores it. See the comment there for why
-      # it is keyed by registry and not by scope.
-      - name: The TypeScript package
+      # One script, so that the same thing CI runs can be run outside it:
+      # `hack/publish.sh --dry-run <version>` stops in front of the two
+      # irreversible actions. Release machinery that can only be tested by
+      # tagging is tested the one way that costs a version.
+      #
+      # The npm token reaches yarn through ts/.yarnrc.yml, which
+      # interpolates it from the environment and never stores it. See the
+      # comment there for why it is keyed by registry and not by scope.
+      - name: The packages goreleaser does not build
         env:
           GITHUB_PACKAGES_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          devbox run -- bash -c '
-            set -euo pipefail
-            cd ts
-            yarn install --immutable
-            rm -rf dist && yarn build
-            yarn npm publish --access public
-          '
-
-      # A wheel, not an sdist: an sdist would make every consumer build it,
-      # and this package has nothing to build. GitHub Packages has no PyPI
-      # registry, so a Release asset is the nearest GitHub-hosted shape —
-      # same tag, same release, no index to claim.
-      - name: The Python wheel
-        env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.ref_name }}
-        run: |
-          set -euo pipefail
-          devbox run -- bash -c 'cd python && uv build --wheel --out-dir dist'
-          gh release upload "$TAG" python/dist/*.whl --clobber
+        run: devbox run -- bash hack/publish.sh "$VERSION" "$TAG"
 
       # Say where each one landed, because "the release succeeded" is not the
       # same claim as "a consumer can install it".
