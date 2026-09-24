@@ -1,0 +1,114 @@
+# Tag-triggered release.
+#
+# Three artifacts come out of one tag, which is the release contract's first
+# rule: the Go module (a tag is all the module proxy needs), the TypeScript
+# package on GitHub Packages, and the Python wheel as a Release asset.
+#
+# Neither the wheel nor the npm package is something goreleaser builds, so
+# the shared workflow cuts the Release and a second job attaches the rest to
+# it. That ordering is a dependency rather than a preference: `gh release
+# upload` needs a release to upload to.
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+# Never cancel a running publish — a half-published artifact set is worse
+# than a queued wait, and a version that failed halfway is burned.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # The GitHub Release and its changelog. The caller grants the permissions
+  # because a reusable workflow can narrow them but never widen them.
+  release:
+    permissions:
+      contents: write
+      packages: write
+    uses: truvity/ci-workflows/.github/workflows/release-public.yaml@36be6b238bfb119de3ffeed9604bae5e7a3d7c8d # v3.4.0
+
+  packages:
+    needs: [release]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: jetify-com/devbox-install-action@22b0f5500b14df4ea357ce673fbd4ced940ed6a1 # v0.13.0
+        with:
+          enable-cache: "true"
+
+      # The TAG is the sole version authority. Both manifests carry a
+      # placeholder that never moves, and it is stamped here — a version
+      # committed to a manifest is a second place to forget.
+      - name: The tag is the version
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          version="${REF_NAME#v}"
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          devbox run -- bash -c "cd ts && yarn version '$version'"
+          python3 - "$version" <<'PY'
+          import pathlib, re, sys
+          version = sys.argv[1]
+          p = pathlib.Path("python/pyproject.toml")
+          s = p.read_text()
+          out, n = re.subn(r'(?m)^version = ".*"$', f'version = "{version}"', s, count=1)
+          if n != 1:
+              raise SystemExit("python/pyproject.toml: no version line to stamp")
+          p.write_text(out)
+          PY
+
+      # The token is read from the environment by ts/.yarnrc.yml, which
+      # interpolates it and never stores it. See the comment there for why
+      # it is keyed by registry and not by scope.
+      - name: The TypeScript package
+        env:
+          GITHUB_PACKAGES_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          devbox run -- bash -c '
+            set -euo pipefail
+            cd ts
+            yarn install --immutable
+            rm -rf dist && yarn build
+            yarn npm publish --access public
+          '
+
+      # A wheel, not an sdist: an sdist would make every consumer build it,
+      # and this package has nothing to build. GitHub Packages has no PyPI
+      # registry, so a Release asset is the nearest GitHub-hosted shape —
+      # same tag, same release, no index to claim.
+      - name: The Python wheel
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          devbox run -- bash -c 'cd python && uv build --wheel --out-dir dist'
+          gh release upload "$TAG" python/dist/*.whl --clobber
+
+      # Say where each one landed, because "the release succeeded" is not the
+      # same claim as "a consumer can install it".
+      - name: What shipped
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          {
+            echo "### $TAG"
+            echo
+            echo "| Artifact | Install |"
+            echo "|---|---|"
+            echo "| Go module | \`go get github.com/truvity/policy@$TAG\` |"
+            echo "| TypeScript | \`yarn add @truvity/policy@$VERSION\` (GitHub Packages) |"
+            echo "| Python | \`uv add https://github.com/truvity/policy/releases/download/$TAG/truvity_policy-$VERSION-py3-none-any.whl\` |"
+          } >> "$GITHUB_STEP_SUMMARY"

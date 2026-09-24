@@ -4,9 +4,9 @@ What changed for someone consuming this repository, newest first. A version
 missing from this file changed nothing a consumer can see — a dependency bump
 and nothing else — and its GitHub Release lists the commits.
 
-## v0.1.0
+## v0.1.0 — 2026-09-24
 
-Not yet released. The first version will carry:
+The first version. It carries:
 
 - **The repository skeleton.** Devbox toolchain, the `just check` gate, the
   leak canary on every commit and in CI, and hosted-runner-only CI.
@@ -238,3 +238,43 @@ Not yet released. The first version will carry:
   `nats-consumer` fragment describes what a consumer binds to. The first real
   consumer is what showed that a publisher carrying a `consumer` field it
   never reads is a field somebody will eventually set.
+- **A third loader, in Python**, read against the SAME fixtures as the other
+  two. That is the point rather than a detail: a contract with one
+  implementation is a library, and a contract whose implementations are
+  tested against different inputs is two contracts wearing one name — a key
+  one loader refuses and another accepts is a configuration that passes a
+  chart's test and crashes the service.
+- **A Python transport helper**, and the difference it cannot hide. Python's
+  `ssl` module has no verification callback, so a peer cannot be admitted or
+  refused during the handshake the way the Go package does it: the chain is
+  verified by the library and the ACCOUNT is checked immediately afterwards,
+  by the caller. The failure that shape invites is invisible — a service
+  that builds the context correctly and never makes that call verifies a
+  certificate chain and admits anybody holding one, with every other test
+  still passing. The test for it is a stranger holding a genuine certificate
+  from the same authority, in the same trust domain, for an account nobody
+  granted.
+- **The example's fourth component is not written in Go**, and almost
+  nothing changes. It consumes the request records the redirect service
+  publishes and archives them as NDJSON in an object store, and its
+  deployment is twenty lines that never mention the language: the same
+  probes on the same port, the same drain, the same account, and its
+  configuration file validated by the same chart test as the other three. A
+  platform that had to know which language a workload was written in would
+  be a platform every new language has to be added to.
+- **The `bucket` fragment has a consumer**, so "a store is an endpoint, not
+  a vendor" is exercised rather than stated: name, region, endpoint, path
+  style, certificate authority, and credentials by NAME. The local cluster
+  points it at its own object store and the component cannot tell.
+- **A batch is named by its first stream sequence and nothing else.** A
+  batch is acknowledged only after its object is written, so a failed write
+  means the same records are redelivered — and a redelivery begins at the
+  same sequence, so it overwrites its own partial attempt rather than
+  leaving a second copy beside it. A failed write KEEPS the batch, because a
+  consumer that acknowledged what it had not stored would lose it for good.
+- **A runtime image with no build step, in a language that has no `ko`.**
+  The dependency tree is resolved from the committed lock and installed
+  OUTSIDE the image; the Dockerfile is a copy and an entry point. A
+  multi-stage build is not the same thing — it still runs a package manager
+  while the image is assembled, which is exactly what makes a
+  cross-architecture build need emulation.
