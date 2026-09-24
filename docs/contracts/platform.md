@@ -232,10 +232,13 @@ the argument is resolved silently.
 | `log.level` | how loud | — |
 | `image.digests` | which build | image tags and digests |
 
-`image.digests` is the one row a platform does not fill: a release stamps
-it into the published chart, per component. A platform that supplied it
-would be choosing a build, which is the release's decision and nobody
-else's.
+`image.digests` is the one row a platform does not fill. A published chart
+carries the version its release stamped, and resolves its images from that
+by default; a platform that supplied a tag or a digest would be choosing a
+build, which is the release's decision and nobody else's. A *deployment*
+may pin digests, and should where a rollback has to reach an exact image —
+that is a different actor from the platform, making a stronger promise
+about one install.
 
 ### What a platform must NOT pass
 
