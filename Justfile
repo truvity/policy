@@ -182,9 +182,16 @@ charts:
 
 # Regenerate the chart goldens. Read the diff BEFORE running this: a golden
 # updated without being read is a golden that records whatever happened.
+#
+# The pattern matches BOTH chart render tests. `TestWhatTheChartRenders`
+# alone does not: the infrastructure chart's is
+# `TestWhatTheInfraChartRenders`, which that pattern does not contain, so
+# this recipe regenerated one chart's goldens and silently left the other's
+# stale. The only symptom was a CI failure on a change the author had
+# already run `just golden` for.
 [doc("Regenerate the chart goldens")]
 golden:
-    cd examples/url-shortener && UPDATE_GOLDEN=1 go test ./charts/... -run TestWhatTheChartRenders -count=1
+    cd examples/url-shortener && UPDATE_GOLDEN=1 go test ./charts/... -run 'TestWhatThe(Infra)?ChartRenders' -count=1
 
 # Regenerate the RPC code from the schema.
 [doc("Regenerate the RPC code from the schema")]
