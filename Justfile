@@ -159,13 +159,20 @@ cluster-all: cluster cluster-verify cluster-smoke example-images example-install
 cluster-down:
     kind delete cluster --name policy
 
-# Validate the committed renders against the Kubernetes API's own schemas.
+# Render and validate every chart.
+#
+# The name is the repository contract's, not a description of the tool: a
+# person moving between repositories should not have to read this file to
+# find out what the chart check is called here, and a repository that has
+# the job under another name has made every caller special. This one was
+# called `kubeconform` until it was noticed that policy was failing its own
+# contract.
 #
 # NOT part of `check`: it fetches the schema for a custom resource, and the
 # gate needs nothing but the checkout. It sits beside `ts` for the same
 # reason — both are real checks that happen to need the network.
-[doc("Validate the rendered charts against the Kubernetes schemas")]
-kubeconform:
+[doc("Render and validate every chart")]
+charts:
     bash hack/kubeconform.sh
 
 # Regenerate the chart goldens. Read the diff BEFORE running this: a golden

@@ -65,3 +65,18 @@ boundary should be an RPC or an event. Both are named in the service
 contract's conformance table. A table with a gap in it is worth more than one
 that implies coverage it does not have, because a gap is a thing somebody can
 close.
+## The recipe names are the check
+
+`repository.md` §2 fixes them: `check build test lint vuln charts golden
+leak-canary`. A repository that has the job under another name has made
+every caller special — anything automating across repositories has to learn
+its exception, and a person moving between them has to read a recipe file to
+find out what the linter is called.
+
+It is worth listing them against `just --list` rather than assuming, because
+the failure is invisible from inside the repository: everything runs, the
+gate is green, and only a caller from outside notices. This repository
+shipped the chart check as `kubeconform` — an accurate name for the tool and
+the wrong name for the recipe — and did not notice until the contract was
+read back against it.
+
