@@ -4,6 +4,56 @@ What changed for someone consuming this repository, newest first. A version
 missing from this file changed nothing a consumer can see — a dependency bump
 and nothing else — and its GitHub Release lists the commits.
 
+## v0.4.0 — 2026-09-24
+
+- **`platform.md` §10: what a platform passes a chart, by name.** Rules 1 to
+  9 say what a chart may ask for; nothing said what a platform hands it, and
+  the gap between those two is where a repository ends up satisfying the
+  whole service contract and still being undeployable.
+
+  Found by taking these charts to a real delivery layer and discovering that
+  the values it renders and the values these charts read have zero keys in
+  common — not a spelling difference, two unrelated interfaces. One side
+  passes addresses; the other derives them from a naming convention. The
+  second renders perfectly and installs on exactly one platform, and nothing
+  says so until the second platform tries.
+
+  Two tables, one per chart, each row naming the decision it answers. The
+  test is rule 1's: hand the table to a platform that shares no naming
+  convention with the first, and a row it cannot fill is a convention
+  wearing a value's clothes.
+
+- **The infrastructure chart takes the platform's decisions.**
+  `postgres.labels`, `postgres.scheduling`, `postgres.backup`,
+  `postgres.serverTLS` and `events.account`, named for the decision rather
+  than for the operator's field — so a platform running a different database
+  operator can still say *these instances belong on that pool*. Every one
+  defaults to nothing: installing this on an empty cluster renders exactly
+  what it rendered before.
+
+  Archiving is a **name**, not a description. The archive is a resource the
+  platform made, with its own retention and credential model; a chart that
+  described one would be describing the wrong one on every platform but the
+  one it was written against, and the difference is only visible when
+  somebody tries a restore.
+
+  `events.account` and `events.url` are alternatives rather than a pair. An
+  account carries both the broker and the identity, so a server list beside
+  one is the chart arguing with the broker about an answer the broker
+  already has — and that argument is resolved silently.
+
+- **Rule 6 is checked by a test now, not by reading.** Both charts render in
+  the suite and neither may produce the other's kinds: no workload from the
+  chart with a separate lifetime, nothing the application chart should be
+  finding rather than making. That ordering was discovered by building it
+  the other way first, and nothing but a test would notice it being undone.
+
+  Embedding the second chart paid immediately: the platform's labels were
+  being written *above* the chart's own rather than merged, producing a
+  duplicate `app.kubernetes.io/instance` line. Helm renders it, the API
+  server keeps the last, and which one that is depends on the order a
+  template happens to write them in.
+
 ## v0.3.0 — 2026-09-24
 
 - **The charts are published.** The image repository has pointed at ghcr
