@@ -189,6 +189,11 @@ lint:
     # exempt from the rules it demonstrates is a reference to nothing.
     ( cd examples/url-shortener && golangci-lint run ./... ) || fail=1
 
+    # The two package manifests still hold the placeholder the release
+    # stamps over. A version edited by hand here ships as itself — and a
+    # package published at 0.0.0 cannot be taken back.
+    python3 hack/stamp-version.py --check || fail=1
+
     # Nothing built is committed. A binary in a public repository's history is
     # in every clone forever, and carries the build machine's paths. The
     # largest file here is prose; 1 MiB is a build output.

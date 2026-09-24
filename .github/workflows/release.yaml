@@ -49,6 +49,16 @@ jobs:
       # The TAG is the sole version authority. Both manifests carry a
       # placeholder that never moves, and it is stamped here — a version
       # committed to a manifest is a second place to forget.
+      #
+      # Edited in place rather than through each ecosystem's own command.
+      # `yarn version` refuses on a tag checkout — it looks for an ancestor
+      # among master/main to resolve a deferred bump against, and a release
+      # runs on a detached tag where there is none. Nothing about setting a
+      # field in a manifest needs to know what a branch is.
+      #
+      # Each edit asserts it matched. A substitution that matches nothing
+      # succeeds silently, and the failure would be a package published at
+      # the placeholder version — which cannot be taken back.
       - name: The tag is the version
         env:
           REF_NAME: ${{ github.ref_name }}
@@ -56,17 +66,7 @@ jobs:
           set -euo pipefail
           version="${REF_NAME#v}"
           echo "VERSION=$version" >> "$GITHUB_ENV"
-          devbox run -- bash -c "cd ts && yarn version '$version'"
-          python3 - "$version" <<'PY'
-          import pathlib, re, sys
-          version = sys.argv[1]
-          p = pathlib.Path("python/pyproject.toml")
-          s = p.read_text()
-          out, n = re.subn(r'(?m)^version = ".*"$', f'version = "{version}"', s, count=1)
-          if n != 1:
-              raise SystemExit("python/pyproject.toml: no version line to stamp")
-          p.write_text(out)
-          PY
+          python3 hack/stamp-version.py "$version"
 
       # The token is read from the environment by ts/.yarnrc.yml, which
       # interpolates it and never stores it. See the comment there for why
