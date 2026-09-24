@@ -4,7 +4,7 @@ What changed for someone consuming this repository, newest first. A version
 missing from this file changed nothing a consumer can see — a dependency bump
 and nothing else — and its GitHub Release lists the commits.
 
-## Unreleased
+## v0.2.0 — 2026-09-24
 
 - **Which cluster a repository tests against is not a preference.** A public
   repository stands up a local one because it is forced to: a fork's pull
