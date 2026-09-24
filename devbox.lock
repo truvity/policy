@@ -233,6 +233,55 @@
         }
       }
     },
+    "gradle@8.14.4": {
+      "last_modified": "2026-08-27T07:16:00Z",
+      "plugin_version": "0.0.1",
+      "resolved": "github:NixOS/nixpkgs/c27cdad491a991b11ed731760aa2ef8db0cb0410#gradle",
+      "source": "devbox-search",
+      "version": "8.14.4",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/jnr4lalsr5dr13lr860sxc0yi8zwqyic-gradle-8.14.4",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/jnr4lalsr5dr13lr860sxc0yi8zwqyic-gradle-8.14.4"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/zh1bpwy5zzhgwaqybq77sbb1y3mhwbpd-gradle-8.14.4",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/zh1bpwy5zzhgwaqybq77sbb1y3mhwbpd-gradle-8.14.4"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/kwdxjl8kvwya1j2skd7zzyjk3wx1lr2n-gradle-8.14.4",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/kwdxjl8kvwya1j2skd7zzyjk3wx1lr2n-gradle-8.14.4"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/58dmv6x2p68hlhipxc7fbhjdvcplcvkx-gradle-8.14.4",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/58dmv6x2p68hlhipxc7fbhjdvcplcvkx-gradle-8.14.4"
+        }
+      }
+    },
     "just-lsp@latest": {
       "last_modified": "2026-08-27T07:16:00Z",
       "resolved": "github:NixOS/nixpkgs/c27cdad491a991b11ed731760aa2ef8db0cb0410#just-lsp",
@@ -866,6 +915,54 @@
             }
           ],
           "store_path": "/nix/store/fk8c5cqd0npblqv1mcd8swhkcbng84qr-python3-3.14.4"
+        }
+      }
+    },
+    "temurin-bin@21.0.8": {
+      "last_modified": "2025-10-22T20:59:19Z",
+      "resolved": "github:NixOS/nixpkgs/01b6809f7f9d1183a2b3e081f0a1e6f8f415cb09#temurin-bin",
+      "source": "devbox-search",
+      "version": "21.0.8",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/x39311498bh7sb2ag1fjikgv7i0ll5qb-temurin-bin-21.0.8",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/x39311498bh7sb2ag1fjikgv7i0ll5qb-temurin-bin-21.0.8"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/3q60g6x4qf2wfvbalnyx1510n9gwbd5j-temurin-bin-21.0.8",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/3q60g6x4qf2wfvbalnyx1510n9gwbd5j-temurin-bin-21.0.8"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/q0y2plx55rmhyqbindyfg01xwjj45da6-temurin-bin-21.0.8",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/q0y2plx55rmhyqbindyfg01xwjj45da6-temurin-bin-21.0.8"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/x1f6yd37mb7lfp61xh585vrfjs3cgw99-temurin-bin-21.0.8",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/x1f6yd37mb7lfp61xh585vrfjs3cgw99-temurin-bin-21.0.8"
         }
       }
     },

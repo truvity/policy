@@ -20,6 +20,9 @@ build:
     cd python && uv sync --frozen --quiet
     # The example's Python component, for the same reason.
     cd examples/url-shortener/log && uv sync --frozen --quiet
+    # The Kotlin loader. `assemble` rather than `build`, so this stays a
+    # build: the tests are the test recipe's job.
+    cd kotlin && gradle assemble --console=plain --quiet
 
 # The unit tests. They need no network and no services, which is the whole
 # point of the gate.
@@ -43,6 +46,8 @@ test:
     # against a store is a five-line double, which is what the one-method
     # protocol in archive.py is for.
     cd examples/url-shortener/log && uv run --frozen pytest -q
+    # The Kotlin loader, against the SAME fixtures as the other three.
+    cd kotlin && gradle test --console=plain --quiet
 
 # Report known vulnerabilities in what this module depends on
 [doc("Report known vulnerabilities")]
@@ -189,6 +194,11 @@ lint:
     # The Python loader: one tool for lint and formatting, so formatting is
     # never a second opinion, and a type checker, because an annotation
     # nothing checks is a comment that rots.
+    # The Kotlin compiler with warnings as errors, which is where a JVM
+    # project's lint lives: there is no separate linter to run, and a
+    # warning nobody fails on is a warning nobody reads.
+    ( cd kotlin && gradle compileKotlin compileTestKotlin --console=plain --quiet ) || fail=1
+
     for py in python examples/url-shortener/log; do
         ( cd "$py" \
             && uv run --frozen ruff check . \

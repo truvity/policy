@@ -42,7 +42,7 @@ nobody has run.
 |---|---|---|
 | Go | [canon/go.md](../canon/go.md) | the migration, the redirect service, the counter |
 | TypeScript | [canon/node.md](../canon/node.md) | the loader package; the front end follows |
-| Kotlin | [canon/kotlin.md](../canon/kotlin.md) | the counter, once it is rewritten |
+| Kotlin | [canon/kotlin.md](../canon/kotlin.md) | the [loader](../../kotlin/); the counter follows |
 | Python | [canon/python.md](../canon/python.md) | the [loader](../../python/) and the [archiver](../../examples/url-shortener/log/) |
 
 A cell reading "follows" means the rule holds for that language and the
