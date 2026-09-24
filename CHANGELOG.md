@@ -35,6 +35,32 @@ and nothing else — and its GitHub Release lists the commits.
   custom resources some operator reconciles, while "bucket" is one
   cloud's word, and this chart has to install on a laptop too.
 
+## v0.4.6 — 2026-09-24
+
+- **A client can authenticate to the broker.** The configuration contract
+  has had `nats.tokenFile` all along, described as something the platform
+  mounts — and nothing mounted it. Against a broker that authenticates
+  its clients, every component that touches the stream failed at connect
+  with `Authorization Violation`, which reads like a wrong password
+  rather than a missing mount.
+
+  `events.auth.audience` is an **audience**, not a credential: the chart
+  projects a ServiceAccount token for it, the pod cannot forge one, and
+  nothing here or in a values file is a secret. Empty renders no volume
+  at all, which is a broker that admits anonymous clients — what a local
+  one does.
+
+- **The route declares the fields the API server defaults.** `group`,
+  `kind` and `weight` on a backend reference are filled in if omitted, so
+  a chart that leaves them out renders a route that never matches what is
+  stored: a permanent difference, in every renderer that compares the
+  two, for a route nobody changed.
+
+  Declared rather than ignored. Telling a comparer to skip those fields
+  silences the real changes underneath them, and declaring a default is
+  not duplication — it is saying which value this chart wants, where a
+  reader can see it.
+
 ## v0.4.5 — 2026-09-24
 
 - **Every component exports telemetry**, in all four languages, read from
