@@ -4,6 +4,79 @@ What changed for someone consuming this repository, newest first. A version
 missing from this file changed nothing a consumer can see — a dependency bump
 and nothing else — and its GitHub Release lists the commits.
 
+## Unreleased
+
+- **The example has an ownership boundary, and all three shapes are now in
+  it on purpose.** A new service owns the URL tables; the counter asks it
+  instead of writing them. The counter's configuration has no `database`
+  block at all, and a test asserts that it does not — the ownership rule
+  usually shows up as an absence rather than as a line of code. What used to
+  be a database password with write rights on a table it did not own is now
+  an address.
+
+  The contrast is the interesting part and it is documented rather than
+  tidied away: an RPC for a boundary of ownership, an event for fan-out, and
+  a direct read on the redirect path because that is the hot path and a
+  second network hop on it is not worth what it buys.
+
+- **One handler serves Connect, gRPC and gRPC-Web on one port**, so the
+  protocol is the caller's choice. The smoke test proves both ends of that:
+  the counter's call arrives as gRPC, and the same boundary answers an
+  ordinary `curl` POST with a JSON body. The second is worth a test because
+  it is the difference between a boundary anyone can ask a question of and
+  one that needs a generated client.
+
+- **The schema is a file with a linter on it, and the generated code is
+  committed.** A field renumbered by hand is a wire incompatibility that no
+  compiler catches, because both sides are regenerated from the same file in
+  the same commit and agree with each other perfectly. Generation at build
+  time was the alternative, and its first casualty is the editor, which
+  cannot resolve a symbol that does not exist yet.
+
+- **`listen` leaves the shared envelope**, for the same reason the transport
+  block never joined it: a job exits and a consumer answers nothing, so a
+  listener is not something every component has. This was found rather than
+  reasoned about — the counter had been carrying a `listen` it never read,
+  purely so that a test comparing its type to its schema would pass. A field
+  every component carries and only some can use is a field a deployment sets
+  and watches do nothing, which is the third time this repository has met
+  that shape.
+
+- **A client presents an identity too, and the gate now proves it.** The
+  counter is the example's first in-cluster RPC client, so it is the first
+  component that needs a certificate without serving one. Three things came
+  out of making that work on a cluster rather than on paper:
+
+  A chart's own internal callers are the chart's to grant. The allow-list
+  value is for callers from OUTSIDE the release — leaving the internal one
+  to an operator means a chart whose default configuration cannot talk to
+  itself, and the error names a certificate rather than a list nobody
+  filled in.
+
+  `permissive` is meaningless for a component that serves nothing. There is
+  no second listener to put anywhere, and rendering that mode produced a
+  crash loop complaining about a listener address on a component with none.
+  A client either presents an identity or it does not.
+
+  And the two allow-lists are different questions. "Who may call this
+  service" and "whose answer will this client accept" look alike enough to
+  share a value, and must not: a client that checked only the certificate
+  chain would accept any workload in the trust domain that happened to
+  answer on that address.
+
+- **The example's cluster scripts name the cluster they talk to.** Not
+  whatever context is current — `kind create cluster` points the current
+  context at whatever it just made, so a second box created in another
+  terminal silently moves every command in the script. The symptom is
+  "namespace not found" for a namespace that is right there, in the cluster
+  you thought you were talking to. It also means the scripts cannot be
+  aimed at a real cluster by accident.
+
+- **The deprecated `h2c` wrapper is gone.** Cleartext HTTP/2, which a gRPC
+  client needs when there is no TLS to negotiate over, is `Protocols` on the
+  standard library's server and transport since Go 1.24. One fewer dependency
+  on each side.
+
 ## v0.1.0 — 2026-09-24
 
 The first version. It carries:

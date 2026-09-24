@@ -12,6 +12,7 @@ that look like something else.
 | Guide | Covers |
 |---|---|
 | [configuration.md](configuration.md) | one file, one schema, secrets by name |
+| [rpc.md](rpc.md) | which boundary is an RPC, one handler for three protocols |
 | [identity-and-secrets.md](identity-and-secrets.md) | the account a workload runs as, and how a secret reaches it |
 | [events.md](events.md) | publishing and consuming, and how a client authenticates |
 | [probes-and-rollout.md](probes-and-rollout.md) | the two endpoints, and replacing an instance without a gap |
@@ -33,7 +34,6 @@ nobody has run.
 |---|---|
 | object storage | the log component, which is the first to read a bucket |
 | keys and signing | the first component that signs something |
-| RPC and schemas | the service that owns the tables, and the front end that calls it |
 | migrating from a framework | written from the change that removes one |
 
 ## The languages

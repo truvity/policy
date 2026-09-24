@@ -1,6 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/schemas/shortener.json",
+  "$id": "https://example.com/url-shortener/schemas/urls.json",
+  "title": "urls",
+  "description": "The service that owns the URL tables. Everything that writes them asks it.",
   "allOf": [
     {
       "$ref": "https://github.com/truvity/policy/schemas/service.json"
@@ -10,19 +12,17 @@
   "unevaluatedProperties": false,
   "required": [
     "listen",
-    "database",
-    "baseURL"
+    "database"
   ],
   "properties": {
     "listen": {
       "$ref": "https://github.com/truvity/policy/schemas/fragments/listen.json"
     },
-    "baseURL": {
-      "type": "string",
-      "format": "uri"
-    },
     "database": {
       "$ref": "https://github.com/truvity/policy/schemas/fragments/postgres.json"
+    },
+    "tls": {
+      "$ref": "https://github.com/truvity/policy/schemas/fragments/tls.json"
     }
   }
 }

@@ -81,7 +81,7 @@ example-images:
     set -euo pipefail
     cd examples/url-shortener
     export KO_DOCKER_REPO=kind.local KIND_CLUSTER_NAME=policy
-    for c in migrate redirect stat; do
+    for c in migrate redirect stat urls; do
         ko build -B --platform linux/amd64 --tags latest "./cmd/$c"
     done
 
@@ -124,6 +124,11 @@ cluster-down:
     kind delete cluster --name policy
 
 # Regenerate what every loader carries from `schemas/`.
+[doc("Regenerate the RPC code from the schema")]
+protos:
+    cd examples/url-shortener && buf lint && buf generate
+
+# Regenerate what every loader carries from `schemas/`.
 [doc("Regenerate the schemas the loaders carry")]
 schemas:
     node hack/generate-schemas.mjs
@@ -133,8 +138,13 @@ schemas:
 # thing this repository exists to prevent. Needs no network: the generator
 # reads this checkout and writes into it.
 [doc("Fail if generated code was not regenerated")]
-drift: schemas
+drift: schemas protos
     git diff --exit-code -- ts/src/schemas.generated.ts python/src/truvity_policy/schemas.py
+    # The RPC code too. It is committed rather than generated at build time,
+    # because a build step between a checkout and a compiler is a step that
+    # has to work on every machine forever — and the first thing it breaks
+    # is the editor, which cannot resolve a symbol that does not exist yet.
+    git diff --exit-code -- examples/url-shortener/internal/gen
 
 # The TypeScript package: install, typecheck, test, build, and check what a
 # publish would ship. NOT part of `check`, which needs nothing but the
