@@ -42,6 +42,25 @@ suite against its own infrastructure. The result travels with the pin, which
 is the evidence the release contract already asks a consumer's adoption to
 carry.
 
+**And the two kinds of repository should not make the same choice here.**
+
+A **public** repository stands up a local cluster, for the reason above: a
+fork's pull request must never reach the estate's own infrastructure, and a
+contributor has none of it. That constraint is what makes a local cluster the
+only honest answer, not a preference.
+
+A **private** repository has no such constraint, and taking the local cluster
+anyway costs it the thing it actually needs. Its CI can reach a shared
+development cluster — the real identity plane, the real provisioning, the
+real network policy — which is exactly the depth a local cluster cannot
+reach. Standing up a throwaway cluster to avoid using one that is already
+there trades a better test for a slower one.
+
+So: **a public repository's gate is a local cluster; a private
+repository's is the shared development cluster.** The suite is the same
+either way, which is the point of writing it against a chart and a set of
+probes rather than against an environment.
+
 ## Consequences
 
 ### Good

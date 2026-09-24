@@ -6,6 +6,17 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **Which cluster a repository tests against is not a preference.** A public
+  repository stands up a local one because it is forced to: a fork's pull
+  request must never reach your infrastructure, and a contributor has none of
+  it. A private repository has no such constraint, and taking the local
+  cluster anyway costs it the thing it actually needs — its CI can reach a
+  shared development cluster, which has the identity plane, the provisioning
+  and the network policy a local one cannot. Standing up a throwaway cluster
+  to avoid one that is already there trades a better test for a slower one.
+  The suite does not change either way, which is the point of writing it
+  against a chart and a set of probes rather than against an environment.
+
 - **Chart goldens, and the second one is the one that earns its keep.** A
   `minimal` render records what the defaults produce, so a changed default is
   a diff in a review rather than a surprise in a cluster. An `everything`
