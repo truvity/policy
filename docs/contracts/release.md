@@ -74,9 +74,28 @@ only once the image is built, so anything that embeds one — a chart, a
 manifest, a lockfile — is produced **after** the images and **from** them.
 A release that publishes a chart first publishes one with the field empty.
 
-And it is enforced rather than intended: the release refuses to publish a
-chart whose image entries are not all digest-pinned. An intention that
-nothing checks is how the field came to be empty in the first place.
+The ordering is made impossible to get wrong rather than merely written
+down: **one job** builds and pushes the images and then packages the
+charts from the file that build produced. A chart cannot be published
+before its images exist, because it is packaged from something that does
+not exist until they do. And the release refuses outright to package a
+chart whose image entries are not all digest-pinned.
+
+**Two tools, and nothing of ours between them.** The build tool builds and
+pushes; the registry tool reads what it pushed, bakes the digests into the
+charts and pushes those. A script in this path is a third thing to keep
+correct, and — being ours — the one most likely to reproduce a schema
+somebody else owns.
+
+Each language's own compiler still runs, as a hook: a jar, a wheel and a
+JavaScript bundle are what `go build` is for Go. That is a build, not a
+release step, and the difference is that nothing there publishes anything.
+
+**ONE destination per repository.** Public artifacts to a public registry,
+private to a private one, never both. What varies between a local loop, a
+CI loop and a release is *where* — one environment variable — and never
+*what is built*. A release that can be told to publish somewhere else is a
+release that eventually will be.
 
 ## 6. Adoption is proved, not asserted
 
@@ -130,6 +149,6 @@ is what a release is measured by.
 | 2. versioning | review |
 | 3. changelog | review; a version with no heading is a deliberate statement |
 | 4. who cuts | automation is armed for patches only |
-| 5. built in CI | the release runs only from a tag, in CI; the chart publish refuses an unpinned image |
+| 5. built in CI | the release runs only from a tag, in CI; one job builds then packages; the chart publish refuses an unpinned image; a test asserts every image declares every architecture, that no Dockerfile executes while building, and that no registry is hard-coded |
 | 7. tested as published | a chart test renders with NO values supplied; the kind lane installs the published artifacts |
 | 6. adoption | the consumer's pin bump carries the diff |

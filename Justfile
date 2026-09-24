@@ -93,9 +93,14 @@ example-images:
     # HOST ARCHITECTURE ONLY, and that is a local optimisation rather than a
     # different rule: these images are loaded straight into the local box's
     # single node, so a second architecture would be built and discarded. A
-    # RELEASE always publishes every architecture — see
-    # examples/url-shortener/hack/publish-images.sh, which does not take an
-    # option to do otherwise.
+    # RELEASE always publishes every architecture — see .goreleaser.yaml,
+    # whose platform lists are asserted by `just release-config`.
+    #
+    # The build CONTEXT is the repository root (`../..`), not each
+    # component's directory. That is not a preference: the release stages
+    # these files into GoReleaser's own context keeping their paths, and a
+    # Dockerfile can only be written for one context. One `COPY` line that
+    # both builds agree on beats two that can drift.
     for c in migrate redirect urls; do
         ko build -B --platform linux/amd64 --tags latest "./cmd/$c"
     done
@@ -104,7 +109,7 @@ example-images:
     # OUTSIDE the image and the Dockerfile copies it — a jar on a JRE base,
     # no RUN line, nothing that executes while the image is assembled.
     ( cd stat && gradle bootJar --console=plain --quiet )
-    docker build --quiet --tag kind.local/stat:latest stat >/dev/null
+    docker build --quiet --file stat/Dockerfile --tag kind.local/stat:latest ../.. >/dev/null
     kind load docker-image kind.local/stat:latest --name policy
 
     # The TypeScript component: the page is built and the server is bundled
@@ -118,7 +123,7 @@ example-images:
     # import of a dependency that is plainly right there in the lockfile.
     ( cd ../../ts && yarn install --immutable && yarn build )
     ( cd web && yarn install --immutable && yarn build )
-    docker build --quiet --tag kind.local/web:latest web >/dev/null
+    docker build --quiet --file web/Dockerfile --tag kind.local/web:latest ../.. >/dev/null
     kind load docker-image kind.local/web:latest --name policy
 
     # The Python component. ko builds an image around a static binary and
@@ -126,7 +131,7 @@ example-images:
     # the image is assembled — is kept by doing the install OUTSIDE it and
     # leaving the Dockerfile with a COPY and nothing else.
     bash log/hack/build.sh
-    docker build --quiet --tag kind.local/log:latest log >/dev/null
+    docker build --quiet --file log/Dockerfile --tag kind.local/log:latest ../.. >/dev/null
     kind load docker-image kind.local/log:latest --name policy
 
 # Install the example: the infrastructure release, then the application.

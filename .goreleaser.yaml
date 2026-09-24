@@ -1,18 +1,119 @@
-# Tag-triggered release through truvity/ci-workflows release-public.yaml.
+# The release, as two tools and nothing of ours between them.
 #
-# No binaries and no charts. This repository ships three libraries and a
-# worked example: the Go module needs no build step at all (a tag IS the
-# release, as far as the module proxy is concerned), and the TypeScript and
-# Python packages are published by the caller's own job because neither is
-# something goreleaser builds.
+# GoReleaser builds and pushes every image and writes dist/artifacts.json;
+# helmctl (truvity/ocictl) reads that file, bakes the digests into the
+# charts and pushes them. There is no script in this path, and there is
+# nothing to pass between jobs, because it is one job.
 #
-# So goreleaser's job here is exactly one thing: cut the GitHub Release with
-# the changelog, which is what the other two artifacts attach to. `skip: true`
-# is its documented shape for a library project.
+# That is not tidiness. A digest exists only once the image is built, and
+# this repository used to publish the charts in a job that ran FIRST — so
+# they reached the registry with their image values empty and could not
+# render a Deployment. Every test passed; each supplied images of its own.
+# Here the order is not a convention that can be got wrong: the charts are
+# packaged from a file that does not exist until the images are pushed.
+#
+# A RELEASE IS ALWAYS MULTI-ARCHITECTURE, because a published artifact is
+# consumed by machines whose architecture the publisher does not know. The
+# platform lists below are that promise, and `just goreleaser-config` is
+# the test that none of them is quietly shortened.
+#
+# It costs almost nothing, and the image shape is why: not one Dockerfile
+# has a RUN line (asserted by the same test). The Go binaries are
+# cross-compiled by ko, the Python dependency trees are resolved per
+# architecture by uv, and the jar and the JavaScript bundle are the same
+# bytes everywhere — so building for arm64 on an x86 machine copies files
+# rather than executing them, and needs no second runner and no qemu.
 version: 2
 
+# Each component's own build tool, producing what its Dockerfile copies.
+# These are the peers of `go build`, not release machinery: gradle compiles
+# the jar, uv resolves a dependency tree per architecture, yarn bundles the
+# JavaScript. GoReleaser runs them; nothing here publishes anything.
+before:
+  hooks:
+    - bash examples/url-shortener/log/hack/build.sh
+    - gradle --project-dir examples/url-shortener/stat bootJar --console=plain --quiet
+    - yarn --cwd ts install --immutable
+    - yarn --cwd ts build
+    - yarn --cwd examples/url-shortener/web install --immutable
+    - yarn --cwd examples/url-shortener/web build
+
 builds:
-  - skip: true
+  - id: migrate
+    dir: examples/url-shortener
+    main: ./cmd/migrate
+    binary: migrate
+    env: [CGO_ENABLED=0]
+    goos: [linux]
+    goarch: [amd64, arm64]
+  - id: redirect
+    dir: examples/url-shortener
+    main: ./cmd/redirect
+    binary: redirect
+    env: [CGO_ENABLED=0]
+    goos: [linux]
+    goarch: [amd64, arm64]
+  - id: urls
+    dir: examples/url-shortener
+    main: ./cmd/urls
+    binary: urls
+    env: [CGO_ENABLED=0]
+    goos: [linux]
+    goarch: [amd64, arm64]
+
+# The Go components need no Dockerfile at all: ko builds the image from the
+# package, cross-compiling rather than emulating.
+kos:
+  - id: migrate
+    build: migrate
+    repositories: ["{{ .Env.IMAGE_REPO }}/migrate"]
+    platforms: [linux/amd64, linux/arm64]
+    tags: ["{{ .Env.IMAGE_TAG }}"]
+    bare: true
+  - id: redirect
+    build: redirect
+    repositories: ["{{ .Env.IMAGE_REPO }}/redirect"]
+    platforms: [linux/amd64, linux/arm64]
+    tags: ["{{ .Env.IMAGE_TAG }}"]
+    bare: true
+  - id: urls
+    build: urls
+    repositories: ["{{ .Env.IMAGE_REPO }}/urls"]
+    platforms: [linux/amd64, linux/arm64]
+    tags: ["{{ .Env.IMAGE_TAG }}"]
+    bare: true
+
+# The other three carry a runtime somebody else builds, so they have a
+# Dockerfile — one FROM and one COPY each.
+#
+# `extra_files` stages a path into the build context KEEPING IT, so the
+# COPY lines are written from the repository root. That is also how they
+# are built locally (`just example-images` runs this same configuration in
+# snapshot mode), so there is one build of these images and not two that
+# can disagree.
+dockers_v2:
+  - id: log
+    images: ["{{ .Env.IMAGE_REPO }}/log"]
+    dockerfile: examples/url-shortener/log/Dockerfile
+    platforms: [linux/amd64, linux/arm64]
+    tags: ["{{ .Env.IMAGE_TAG }}"]
+    extra_files:
+      - examples/url-shortener/log/build/site-packages-amd64
+      - examples/url-shortener/log/build/site-packages-arm64
+  - id: stat
+    images: ["{{ .Env.IMAGE_REPO }}/stat"]
+    dockerfile: examples/url-shortener/stat/Dockerfile
+    platforms: [linux/amd64, linux/arm64]
+    tags: ["{{ .Env.IMAGE_TAG }}"]
+    extra_files:
+      - examples/url-shortener/stat/build/libs/stat.jar
+  - id: web
+    images: ["{{ .Env.IMAGE_REPO }}/web"]
+    dockerfile: examples/url-shortener/web/Dockerfile
+    platforms: [linux/amd64, linux/arm64]
+    tags: ["{{ .Env.IMAGE_TAG }}"]
+    extra_files:
+      - examples/url-shortener/web/dist
 
 changelog:
   sort: asc
@@ -23,5 +124,21 @@ changelog:
       - "^docs"
       - "^test"
 
+# Three loops, one configuration, and the only difference between them is
+# where the images go and whether a GitHub release is cut:
+#
+#   local     IMAGE_REPO=<the kind registry>  IMAGE_TAG=dev     release off
+#   CI        IMAGE_REPO=<the kind registry>  IMAGE_TAG=<run>   release off
+#   release   IMAGE_REPO=ghcr.io/...          IMAGE_TAG=<ver>   release on
+#
+# A private repository is the same three values with ECR and its devel
+# cluster, and nothing else in this file changes. ONE destination per
+# repository -- public to ghcr, private to ECR -- never both.
+#
+# NEVER `--snapshot`. It is the one mode that also stops the images being
+# pushed, so it builds something no cluster can pull -- which is the same
+# class of mistake as publishing a chart before its images. Local and CI
+# pass `--skip=validate` instead, so a commit that is not a tag may build.
 release:
   github: {}
+  disable: "{{ .Env.GITHUB_RELEASE_DISABLED }}"

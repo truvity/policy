@@ -31,21 +31,18 @@ jobs:
     permissions:
       contents: write
       packages: write
-    # AFTER the images, because a chart is packaged from what they
-    # produced. A digest only exists once the image is built, and this
-    # repository published the charts first -- so they reached the
-    # registry with empty image values and could not render a Deployment.
-    # Nothing here could see it; it was found by installing the artifact.
-    needs: [images]
-    uses: truvity/ci-workflows/.github/workflows/release-public.yaml@fc78dcd76544edd999e1afe028ac90f41b468f88 # v3.11.0
+    uses: truvity/ci-workflows/.github/workflows/release-public.yaml@58251ffc69d445228f57cfdc3a7d94d513b597f4 # v3.12.0
     with:
-      # One `<chart>.yaml` per chart that needs one. url-shortener-infra
-      # deploys no images and has none, so it is packaged from the tag.
-      chart-manifests: chart-manifests
-      # And the release REFUSES to package a chart whose images.* entries
-      # are not all digest-pinned. That is the half that matters: the
-      # failure this whole change is about becomes unpublishable rather
-      # than merely fixed once.
+      # ONE job builds and pushes the images, then packages the charts
+      # from the digests it produced. The charts cannot be published
+      # before their images exist, because they are packaged from a file
+      # that does not exist until the images are pushed -- which is what
+      # makes the ordering impossible to get wrong rather than merely
+      # right today.
+      chart-images: goreleaser
+      image-repo: ghcr.io/truvity/policy/url-shortener
+      # And a chart whose images.* entries are not all digest-pinned is
+      # refused outright.
       require-image-digests: true
       # BOTH charts, and they are a pair rather than a chart and an extra.
       #
@@ -62,73 +59,6 @@ jobs:
       # repository's root — `chart-root` exists so that they can.
       charts: '["url-shortener", "url-shortener-infra"]'
       chart-root: examples/url-shortener/charts
-
-  # The example's images, for every architecture, in one job and with no
-  # emulation. Every one of the six Dockerfiles is a COPY and nothing else —
-  # the Go binaries are cross-compiled by ko, the Python dependency trees are
-  # resolved per architecture by uv, and the jar and the JavaScript bundle are
-  # the same bytes everywhere — so building for arm64 on an x86 runner copies
-  # files rather than executing them.
-  #
-  # It is not academic. The chart's own default repository points here, and
-  # until this job existed it pointed at images nobody published.
-  images:
-    runs-on: ubuntu-latest
-    timeout-minutes: 40
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: jetify-com/devbox-install-action@22b0f5500b14df4ea357ce673fbd4ced940ed6a1 # v0.13.0
-        with:
-          enable-cache: "true"
-      - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
-
-      - name: Log in to the registry
-        run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ACTOR: ${{ github.actor }}
-
-      # The digests are written to the step summary rather than thrown away.
-      # A chart pins an image by digest, and the only place those exist is
-      # the build that made them.
-      - name: The images
-        env:
-          REF_NAME: ${{ github.ref_name }}
-          KO_DOCKER_REPO: ghcr.io/truvity/policy/url-shortener
-        run: |
-          set -euo pipefail
-          version="${REF_NAME#v}"
-          REPOSITORY=ghcr.io/truvity/policy/url-shortener VERSION="$version" \
-            devbox run -- bash examples/url-shortener/hack/publish-images.sh \
-            | tee /tmp/digests.txt
-          {
-            echo "### Images"
-            echo
-            echo '```yaml'
-            echo "image:"
-            echo "  repository: ghcr.io/truvity/policy/url-shortener"
-            echo "  digests:"
-            sed 's/^/    /; s/=/: /' /tmp/digests.txt
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          # The chart's half of the same facts. The summary above is for a
-          # person; this is what the release packages from.
-          mkdir -p "$RUNNER_TEMP/chart-manifests"
-          devbox run -- python3 examples/url-shortener/hack/chart-manifest.py \
-            --version "$version" \
-            --repository truvity/policy/url-shortener \
-            --output "$RUNNER_TEMP/chart-manifests/url-shortener.yaml" \
-            < /tmp/digests.txt
-
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: chart-manifests
-          path: ${{ runner.temp }}/chart-manifests
-          if-no-files-found: error
 
   packages:
     needs: [release]

@@ -4,6 +4,37 @@ What changed for someone consuming this repository, newest first. A version
 missing from this file changed nothing a consumer can see — a dependency bump
 and nothing else — and its GitHub Release lists the commits.
 
+## Unreleased
+
+- **The release is two tools and no scripts of ours.** GoReleaser builds
+  and pushes every image and records what it pushed; helmctl reads that
+  and bakes the digests into the charts. `publish-images.sh` and
+  `chart-manifest.py` are both gone — the second of them reproduced a
+  schema ocictl owns, inside the repository other repositories copy.
+
+  **One job**, so the ordering cannot be got wrong: the charts are
+  packaged from a file that does not exist until the images are pushed.
+  v0.4.1 fixed that ordering; this removes the possibility of it.
+
+- **One configuration, three loops.** The image destination, the tag and
+  the GitHub-release switch are taken from the environment, so a local
+  loop, a CI loop and a release differ in three values and never in what
+  is built. One destination per repository — public to a public registry,
+  private to a private one, never both.
+
+- **The multi-architecture rule is a test, not a shell assertion.** It was
+  a check that inspected images after pushing them, which could only fail
+  once a release had happened and could not see the likeliest mistake — a
+  platform quietly dropped from the list. It now fails in the gate, and it
+  is joined by two more: no Dockerfile may execute anything while the
+  image is assembled (which is what makes cross-building a file copy), and
+  no registry may be written into the release configuration.
+
+  The build context is the repository root for every image, because the
+  release stages files into the build tool's context keeping their paths
+  and a Dockerfile can only be written for one context. One `COPY` line
+  both builds agree on beats two that can drift.
+
 ## v0.4.1 — 2026-09-24
 
 - **The release pins every image by digest, and refuses to publish a chart
