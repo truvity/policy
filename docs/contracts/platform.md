@@ -287,8 +287,8 @@ The line that works:
 
 | | owns |
 |---|---|
-| **the platform, per namespace** | the namespace, its baseline policy, who may act in it, and the identity the namespace's workloads run as |
-| **the infrastructure chart, per install** | the database, the stream, the objects this install owns, and the policies that describe its own flows |
+| **the platform, per namespace** | the namespace, its baseline policy, who may act in it, and the standing identity an install that mints nothing runs as |
+| **the infrastructure chart, per install** | the database, the stream, the store and identity THIS install owns, and the policies that describe its own flows |
 | **the application chart** | nothing it can find |
 
 ### Every resource this example has, and where it belongs
@@ -303,7 +303,9 @@ do not matter, the **scope** does.
 | baseline network policy | namespace | platform | the wall around the namespace, identical for every install in it |
 | who may act in the namespace | namespace | platform | an authorisation decision, never a chart's |
 | the namespace's standing identity | namespace | platform | what installs that mint nothing run as |
-| the store the namespace may write to | namespace | platform | a shared one with a prefix per install, or a dedicated one where the install owns it |
+| a SHARED store, with a prefix per install | namespace | platform | what a test install writes to, so it provisions nothing |
+| **the store an install OWNS** | **install** | **infrastructure chart** | it is a function of this release, and there is no "the install" at cluster scope |
+| **the identity that reaches that store** | **install** | **infrastructure chart** | it exists to reach the thing above, so it is scoped with it |
 | **database** | **install** | **infrastructure chart** | one per install; the application migrates it, so it cannot create it |
 | **stream** | **install** | **infrastructure chart** | one per install; its name and subjects are the project's |
 | **the install's own policies** | **install** | **infrastructure chart** | they describe *this release's* flows, by its own labels |
@@ -313,18 +315,35 @@ do not matter, the **scope** does.
 
 Two entries are worth reading twice.
 
-**The store is at NAMESPACE scope, not install scope**, even though each
-install writes to its own prefix. That is what lets one namespace serve an
-engineer's copy and a CI run without either provisioning anything. Where
-an install genuinely owns a dedicated store, the platform still provides
-it — the chart is handed a name either way, and does not know which it
-got.
+**A store is at whichever scope it is actually owned at, and the tier
+says which.** A test install writes to a SHARED store under a prefix of
+its own, so it provisions nothing — that is what lets one namespace serve
+an engineer's copy and a CI run. A primary owns its store, and owning it
+means the chart makes it, because it is a function of this release in
+this namespace and there is no "the install" at cluster scope.
 
-**Nothing in the infrastructure chart names a vendor.** A database and a
-stream are custom resources some operator reconciles; a bucket is not,
-because "bucket" is one cloud's word. Rule 4 is why: a chart that creates
-cloud objects is a chart that installs on one cloud, and this one has to
-install on a laptop too.
+That was got wrong in the other direction first, and the failure is worth
+keeping: moving these into a per-cluster stack covered the primary and
+silently left every test install with no store and no credential at all.
+Ring2 has two installers — a platform's and a test harness's — and a
+per-cluster stack cannot be the third.
+
+**The infrastructure chart may name a vendor, and the TIER is what keeps
+that honest.** A database and a stream are custom resources some operator
+reconciles; a store and the identity that reaches it are one cloud's
+kinds, and a primary install provisions them by name.
+
+The bar this has to clear is that the chart **renders** without a cloud,
+not that it installs on one. A `test` install renders none of those kinds,
+so the chart is still read, still tested and still reviewed on a cluster
+that has never heard of them — and `test` is the default, so the common
+case is the one that works anywhere.
+
+That distinction is the whole of it. A chart whose cloud objects render
+unconditionally is a chart for one cloud. A chart that renders them only
+where a platform asked for them by name is a chart that tells the truth
+about what it would provision, to a reader who has neither the cloud nor
+the intention of using it.
 
 ### Tiers, and the thing that surprises people
 
@@ -349,11 +368,39 @@ now depends on. The platform can do it for the deployment; nothing does it
 for a test install, and the install fails with a secret that is simply
 absent.
 
-Prefer a credential the database operator issues for the role it already
-manages: a client certificate. Nothing generates it, nothing rotates it by
-hand, no tier needs a provider, and there is no password to leak. Where a
-connection string carries the certificate's paths, this costs the
-application nothing at all.
+Prefer a client certificate. Nothing generates it, nothing rotates it by
+hand, no tier needs a provider, and there is no password to leak or to
+print. Where a connection string carries the certificate's paths, this
+costs the application nothing at all — the services in this example were
+not changed to adopt it, because one that names no password variable
+already uses the URL as given.
+
+**Check what your operator actually offers before designing around this.**
+The wording above used to say "a credential the database operator issues
+for the role it already manages", and the operator here does not issue
+one: its managed roles take a password secret or no password, and there
+is no declarative way to ask for a certificate per role. What it does
+provide is the client CA, so the certificate comes from a certificate
+issuer signing from that CA — a real dependency, and the cost of the
+mode.
+
+Three ways to hold it wrong, each silent:
+
+- **The common name is the ROLE.** Postgres identifies a certificate's
+  bearer by it. Named for the release, the service or the host, the
+  certificate is valid, trusted, and authenticates as nobody.
+- **The issuer must sign from the database's OWN client CA.** The server
+  verifies against that and no other, so a certificate from the
+  cluster's general-purpose issuer is refused for an authority it has
+  never been told about.
+- **Remove the password, do not merely stop using it.** A role that may
+  still present one will, the first time something falls back, and the
+  fallback is invisible because it succeeds. Disable it on the role AND
+  have the server demand the certificate.
+
+And keep `sslmode=verify-full` rather than `require`. A client
+certificate proves the client to the server and nothing in the other
+direction; `require` encrypts and verifies nobody.
 
 ## Conformance
 
@@ -367,7 +414,7 @@ application nothing at all.
 | 6. found, not made | chart test: neither chart renders the other's kinds |
 | 7. exposure | chart golden; a negative fixture for an unattached policy |
 | 8. transport | the default render is byte-identical without it |
-| 11. two charts, two scopes | a chart test renders each tier; the example installs from a test harness as well as a deployment |
+| 11. two charts, two scopes | a chart test renders each tier, and asserts a `test` install mints none of the cloud kinds a `primary` does; the example installs from a test harness as well as a deployment |
 | 10. what a platform passes | the `everything` chart goldens: a value nothing reads shows as a diff |
 
 Rule 6 is checked mechanically now: the example's chart tests render both

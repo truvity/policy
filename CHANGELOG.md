@@ -35,6 +35,41 @@ and nothing else — and its GitHub Release lists the commits.
   custom resources some operator reconciles, while "bucket" is one
   cloud's word, and this chart has to install on a laptop too.
 
+## Unreleased
+
+- **The infrastructure chart provisions the objects an install owns**, and
+  takes a `tier` that decides whether it provisions them at all. A `test`
+  install mints nothing and runs as the namespace's standing identity; a
+  `primary` install makes its own store and the identity that reaches it,
+  from names it is given rather than names it derives.
+
+  Those resources had been moved into a stack that runs per cluster. The
+  reason that was wrong is scope: there is no "the install" at cluster
+  scope, so it served the deployment and left every engineer's copy and
+  every CI run with nothing.
+
+- **The runtime role can authenticate with a client certificate**, and
+  then it has no password at all — `postgres.auth: certificate` disables
+  it on the role and the server is told to demand the certificate.
+  Nothing generates it, nothing rotates it by hand, and there is none to
+  leak or print. It needs a certificate issuer signing from the
+  database's own client CA, which is a real dependency of that mode.
+
+  **`platform.md` was wrong and is corrected**: it recommended "a
+  credential the database operator issues for the role it already
+  manages", and the operator issues no such thing. Its managed roles take
+  a password or no password.
+
+- **Both defaults are unchanged and the default render is byte-identical.**
+  `tier` defaults to `test` and `auth` to `password`, so nothing here is
+  reachable until a platform asks for it by name. No application code
+  changed: a service that names no password variable already uses its
+  connection string as given.
+
+- **`platform.md` §11 no longer says a chart may not name a vendor.** The
+  bar is that it RENDERS without that cloud, not that it installs on one,
+  and the tier is what keeps that honest.
+
 ## Unreleased — packaging
 
 - **v0.4.6's `url-shortener-infra` chart cannot be installed. Use v0.4.7.**
