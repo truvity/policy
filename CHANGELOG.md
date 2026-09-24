@@ -4,6 +4,35 @@ What changed for someone consuming this repository, newest first. A version
 missing from this file changed nothing a consumer can see — a dependency bump
 and nothing else — and its GitHub Release lists the commits.
 
+## v0.4.1 — 2026-09-24
+
+- **The published chart could not render a single Deployment.** Its own
+  values said *the release stamps a digest per component here*, and the
+  release does not: it publishes the charts and the images in the same run,
+  and a digest only exists once the image is built. So the chart reached the
+  registry with `digests: {}` and `tag: ""`, and every install of it failed
+  at the first `image:` with `no image for web`.
+
+  Nothing in this repository could see it. Every chart test supplied a tag
+  or a set of digests, so all of them passed against a chart no consumer
+  could use. It was found by installing the published artifact, which is the
+  only place the difference exists.
+
+  A published chart now falls back to its own **appVersion** — the version
+  its release stamped, and the one thing such a chart always knows about the
+  images built beside it. `image.digests` remains, and a deployment that
+  needs a rollback to reach an exact image still sets it; what changed is
+  that a chart with neither installs instead of refusing.
+
+  There is a test for the published case now, and it fails against the old
+  helper with the same message the cluster produced.
+
+- **`platform.md` §10 corrected on the same point.** It claimed a release
+  stamps digests into the published chart. It does not, and saying so made
+  a chart that cannot be installed look like the intended shape. A platform
+  still fills neither field; a *deployment* may pin digests, and that is a
+  different actor making a stronger promise about one install.
+
 ## v0.4.0 — 2026-09-24
 
 - **`platform.md` §10: what a platform passes a chart, by name.** Rules 1 to
