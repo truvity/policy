@@ -48,23 +48,18 @@ and nothing else — and its GitHub Release lists the commits.
   scope, so it served the deployment and left every engineer's copy and
   every CI run with nothing.
 
-- **The runtime role can authenticate with a client certificate**, and
-  then it has no password at all — `postgres.auth: certificate` disables
-  it on the role and the server is told to demand the certificate.
-  Nothing generates it, nothing rotates it by hand, and there is none to
-  leak or print. It needs a certificate issuer signing from the
-  database's own client CA, which is a real dependency of that mode.
-
-  **`platform.md` was wrong and is corrected**: it recommended "a
+- **`platform.md`'s credential advice is corrected.** It recommended "a
   credential the database operator issues for the role it already
-  manages", and the operator issues no such thing. Its managed roles take
-  a password or no password.
+  manages"; the operator issues no such thing, and its managed roles take
+  a password or no password. The recommendation stands and now says what
+  it costs: who owns the CA, why one arrangement makes you take over
+  replication's identity, and why splitting the two CAs breaks verifying
+  the server. The example still uses a password, because the issuer is a
+  platform's to provide.
 
-- **Both defaults are unchanged and the default render is byte-identical.**
-  `tier` defaults to `test` and `auth` to `password`, so nothing here is
-  reachable until a platform asks for it by name. No application code
-  changed: a service that names no password variable already uses its
-  connection string as given.
+- **The default is unchanged and the default render is byte-identical.**
+  `tier` defaults to `test`, so nothing here is reachable until a
+  platform asks for it by name.
 
 - **`platform.md` §11 no longer says a chart may not name a vendor.** The
   bar is that it RENDERS without that cloud, not that it installs on one,

@@ -371,28 +371,44 @@ absent.
 Prefer a client certificate. Nothing generates it, nothing rotates it by
 hand, no tier needs a provider, and there is no password to leak or to
 print. Where a connection string carries the certificate's paths, this
-costs the application nothing at all — the services in this example were
-not changed to adopt it, because one that names no password variable
-already uses the URL as given.
+costs the application nothing at all — a service that names no password
+variable already uses its URL as given.
 
 **Check what your operator actually offers before designing around this.**
-The wording above used to say "a credential the database operator issues
-for the role it already manages", and the operator here does not issue
-one: its managed roles take a password secret or no password, and there
-is no declarative way to ask for a certificate per role. What it does
-provide is the client CA, so the certificate comes from a certificate
-issuer signing from that CA — a real dependency, and the cost of the
-mode.
+This section used to say "a credential the database operator issues for
+the role it already manages", and the operator here issues no such thing:
+its managed roles take a password secret or no password, and there is no
+declarative way to ask for a certificate per role. It *does* mint client
+certificates — replication uses one — but only for its own purposes.
 
-Three ways to hold it wrong, each silent:
+So the certificate comes from a certificate issuer, and the question is
+who owns the CA the server validates against. Both answers work and they
+are not equally cheap:
+
+- **The operator keeps its CA, and an issuer signs from it.** Needs the
+  CA's key in the shape the issuer reads — here the operator writes
+  `ca.crt`/`ca.key` and the issuer wants `tls.crt`/`tls.key`, so
+  something has to remap two key names and keep tracking them as the CA
+  rotates.
+- **The issuer owns the CA, and the operator is told to trust it.** Fully
+  declarative, and it costs more than it looks: this operator will accept
+  a CA without its key only if you also supply the replication
+  certificate, so you take over replication's identity to change the
+  application's.
+
+The second also splits the two CAs, and that catches people: the client
+verifies the SERVER against the server's CA, which is no longer the CA
+that issued the client certificate. A connection that mounts one CA and
+uses it for both is correct only while the operator uses one for both.
+
+Three ways to hold the certificate itself wrong, each silent:
 
 - **The common name is the ROLE.** Postgres identifies a certificate's
   bearer by it. Named for the release, the service or the host, the
   certificate is valid, trusted, and authenticates as nobody.
-- **The issuer must sign from the database's OWN client CA.** The server
-  verifies against that and no other, so a certificate from the
-  cluster's general-purpose issuer is refused for an authority it has
-  never been told about.
+- **The issuer must sign from the CA the server validates against.**
+  Otherwise the refusal names an authority the server has never been
+  told about.
 - **Remove the password, do not merely stop using it.** A role that may
   still present one will, the first time something falls back, and the
   fallback is invisible because it succeeds. Disable it on the role AND
@@ -401,6 +417,12 @@ Three ways to hold it wrong, each silent:
 And keep `sslmode=verify-full` rather than `require`. A client
 certificate proves the client to the server and nothing in the other
 direction; `require` encrypts and verifies nobody.
+
+**The example does not do this yet.** Its runtime role still takes a
+password secret, because the issuer above is a platform's to provide and
+this repository has none to point at. The recommendation stands; what is
+missing is on the platform's side of the line, which is the honest place
+for it to be missing.
 
 ## Conformance
 
