@@ -106,6 +106,11 @@ example-images:
     # only tidiness, because the dependency on this repository's own loader
     # is a symlink in a checkout and a symlink cannot be copied into a
     # container.
+    # The loader package FIRST. The front end depends on it through a
+    # portal, which resolves to that package's built entry point — and a
+    # fresh checkout has none, so the bundler reports it as an unresolved
+    # import of a dependency that is plainly right there in the lockfile.
+    ( cd ../../ts && yarn install --immutable && yarn build )
     ( cd web && yarn install --immutable && yarn build )
     docker build --quiet --tag kind.local/web:latest web >/dev/null
     kind load docker-image kind.local/web:latest --name policy
