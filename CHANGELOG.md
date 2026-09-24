@@ -6,6 +6,47 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **A fourth loader, in Kotlin**, read against the same fixtures as the other
+  three. An empty file parses to a MISSING node on the JVM rather than a null
+  one, and checking only the second let it reach the validator — which
+  reported "unknown found, object expected". Accurate, and no help at all to
+  somebody looking at a blank file.
+
+- **The counter is a Spring Boot service now, and the Go one is deleted.**
+  The example has four languages in it and the chart still does not know
+  which is which: the same probes on the same paths, the same drain, the same
+  account, the same configuration file validated against the same schema.
+  Three things had to be got right for that to be true, and each was wrong
+  first:
+
+  A framework that serves no traffic still has to stay running. With the web
+  application turned off entirely the process started, consumed once and
+  exited — and the probe listener never started either, so the symptom was a
+  pod reporting "drained" a second after it reported "consuming". The main
+  listener is disabled and the management one is not.
+
+  The configuration file is read ONCE, by the composition root. A bean that
+  re-read it would have to rediscover the path, and the first version did
+  exactly that and found nothing, because the path arrives as an argument
+  and a bean has none.
+
+  And the refusal happens before the framework starts. A configuration this
+  service will not accept should be one line on stderr, not a framework
+  stack trace about a bean that could not be created — which is the same
+  refusal with the answer buried in it.
+
+- **The JVM presents an identity as a client**, with TLS 1.3, a certificate
+  reloaded when the platform replaces it, and the peer admitted by the
+  ACCOUNT in its certificate rather than by the address that answered. Proved
+  under strict mutual TLS on a cluster, in the same gate as the Go and
+  Python components.
+
+- **The Connect generator for Kotlin is a JAR, not a binary**, so the build
+  writes a launcher around it. Every other generator here is a static binary
+  the environment manifest pins; this one is a JVM artifact, and pinning it
+  in the manifest would mean pinning a jar as if it were a binary while
+  pretending the JVM is not already on the machine.
+
 - **The example has an ownership boundary, and all three shapes are now in
   it on purpose.** A new service owns the URL tables; the counter asks it
   instead of writing them. The counter's configuration has no `database`

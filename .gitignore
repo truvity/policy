@@ -49,3 +49,5 @@ kotlin/.gradle/
 # anyway — the Gradle project is in kotlin/, and a properties file outside a
 # project directory is not read for it.
 /gradle.properties
+examples/url-shortener/stat/build/
+examples/url-shortener/stat/.gradle/
