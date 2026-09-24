@@ -58,6 +58,31 @@ That last one matters more often than it sounds. It is the difference between
 a boundary you can poke at three in the morning and one you need a generated
 client to ask a question of.
 
+## A JVM service that OWNS a boundary
+
+Connect's Kotlin library generates clients and no servers. That is a real
+constraint on where a JVM service sits in a topology, and it is better known
+before the first one is written than after — the counter in this example is
+a client, which is the honest placement for it.
+
+A JVM service that owns a boundary is not blocked; it just takes a different
+server. This path is **documented rather than built**, because nothing here
+needs it yet and a guide written from code nobody has run describes nothing:
+
+- The server is **grpc-kotlin on grpc-java**, serving the gRPC protocol from
+  the same `.proto` everything else is generated from.
+- **Go and TypeScript clients reach it unchanged**, over their gRPC
+  transport — which is what both already use in the cluster, so nothing on
+  the calling side knows the difference.
+- **A browser reaches it through the gateway's gRPC-Web filter**, which is
+  the same hop a browser takes to a Connect server anyway, because HTTP/2
+  trailers do not survive every path.
+
+What is lost is the thing the Connect server gives you for free: a unary
+call as an ordinary POST with a JSON body, curl-able without a generated
+client. Worth weighing, and worth writing down when a JVM service takes a
+boundary, rather than discovering it at three in the morning.
+
 ## Traps
 
 **A gRPC client in the cluster needs HTTP/2, and with the transport off there
