@@ -114,6 +114,22 @@ configuration file the second, and the account the workload runs as the
 third. It is worth a test, because every instance looks like a hang rather
 than an error.
 
+**A stream's name is tenant-scoped, not global.** A broker's streams and
+subjects live on the broker, not inside a Kubernetes namespace, so nothing
+about how Kubernetes scopes its own objects protects one install's stream
+from another's. Two installs that share a namespace but not a release name
+still share the broker; two installs that share a release name but not a
+namespace still share the broker too. Either alone is a name two installs
+can agree on by accident, and the two don't fail — one consumer quietly
+reads the other's events, or replays them, or both, and nothing reports it
+because every health check the two installs run is green. The name that
+survives both shapes of accident is the pair: this install's namespace
+**and** its install name, together — see
+[`examples/url-shortener`](../../examples/url-shortener/charts) for the
+convention (`installName`, defaulting to the release name) and the chart
+test that proves two installs never share a stream, a subject or a
+durable consumer name.
+
 ## 7. Exposure is a route with a parent the chart is given
 
 A chart that is reachable from outside renders **one route**, whose parent is
@@ -434,6 +450,7 @@ for it to be missing.
 | 4. object store | schema |
 | 5. key providers | the local provider runs in the gate |
 | 6. found, not made | chart test: neither chart renders the other's kinds |
+| 6. tenant-scoped names | chart test: two installs, varied by namespace and by install name in turn, never share a stream, a subject or a durable consumer name |
 | 7. exposure | chart golden; a negative fixture for an unattached policy |
 | 8. transport | the default render is byte-identical without it |
 | 11. two charts, two scopes | a chart test renders each tier, and asserts a `test` install mints none of the cloud kinds a `primary` does; the example installs from a test harness as well as a deployment |

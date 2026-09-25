@@ -20,6 +20,21 @@ and nothing else — and its GitHub Release lists the commits.
   moves to another tier; `identity-smoke.sh` is unchanged and not yet run
   anywhere.
 
+- **The url-shortener example's JetStream stream, its subjects and its
+  durable consumer names are now tenant-scoped, not global.** They used to
+  be a fixed name (`URL_SHORTENER`, `url-shortener.redirect`), which is
+  harmless on a disposable cluster and a silent collision on a shared one:
+  two installs that agreed on that name — two CI runs in one namespace, or
+  two engineers who each called their copy by the project's own name —
+  found each other's stream, and neither install failed. Both charts now
+  compute every one of those names from one formula, `installName`
+  (defaulting to the release name) plus the release's namespace, so that
+  sharing either alone no longer collides. A chart test renders two
+  installs, varied one way and then the other, and asserts neither shares
+  a name with the other. `docs/guides/events.md` has the rule and the
+  trap; `docs/contracts/platform.md` rule 6 has the naming half of "found,
+  not made".
+
 - **The archiver no longer crashes when the stream is quiet.** An empty
   fetch is reported by the client as the standard `TimeoutError`, and the
   archiver caught only the client's own subclass of it, so the first quiet

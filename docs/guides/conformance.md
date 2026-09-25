@@ -119,3 +119,10 @@ charts: the infrastructure one and the application one. The reasons are in
   installs it, and so does whatever installs a copy per engineer and per
   CI run. Both pass the same values. If one of them needs a different
   chart, the interface is wrong.
+- **Are cluster-global names tenant-scoped?** A stream, its subjects and
+  its durable consumer names live on the broker, not inside a namespace —
+  a name built from the namespace alone, or from the install name alone,
+  is a name two installs can share by accident, and neither install fails
+  when they do. Render two installs, vary the namespace and the install
+  name one at a time, and check that neither shares a name with the
+  other; `examples/url-shortener`'s chart test is the pattern.
