@@ -14,3 +14,21 @@ containerdConfigPatches:
   - |-
     [plugins."io.containerd.grpc.v1.cri".registry]
       config_path = "/etc/containerd/certs.d"
+# One node means one controller-manager and one scheduler: there is no
+# second one to hand off to, so leader election only adds a way to die.
+# Measured here: under host load the API server answers a lease renewal
+# too slowly, the component exits on "leaderelection lost", and nothing
+# reconciles until it restarts — no default ServiceAccount for a fresh
+# namespace, no rollout progress. `verify.sh` asserts the RUNNING pods
+# carry this flag, not just that the config asked for it.
+kubeadmConfigPatches:
+  - |
+    kind: ClusterConfiguration
+    controllerManager:
+      extraArgs:
+        - name: leader-elect
+          value: "false"
+    scheduler:
+      extraArgs:
+        - name: leader-elect
+          value: "false"
