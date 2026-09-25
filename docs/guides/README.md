@@ -17,7 +17,7 @@ that look like something else.
 | [identity-and-secrets.md](identity-and-secrets.md) | the account a workload runs as, and how a secret reaches it |
 | [events.md](events.md) | publishing and consuming, and how a client authenticates |
 | [probes-and-rollout.md](probes-and-rollout.md) | the two endpoints, and replacing an instance without a gap |
-| [logging-and-telemetry.md](logging-and-telemetry.md) | one stream, one level, and where traces go |
+| [logging-and-telemetry.md](logging-and-telemetry.md) | one stream, one level, where traces go, and how they stay whole |
 | [exposure.md](exposure.md) | the route, its parent, and why its rules are named |
 | [releases-and-images.md](releases-and-images.md) | one tag, every platform, no build step in the image |
 | [testing.md](testing.md) | what the gate proves, and what only a cluster can |

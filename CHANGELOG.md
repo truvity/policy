@@ -6,6 +6,16 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **`logging-and-telemetry.md` gains "A trace that stays whole"**, with
+  pointers from the events, RPC and object-storage guides and a new item in
+  the conformance review. Spans that exist per service but do not connect
+  pass every exporter's health check, so the guide names the five places
+  context is dropped (an RPC, a broker, a database, an object store, a
+  thread hand-off), the two decisions that are not configuration (trust the
+  caller or link to it; parent a single message but *link* a batch), the
+  lower-case `traceparent` header NATS needs, and the check that proves it:
+  fetch one trace by id and read its tree.
+
 - **The example's traces are one graph, not one fragment per service.**
   Every service was exporting spans and no request could be followed
   across them, because each hop began a trace of its own. Five joins,

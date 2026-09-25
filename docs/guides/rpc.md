@@ -83,6 +83,12 @@ call as an ordinary POST with a JSON body, curl-able without a generated
 client. Worth weighing, and worth writing down when a JVM service takes a
 boundary, rather than discovering it at three in the morning.
 
+**A call carries its trace.** The caller makes a client span and injects the
+trace context; the callee extracts it and, when its callers are its own
+platform, trusts it so its span is a child rather than a link. Without both
+halves each service reports a trace of its own for the same request. See
+[logging-and-telemetry.md](logging-and-telemetry.md#a-trace-that-stays-whole).
+
 ## Traps
 
 **A gRPC client in the cluster needs HTTP/2, and with the transport off there

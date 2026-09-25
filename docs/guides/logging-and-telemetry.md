@@ -107,6 +107,114 @@ and make an empty store unambiguous — without a series that is always
 present, "nothing is arriving" and "this service is quiet" look identical,
 and no query can tell you which.
 
+## A trace that stays whole
+
+**The rule.** One request is one trace, from the browser to the row it wrote.
+Spans that exist but do not connect are the failure this section is about:
+every service reports healthy, every store has data, and no request can be
+followed across two of them. That is what the example did until it was
+looked at from the trace viewer rather than from the exporters.
+
+A trace is joined at exactly the places context crosses a boundary, and each
+boundary drops it by default. There are five, and each needs something
+written in code — none of them is configuration.
+
+| Boundary | What carries it | What the code must do |
+|---|---|---|
+| Service to service, RPC | the `traceparent` header | the **caller** starts a client span and injects; the **callee** extracts and starts a server span that is its child |
+| Through the broker | the message's headers | the **publisher** injects into the message; the **consumer** extracts and starts a consumer span |
+| Into a database | the request's context | pass the request's context to every query, and give queries a span |
+| Into an object store | the request's context | the same, for every call the client makes |
+| Onto another thread | nothing, by default | hand the context over where the work is queued |
+
+### Trust the caller, or link to it
+
+A server span whose parent came from a header has a choice: be its child, or
+only **link** to it and start a trace of its own. The Connect interceptor's
+default is the link, and it is right for a service facing the internet, where
+any client could otherwise choose which trace the service joins and whether
+it is sampled.
+
+A service whose callers are its own platform should trust them
+(`otelconnect.WithTrustRemote()` in Go). The example's data service does,
+because every caller reaches it through the transport rules and none is
+anonymous. Leaving the default in place there is the mistake: every request
+becomes two traces, each looking complete, joined only by a link nobody
+follows.
+
+### Through a broker
+
+A broker does nothing with the trace context except keep what the publisher
+put in the message. Three details, each of which cost a debugging session:
+
+- **The header name is `traceparent`, in lower case.** NATS header names are
+  case-sensitive. A publisher that went through an HTTP-style carrier writes
+  `Traceparent`, which a consumer in another language looking for the name
+  the W3C specification gives will never find, and starts a trace of its own
+  without saying so. Inject into a plain map and set the keys directly, and
+  have every consumer lower-case what it reads.
+- **A consumer of one message is a child of the publisher.** It is the same
+  piece of work, later.
+- **A batching consumer links; it does not parent.** A component that holds
+  hundreds of messages and writes one object cannot make the write the child
+  of any one of them. It records a short span per message, each a child of
+  its publisher, and one span for the write that **links** to those. That
+  puts the archive inside the trace of every request it served without
+  pretending the write belongs to just one. A span carries at most 128
+  links, so cap the list rather than let a full batch look complete.
+
+### A thread is a boundary
+
+The current span lives in a thread-local. Work queued to another thread —
+an HTTP client's dispatcher, a pool, an async runtime — starts with no span
+unless the executor captures the context **where the work is queued**. The
+symptom is a client span with no parent, so every call starts a trace of its
+own even though a span was current a line earlier. In Kotlin, wrap the
+client's executor with `Context.taskWrapping`. Python's `asyncio.to_thread`
+and Node's async context copy it for you; a hand-made thread does not.
+
+### Databases and object stores
+
+Both are spans, or the trace ends at the service's edge and "was it the
+database?" has no answer. Two rules for the database:
+
+- **Record the statement text, never the arguments.** The text, with its
+  placeholders, is a bounded set and says which query was slow. The
+  arguments are user data, and a trace store is read by everyone who can
+  read any trace.
+- **Prefer a small callback of your own to a plugin that imports every
+  driver.** The published GORM plugin does, so a service that speaks to one
+  database ships the client for four; the example's copy is
+  [`gormtrace.go`](../../examples/url-shortener/internal/runtime/gormtrace.go).
+
+An object-store client gets its spans from the SDK's instrumentation; the
+example's archiver installs the botocore one before it builds the client.
+A missing row is an answer, not a failure — do not mark it an error.
+
+### Where to look
+
+| | |
+|---|---|
+| RPC, caller (TypeScript) | [`urls.ts`](../../examples/url-shortener/web/src/server/urls.ts), an interceptor |
+| RPC, callee (Go) | `otelconnect.NewInterceptor(otelconnect.WithTrustRemote())` in [`cmd/urls/main.go`](../../examples/url-shortener/cmd/urls/main.go) |
+| Publish (Go) | [`publisher.go`](../../examples/url-shortener/internal/events/publisher.go) |
+| Consume (Kotlin) | `consumed` in [`Stat.kt`](../../examples/url-shortener/stat/src/main/kotlin/com/truvity/example/stat/Stat.kt) |
+| Consume and link (Python) | [`tracing.py`](../../examples/url-shortener/log/src/url_shortener_log/tracing.py) |
+
+### Verifying it
+
+**Exporters healthy is not the claim.** Fetch ONE trace by its id from the
+trace store and read its tree: every service you expect must be in it, and
+every span but the root must have a parent that is also in it. A search
+that lists a span per service proves each service exports; only a single
+trace with more than one service in it proves they are connected.
+
+Test each boundary where it breaks, not only that a span exists: assert the
+callee's span has the caller's span id as its parent, and that the header a
+consumer reads is byte-for-byte the name the publisher wrote. The two
+failures above — a capitalised header and a parentless client span on
+another thread — both passed a "a span was created" test.
+
 ## Traps
 
 **A hardcoded level is a service that cannot be debugged without a release.**
