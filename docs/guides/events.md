@@ -47,11 +47,42 @@ it may not understand.
 that caused the event. A batching consumer links instead of parenting. See
 [logging-and-telemetry.md](logging-and-telemetry.md#a-trace-that-stays-whole).
 
+## Naming
+
+**A stream's name, its subjects and its durable consumer names are
+cluster-global, not namespace-scoped.** They live on the broker, and the
+broker has never heard of a Kubernetes namespace — nothing about how
+Kubernetes scopes its own objects protects one install's stream from
+another's.
+
+The rule: every one of those names derives from **this install's namespace
+and its install name, together**. Namespace alone collides every install
+sharing a namespace — two CI runs against one namespace, each installing
+under the application's own default release name. Install name alone
+collides two installs that happen to agree on a name in different
+namespaces — two engineers who each call their own copy by the project's
+name. The pair is the smallest thing that separates both.
+
+The example's two charts compute these names from one shared formula
+(`installName`, defaulting to the release name, in
+[`_helpers.tpl`](../../examples/url-shortener/charts/url-shortener-infra/templates/_helpers.tpl))
+instead of taking them as values — see
+[`platform.md` rule 6](../contracts/platform.md#6-streams-and-databases-are-things-the-service-finds-not-things-it-makes)
+for why a value is the wrong fix here: the name is this project's own
+convention, not a platform's.
+
 ## Traps
 
 **A service does not create the stream it reads.** A consumer that creates a
 missing stream will, one day, create it with the wrong retention on a cluster
 where it was deliberately absent, and nothing will report it.
+
+**A stream named by namespace only, or by install name only, still
+collides.** Both installs render, both install, and one consumer quietly
+reads the other's events — or replays what it already saw, or both — and
+nothing reports it, because every health check both installs run stays
+green. The chart test that catches it renders two installs varied one way
+and then the other and asserts neither shares a name with the other.
 
 **Never give up reconnecting.** A broker restart is an ordinary event; a
 service that exits on one turns a blip into a rollout.
