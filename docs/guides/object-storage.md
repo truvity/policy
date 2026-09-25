@@ -58,6 +58,11 @@ substitutes five lines instead of a mock. It also stops a caller reaching for
 a delete, a lifecycle rule or a bucket creation — operations that belong to
 whoever provisioned the store.
 
+**Every call to the store is a span**, under whatever is current — for a
+batching consumer, the span of the write. Install the SDK's instrumentation
+before the client is built. See
+[logging-and-telemetry.md](logging-and-telemetry.md#a-trace-that-stays-whole).
+
 ## Traps
 
 **A service that can create a bucket can create it in the wrong account**,

@@ -42,6 +42,11 @@ The body is the fact. Its **type and origin travel as message headers**, not
 inside the body, so a consumer can route on them without parsing a payload
 it may not understand.
 
+**The trace context travels in the message too**, as a lower-case
+`traceparent` header, so a consumer's span can be a child of the request
+that caused the event. A batching consumer links instead of parenting. See
+[logging-and-telemetry.md](logging-and-telemetry.md#a-trace-that-stays-whole).
+
 ## Traps
 
 **A service does not create the stream it reads.** A consumer that creates a

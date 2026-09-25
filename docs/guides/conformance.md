@@ -44,6 +44,12 @@ The rest, in the order that finds problems fastest:
    is an RPC, fan-out is an event, and a direct read of another service's
    store is written down where it is used, with the latency argument that
    justifies it.
+8. **Is one request one trace?** Fetch a single trace by its id from the trace
+   store and read the tree: every service the request touched is in it, and
+   no span but the root is missing its parent. Spans that exist per service
+   but do not connect are the failure, and every exporter's health check
+   passes while it is happening. The boundaries that drop context are listed
+   in [logging-and-telemetry.md](logging-and-telemetry.md#a-trace-that-stays-whole).
 
 ## Adopting the import ban
 
