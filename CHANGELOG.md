@@ -6,6 +6,14 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **The archiver no longer crashes when the stream is quiet.** An empty
+  fetch is reported by the client as the standard `TimeoutError`, and the
+  archiver caught only the client's own subclass of it, so the first quiet
+  second killed the process and the pod restarted in a loop whenever there
+  was no traffic (5-8 restarts in an hour on a quiet cluster, shown as a
+  "flaky" pod). It now catches the base class, in one small function with
+  a test that fails on the old handler.
+
 - **The archiver's write now shows inside each request's trace.** The write
   and its S3 call are one span in one trace (a batch cannot be any single
   request's child), so a trace opened on a redirect ended at "received" and
