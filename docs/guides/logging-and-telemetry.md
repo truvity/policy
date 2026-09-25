@@ -162,6 +162,14 @@ put in the message. Three details, each of which cost a debugging session:
   puts the archive inside the trace of every request it served without
   pretending the write belongs to just one. A span carries at most 128
   links, so cap the list rather than let a full batch look complete.
+- **Show the write in each request's own trace as well.** The write and the
+  object-store call beneath it live in the flush's trace, so a viewer
+  opened on a request ends at "received" and the write is one more search
+  away. Give each message a short `write` child, timed to the flush and
+  **linked** to it: the request's trace shows that the record was archived
+  and how long the write took, and the link is the way into the real spans.
+  Do not try to hang the store call itself under one request; it belongs to
+  all of them.
 
 ### A thread is a boundary
 
