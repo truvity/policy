@@ -6,6 +6,13 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **The archiver's write now shows inside each request's trace.** The write
+  and its S3 call are one span in one trace (a batch cannot be any single
+  request's child), so a trace opened on a redirect ended at "received" and
+  gave no sign the event had been archived. Each message now also gets a
+  short `archive.write` child, timed to the flush and linked to it. The
+  guide says why the S3 call itself stays under the flush.
+
 - **`logging-and-telemetry.md` gains "A trace that stays whole"**, with
   pointers from the events, RPC and object-storage guides and a new item in
   the conformance review. Spans that exist per service but do not connect
