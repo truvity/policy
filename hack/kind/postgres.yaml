@@ -1,0 +1,105 @@
+# Postgres for the cluster, as a plain server: no operator, because this box
+# proves what a chart RENDERS against Kubernetes' own admission and nothing
+# past it. A chart that describes an operator-managed database (a Cluster
+# resource, a managed role) is proved at the level a renderer can reach here,
+# and no deeper — see docs/decisions/0005-kind-is-the-gate.md's "Bad" list.
+#
+# Nothing here names anything about any example. A consumer of this box
+# reaches the server by its Service and by the `postgres-superuser` Secret
+# `up.sh` creates beside this file, and creates whatever databases and roles
+# its own fixture needs — the same split as the S3 stand-in beside it.
+#
+# The superuser Secret and the server's TLS certificate are NOT in this
+# file. Both are generated once, by `up.sh`, with a plain `kubectl create`
+# guarded by "does it already exist" — so re-running the box neither
+# rotates a credential every fixture already has nor fights a templated
+# placeholder for a Secret's own idempotence.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: postgres
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: postgres }
+  template:
+    metadata:
+      labels: { app: postgres }
+    spec:
+      # The certificate Secret is mounted read-only and root-owned; Postgres
+      # refuses a key file that is group- or world-readable, and refuses one
+      # it cannot read at all. The init container copies it into a volume
+      # Postgres's own account owns, at the permission the server demands,
+      # rather than fighting the Secret's mount options for both properties
+      # at once.
+      initContainers:
+        - name: tls
+          image: POSTGRES_IMAGE_PLACEHOLDER
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              cp /tls-src/tls.crt /tls-src/tls.key /pgtls/
+              chown 999:999 /pgtls/tls.crt /pgtls/tls.key
+              chmod 600 /pgtls/tls.key
+              chmod 644 /pgtls/tls.crt
+          volumeMounts:
+            - { name: tls-src, mountPath: /tls-src, readOnly: true }
+            - { name: pgtls, mountPath: /pgtls }
+      containers:
+        - name: postgres
+          image: POSTGRES_IMAGE_PLACEHOLDER
+          args:
+            - postgres
+            - -c
+            - ssl=on
+            - -c
+            - ssl_cert_file=/pgtls/tls.crt
+            - -c
+            - ssl_key_file=/pgtls/tls.key
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: postgres-superuser, key: password }
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - containerPort: 5432
+          readinessProbe:
+            exec: { command: ["pg_isready", "-U", "postgres"] }
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            exec: { command: ["pg_isready", "-U", "postgres"] }
+            periodSeconds: 10
+            initialDelaySeconds: 10
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql/data }
+            - { name: pgtls, mountPath: /pgtls }
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: pgtls
+          emptyDir: {}
+        - name: tls-src
+          secret: { secretName: postgres-tls }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: postgres
+spec:
+  selector: { app: postgres }
+  ports:
+    - port: 5432
+      targetPort: 5432

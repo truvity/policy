@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
-# Stands up the local cluster the charts and the example are tested against:
-# the same operators production runs, and a stand-in only where there is no
-# operator to prove.
+# Stands up the local cluster the charts and every example are tested
+# against: SERVERS ONLY, nothing that binds a chart to one platform's
+# choices.
+#
+# What it carries and why: hack/kind/README.md. What that split means for
+# an example's own database, stream and bucket: each example brings its own
+# FIXTURE, under its own directory, naming what it needs by the names its
+# chart takes — see examples/url-shortener/e2e/fixture.
 #
 # Idempotent. Running it against an existing cluster upgrades in place, which
-# is what makes it usable as a development loop rather than only as a CI step.
+# is what makes it usable as a development loop rather than only as a CI
+# step.
 set -euo pipefail
 cd "$(dirname "$0")"
 # shellcheck disable=SC1091
@@ -21,29 +27,95 @@ else
 fi
 kubectl config use-context "kind-${CLUSTER}" >/dev/null
 
-step "Gateway API ${GATEWAY_API_VERSION}"
-# CRDs only. A route needs them to exist; nothing here needs a controller
-# acting on one, and installing a gateway implementation would be minutes
-# spent proving somebody else's software.
-kubectl apply -f \
-  "https://github.com/kubernetes-sigs/gateway-api/releases/download/${GATEWAY_API_VERSION}/standard-install.yaml"
+step "the local registry ${REGISTRY_NAME}"
+# kind's own documented recipe: https://kind.sigs.k8s.io/docs/user/local-registry/
+#
+# A registry rather than `kind load`, because that is what a chart's own
+# `images.*.registry` value expects to reach, and because a second cluster
+# reusing this box (the whole point of making it example-agnostic) may need
+# to push its own images without a rebuild loading them straight into nodes.
+if [ "$(docker inspect -f '{{.State.Running}}' "$REGISTRY_NAME" 2>/dev/null || true)" != true ]; then
+  docker run -d --restart=always -p "127.0.0.1:${REGISTRY_PORT}:5000" \
+    --network bridge --name "$REGISTRY_NAME" "$REGISTRY_IMAGE" >/dev/null
+fi
 
-step "CloudNativePG ${CNPG_CHART_VERSION}"
-helm repo add cnpg https://cloudnative-pg.github.io/charts >/dev/null 2>&1 || true
-helm repo add nats https://nats-io.github.io/k8s/helm/charts/ >/dev/null 2>&1 || true
-helm repo update >/dev/null
-helm upgrade --install cnpg cnpg/cloudnative-pg \
-  --version "$CNPG_CHART_VERSION" \
-  --namespace cnpg-system --create-namespace \
-  --wait --timeout 5m
+# containerd on every node is told (by cluster.yaml's containerdConfigPatches)
+# to read a per-registry directory for `localhost:${REGISTRY_PORT}`; this
+# writes the file that directory needs. Redone on every run rather than
+# guarded, because it is one write and idempotent on its own.
+registry_dir="/etc/containerd/certs.d/localhost:${REGISTRY_PORT}"
+for node in $(kind get nodes --name "$CLUSTER"); do
+  docker exec "$node" mkdir -p "$registry_dir"
+  docker exec -i "$node" cp /dev/stdin "${registry_dir}/hosts.toml" <<EOF
+[host."http://${REGISTRY_NAME}:5000"]
+EOF
+done
+
+# The registry and the cluster's nodes must be on the same docker network for
+# the host name above to resolve. kind names its network "kind"; connecting
+# is a no-op if it is already connected.
+if [ "$(docker inspect -f '{{json .NetworkSettings.Networks.kind}}' "$REGISTRY_NAME")" = null ]; then
+  docker network connect kind "$REGISTRY_NAME"
+fi
+
+# Documents the mapping for anything that reads it — kind's own convention,
+# https://github.com/kubernetes/enhancements/tree/master/keps/sig-cluster-lifecycle/generic/1755-communicating-a-local-registry
+kubectl apply -f - >/dev/null <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: local-registry-hosting
+  namespace: kube-public
+data:
+  localRegistryHosting.v1: |
+    host: "localhost:${REGISTRY_PORT}"
+    help: "https://kind.sigs.k8s.io/docs/user/local-registry/"
+EOF
+
+step "Postgres"
+kubectl create namespace postgres --dry-run=client -o yaml | kubectl apply -f - >/dev/null
+
+# The superuser's password, generated once per cluster and never again: a
+# `kubectl create` that finds the Secret already there is left alone, so
+# re-running the box does not rotate a credential every already-provisioned
+# database still uses. Created BEFORE the Deployment below, which mounts it
+# — applying the Deployment first would still converge once the Secret
+# exists, but only after a pod sat failing for no reason a reader of the log
+# could guess.
+if ! kubectl -n postgres get secret postgres-superuser >/dev/null 2>&1; then
+  kubectl -n postgres create secret generic postgres-superuser \
+    --type=kubernetes.io/basic-auth \
+    --from-literal=username=postgres \
+    --from-literal=password="$(head -c 24 /dev/urandom | base64 | tr -d '/+=')"
+fi
+
+# A self-signed server certificate, so `sslmode=require` — which every
+# chart's rendered connection string asks for — has something to negotiate.
+# `sslmode=require` only asks for an encrypted channel; it does not verify
+# the certificate against any authority, so a throwaway self-signed pair is
+# the whole answer here. Idempotent on the same terms as the password above.
+if ! kubectl -n postgres get secret postgres-tls >/dev/null 2>&1; then
+  tls=$(mktemp -d)
+  trap 'rm -rf "$tls"' EXIT
+  openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 \
+    -keyout "$tls/tls.key" -out "$tls/tls.crt" \
+    -days 30 -nodes -subj "/CN=postgres" >/dev/null 2>&1
+  kubectl -n postgres create secret tls postgres-tls \
+    --cert="$tls/tls.crt" --key="$tls/tls.key"
+fi
+
+sed "s|POSTGRES_IMAGE_PLACEHOLDER|${POSTGRES_IMAGE}|g" postgres.yaml | kubectl apply -f -
+kubectl -n postgres rollout status deployment/postgres --timeout=5m
 
 step "NATS ${NATS_CHART_VERSION} with JetStream"
 # The memory store is enabled EXPLICITLY, and it is not a detail. With
-# JetStream on and no memory store configured, the server accepts the
-# controller's connection, reports healthy, and refuses every memory stream
-# with "insufficient memory resources available" — so a chart that asks for
-# one fails in the box and works in production, which is the opposite of
-# what a test environment is for. The smoke test is what found it.
+# JetStream on and no memory store configured, the server accepts a
+# connection, reports healthy, and refuses every memory stream with
+# "insufficient memory resources available" — so a chart that asks for one
+# fails in the box and works in production, which is the opposite of what a
+# test environment is for. The smoke test is what found it.
+helm repo add nats https://nats-io.github.io/k8s/helm/charts/ >/dev/null 2>&1 || true
+helm repo update nats >/dev/null
 helm upgrade --install nats nats/nats \
   --version "$NATS_CHART_VERSION" \
   --namespace nats --create-namespace \
@@ -60,81 +132,6 @@ helm upgrade --install nats nats/nats \
 # afternoon.
 kubectl -n nats rollout restart statefulset/nats
 kubectl -n nats rollout status statefulset/nats --timeout=5m
-
-step "NACK ${NACK_CHART_VERSION}"
-# The controller that turns a stream resource into a stream. Without it a
-# chart's stream renders, applies, and nothing happens — which is exactly the
-# failure a cluster is supposed to catch and a container cannot.
-helm upgrade --install nack nats/nack \
-  --version "$NACK_CHART_VERSION" \
-  --namespace nats \
-  --set jetstream.enabled=true \
-  --set jetstream.nats.url=nats://nats.nats.svc:4222 \
-  --wait --timeout 5m
-
-step "cert-manager ${CERT_MANAGER_CHART_VERSION}"
-# The authority, and the thing that mounts an identity into a pod. Installed
-# before the driver, because the driver's approver is a cert-manager
-# extension and the custom resources have to exist first.
-helm repo add jetstack https://charts.jetstack.io >/dev/null 2>&1 || true
-#
-# THE APPROVER IS TURNED OFF HERE, AND THIS IS THE WHOLE POINT.
-#
-# cert-manager ships an approver that approves every request for an issuer it
-# knows about. Leave it on and the identity driver's own approver never gets
-# a say: an account that may create a request gets ANY identity it asks for,
-# including its neighbour's. The driver still works, the certificates still
-# mount, every log line still says success — and the attestation is
-# decoration.
-#
-# Measured in this box before it was disabled: an account called `alice`
-# submitted a request naming `bob` by hand and was issued a certificate for
-# it. Nothing anywhere reported a problem.
-helm upgrade --install cert-manager jetstack/cert-manager \
-  --version "$CERT_MANAGER_CHART_VERSION" \
-  --namespace cert-manager --create-namespace \
-  --set crds.enabled=true \
-  --set "extraArgs={--controllers=*\,-certificaterequests-approver}" \
-  --wait --timeout 5m
-
-step "the trust domain"
-# The root is generated here rather than asked of cert-manager, because the
-# line above turned off the only thing that would have approved it. See
-# identity.yaml for why that is a consequence rather than a workaround.
-#
-# Idempotent: an existing root is kept, so re-running the box does not
-# invalidate every identity it has already issued.
-if ! kubectl -n cert-manager get secret policy-trust >/dev/null 2>&1; then
-  root=$(mktemp -d)
-  trap 'rm -rf "$root"' EXIT
-  openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 \
-    -keyout "$root/tls.key" -out "$root/tls.crt" \
-    -days 30 -nodes -subj "/CN=policy-trust" >/dev/null 2>&1
-  kubectl -n cert-manager create secret tls policy-trust \
-    --cert="$root/tls.crt" --key="$root/tls.key" >/dev/null
-fi
-
-kubectl apply -f identity.yaml
-
-step "the identity driver ${CSI_DRIVER_SPIFFE_CHART_VERSION}"
-# THE PROPERTY THIS PROVES: the driver asks for a certificate using the POD'S
-# OWN account token, which the kubelet hands it, and the approver refuses any
-# request whose identity is not the one the requester holds. A pod cannot ask
-# for a certificate naming its neighbour's account — which is the difference
-# between an identity and a claim.
-helm upgrade --install csi-driver-spiffe jetstack/cert-manager-csi-driver-spiffe \
-  --version "$CSI_DRIVER_SPIFFE_CHART_VERSION" \
-  --namespace cert-manager \
-  --set "app.trustDomain=${TRUST_DOMAIN}" \
-  --set app.issuer.name=policy-workload \
-  --set app.issuer.kind=ClusterIssuer \
-  --set app.issuer.group=cert-manager.io \
-  --set app.driver.volumes[0].name=root-cas \
-  --set app.driver.volumes[0].secret.secretName=policy-trust \
-  --set app.driver.volumeMounts[0].name=root-cas \
-  --set app.driver.volumeMounts[0].mountPath=/var/run/cert-manager-csi-driver-spiffe \
-  --set app.driver.sourceCABundle=/var/run/cert-manager-csi-driver-spiffe/tls.crt \
-  --wait --timeout 5m
 
 step "S3"
 sed "s|LOCALSTACK_IMAGE_PLACEHOLDER|${LOCALSTACK_IMAGE}|" localstack.yaml | kubectl apply -f -

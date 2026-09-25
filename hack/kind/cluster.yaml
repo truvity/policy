@@ -4,3 +4,13 @@ apiVersion: kind.x-k8s.io/v1alpha4
 # chart's contract depends on, and would cost minutes on every run.
 nodes:
   - role: control-plane
+# kind's own documented local-registry recipe
+# (https://kind.sigs.k8s.io/docs/user/local-registry/): `config_path` points
+# containerd at a per-registry directory, and `up.sh` writes a `hosts.toml`
+# into it on every node once the registry container exists — the directory
+# has to be named in the cluster's own config, but the file inside it can
+# only be written after the node does.
+containerdConfigPatches:
+  - |-
+    [plugins."io.containerd.grpc.v1.cri".registry]
+      config_path = "/etc/containerd/certs.d"

@@ -59,27 +59,25 @@ vuln:
     govulncheck ./...
     cd examples/url-shortener && govulncheck ./...
 
-# The local cluster the charts and the example are tested against: the same
-# operators a deployment carries. Idempotent — running it against an existing
-# cluster upgrades in place, which is what makes it a development loop rather
-# than only a CI step. NOT part of `check`, which needs nothing but the
-# checkout; this needs a container runtime.
+# The local cluster the charts and every example are tested against: servers
+# only (Postgres, NATS with JetStream, an S3 stand-in, a local registry), no
+# operator and nothing that names any example — see hack/kind/README.md.
+# Idempotent — running it against an existing cluster upgrades in place,
+# which is what makes it a development loop rather than only a CI step. NOT
+# part of `check`, which needs nothing but the checkout; this needs a
+# container runtime.
 [doc("Create or upgrade the local cluster")]
 cluster:
     bash hack/kind/up.sh
 
-# Ask whether each thing in the box is usable, which is not the same question
-# as whether it installed.
+# Ask each server in the box a REAL question — a query, a publish and a
+# consume, a put and a get, a push and a pull — not whether it installed.
+# There is no operator on this box any more (see hack/kind/README.md), so
+# this is also the question `cluster-smoke` used to ask: there is nothing
+# left for a separate step to prove.
 [doc("Ask whether the box is usable")]
 cluster-verify:
     bash hack/kind/verify.sh
-
-# Prove an operator ACTS: a database becomes a database, a stream becomes a
-# stream, a bucket becomes a bucket. This is the question a renderer cannot
-# answer and the reason the box is a cluster.
-[doc("Prove every operator acts")]
-cluster-smoke:
-    bash hack/kind/smoke.sh
 
 # Build the example's three images straight into the cluster's nodes. No
 # registry: ko loads them, and the chart is installed with `Never` as the
@@ -134,7 +132,17 @@ example-images:
     docker build --quiet --file log/Dockerfile --tag kind.local/log:latest ../.. >/dev/null
     kind load docker-image kind.local/log:latest --name policy
 
-# Install the example: the infrastructure release, then the application.
+# Stand in for the url-shortener-infra chart, which kind never installs (see
+# docs/decisions/0005-kind-is-the-gate.md): the database, the two roles, the
+# stream and the bucket the application chart's values point at, under the
+# EXACT names examples/url-shortener/e2e/fixture reads off the charts. Must
+# run before `example-install`, which the fixture provisions for.
+[doc("Provision what the infra chart would, by name")]
+example-fixture:
+    bash examples/url-shortener/e2e/fixture/apply.sh
+
+# Install the example's APPLICATION chart, on top of what example-fixture
+# provisioned.
 [doc("Install the example into the local cluster")]
 example-install:
     bash examples/url-shortener/hack/install.sh
@@ -146,23 +154,21 @@ example-install:
 example-smoke:
     bash examples/url-shortener/hack/smoke.sh
 
-# Prove the transport rule on the cluster: the platform attests an identity,
-# the service checks it, and a caller holding a REAL identity that is not on
-# the list is closed at the handshake. The second half is the one worth
-# having — issuing identities correctly while admitting anyone who asks is
-# the failure that looks like success from every other angle.
-[doc("Prove transport identity end to end")]
-example-identity:
-    bash examples/url-shortener/hack/identity-smoke.sh
-
 # The whole cluster tier, from nothing.
+#
+# No identity step: transport identity testing moved off the box entirely
+# (0005) and examples/url-shortener/hack/identity-smoke.sh is not yet
+# ported to wherever it lands — a later task, not this one.
 [doc("The whole cluster tier, from nothing")]
-cluster-all: cluster cluster-verify cluster-smoke example-images example-install example-smoke example-identity
+cluster-all: cluster cluster-verify example-images example-fixture example-install example-smoke
 
-# Remove it
+# Remove it, and the registry container beside it — disk is a shared
+# resource on the machine this usually runs on, and a container `up.sh`
+# started is this recipe's to remove.
 [doc("Remove the local cluster")]
 cluster-down:
     kind delete cluster --name policy
+    docker rm -f kind-registry >/dev/null 2>&1 || true
 
 # Render and validate every chart.
 #

@@ -70,6 +70,22 @@ The gate cannot see any of these, and each one has happened here:
   has no effect until a restart;
 - credentials that are correct and rights that are not.
 
+## The box installs no infra chart
+
+The local cluster carries SERVERS ONLY — a plain Postgres, NATS with
+JetStream, an S3 stand-in, a local registry — and no operator: no
+CloudNativePG, no NATS controller. An example's own infra-shaped chart
+(one that renders a `Cluster` or a `Stream` custom resource) is never
+installed here; installing it would prove one example's platform choices
+on infrastructure meant to outlive any one example.
+
+What that chart would have provisioned is instead an example's own
+FIXTURE, under the example's own directory, naming what it creates by the
+exact names the application chart takes as values — rendered from the
+chart, not repeated by hand, so the fixture cannot drift from the
+interface it stands in for. See `examples/url-shortener/e2e/fixture` and
+`docs/decisions/0005-kind-is-the-gate.md`'s amendment.
+
 ## The suite
 
 The cluster suite does not assert that things installed. It asserts that the
