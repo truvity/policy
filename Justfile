@@ -254,6 +254,7 @@ ts:
     cd ../examples/url-shortener/web
     yarn install --immutable
     yarn typecheck
+    yarn test --run
     yarn build
 
 # The rules that hold for every file in this repository.

@@ -107,6 +107,43 @@ and make an empty store unambiguous — without a series that is always
 present, "nothing is arriving" and "this service is quiet" look identical,
 and no query can tell you which.
 
+## Log/trace correlation
+
+**The rule.** Every JSON log record written while a span is current carries
+`trace_id` and `span_id` as top-level fields — lower-case hex, the W3C
+forms, the names the OpenTelemetry specification itself recommends for
+trace context in a log format that is not OTLP. A record written while no
+span is current has neither field: **absent, not an empty string and not a
+zero value**, so "no trace" and "trace zero" cannot be confused by whatever
+reads the line back.
+
+There is no configuration for this. It follows the same rule OTLP logs stay
+off for: a service that already exports traces correctly needs nothing
+extra turned on to make its log lines findable from one, and a service that
+never starts telemetry gets no fields and no error either.
+
+**Use the context-taking log call.** A logger call that is not handed the
+request's (or the message's, or the query's) context cannot know which span
+was current for it, and gets no fields — even while a span is current
+somewhere else in the process. That is deliberate, not a gap: a field that
+appeared because *some* span happened to be current would point at the
+wrong trace as often as the right one, which is worse than pointing at
+none. Go's context-less `Logger.Info` is the clearest case, because nothing
+else in the language would stop a mistake there — Python's and
+TypeScript's OpenTelemetry contexts are ambient, so a call inside the right
+`async`/await chain gets the fields without passing anything explicitly,
+but a callback that escaped that chain (a hand-rolled thread, a detached
+callback) is the same failure by a different route.
+
+### Where it lives
+
+| Language | | |
+|---|---|---|
+| Go | an `slog.Handler` wrapping the service's own, in the root `telemetry` package | reads the span from the `context.Context` the `Handle` call receives |
+| Python | a `structlog` processor in `truvity_policy` | reads `opentelemetry.trace.get_current_span()`; imported lazily, so a consumer who never took the `telemetry` extra gets a no-op, not an import error |
+| TypeScript | wherever the JSON logger already is | reads `@opentelemetry/api`'s active context the same way a span-producing interceptor does |
+| Kotlin | the OpenTelemetry Logback MDC instrumentation, wrapping the appender that already writes structured JSON | the Spring Boot starter does not bring this in by itself — it has to be added and wired in `logback.xml` as an appender wrapping the existing one |
+
 ## A trace that stays whole
 
 **The rule.** One request is one trace, from the browser to the row it wrote.

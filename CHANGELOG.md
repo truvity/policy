@@ -35,6 +35,22 @@ and nothing else — and its GitHub Release lists the commits.
   trap; `docs/contracts/platform.md` rule 6 has the naming half of "found,
   not made".
 
+- **A log line can be followed to its trace, and a trace to its log lines.**
+  Every JSON log record written while a span is current now carries
+  `trace_id` and `span_id` — lower-case hex, the W3C forms, the names the
+  OpenTelemetry specification recommends outside OTLP — as top-level
+  fields, in all four languages. The fields are absent, not empty, when no
+  span is current. Go reads the span from the record's own context, so
+  `log.InfoContext(ctx, ...)` carries it and a call with no context carries
+  nothing; Python and TypeScript read the active OpenTelemetry context, and
+  stay optional extras — the fields are simply absent where the SDK was
+  never installed; Kotlin wires the OpenTelemetry Logback MDC
+  instrumentation, which the Spring Boot starter does not bring in on its
+  own. No configuration key and no enable flag: the correlation follows
+  whether a span happens to be current, the same way the trace itself does.
+  `logging-and-telemetry.md` gains a section naming the fields and the
+  degradation.
+
 - **The archiver no longer crashes when the stream is quiet.** An empty
   fetch is reported by the client as the standard `TimeoutError`, and the
   archiver caught only the client's own subclass of it, so the first quiet
