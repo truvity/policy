@@ -1,93 +1,103 @@
 # The local cluster
 
-A Kubernetes cluster on your machine, carrying the same operators a
-deployment carries, so a chart is proved against the controller that will act
-on it rather than against a renderer.
+A Kubernetes cluster on your machine, carrying SERVERS ONLY — a plain
+Postgres, NATS with JetStream, an S3 stand-in, and a local registry. No
+operator, and nothing here names anything about any example: a chart that
+renders a CNPG `Cluster` or a JetStream `Stream` is proved only at the level
+a renderer can reach — see
+[0005-kind-is-the-gate.md](../../docs/decisions/0005-kind-is-the-gate.md)'s
+"Bad" list for what that trades away.
 
 ```sh
 just cluster        # create or upgrade it, then check it is usable
-just cluster-smoke  # prove every operator ACTS
 just cluster-down   # remove it
 ```
 
-About two minutes to stand up from nothing, and seconds when it already
-exists. The smoke test adds two or three, most of it waiting for a database.
-Measured end to end on a hosted runner with nothing cached: 3m21s.
+About a minute to stand up from nothing, seconds when it already exists.
+
+## Why servers only
+
+This box used to carry the CloudNativePG operator, NATS's own controller
+(NACK), cert-manager and its SPIFFE driver: a chart that rendered a
+`Cluster` or a `Stream` custom resource was proved against the controller
+that would act on it in a real deployment.
+
+That coupled the box to ONE example's platform. A `Cluster` resource, a
+managed role, a `Stream` custom resource — these are `url-shortener`'s own
+chart's choices, made by the `url-shortener-infra` chart, which binds an
+application to a specific platform (see that chart's own header comment).
+Installing it here would make this box prove one example's platform
+choices and nothing else's, on infrastructure every future example
+would have to fight or ignore.
+
+So the box stopped being a platform. It is SERVERS: a database, a broker,
+an object store, a registry — the things ANY chart's fixture can reach by
+endpoint, regardless of which operator a real deployment reconciles that
+endpoint through. What an infra-shaped chart would have provisioned is now
+an example's own job, under its own directory, naming what it creates by
+the names its application chart takes — see
+[`examples/url-shortener/e2e/fixture`](../../examples/url-shortener/e2e/fixture)
+for the worked example.
 
 ## What is in it, and why
 
-| Component | Why it is the real thing |
+| Component | Why it is here |
 |---|---|
-| CloudNativePG | a chart that renders a database resource is only proved when an operator turns it into a database |
-| NATS with JetStream, and its controller | a stream resource applied with no controller is accepted, stored, and never becomes a stream |
-| Gateway API CRDs | a route needs them to exist at all. No controller: nothing here needs one acting on a route, and installing an implementation is minutes spent proving somebody else's software |
-| An S3 implementation | the one stand-in, because there is no operator to prove. It is an endpoint, not a product: the schemas address a store by endpoint, region and path style, so swapping it for a real bucket is configuration |
+| Postgres | a plain server: a database and two roles, by SQL, the same connection contract every chart's fixture reaches |
+| NATS with JetStream | a plain server: a stream, a publish, a consume, by the client protocol every chart's fixture reaches |
+| An S3 implementation | the one stand-in this box has ever needed one for: no vendor runs a licensed object store for a laptop. It is an endpoint, not a product — a schema addresses a store by endpoint, region and path style, so swapping it for a real bucket is configuration |
+| A local registry | kind's own documented recipe (https://kind.sigs.k8s.io/docs/user/local-registry/): every node resolves `localhost:5001` to it, so a chart's `images.*.registry` value can be proved against a real push and pull rather than `kind load` |
 
 Versions live in one file, [`versions.env`](versions.env), so "which version
 is the box on" has an answer that is not a grep through three scripts.
 
-## The two scripts, and why they are two
+## The two scripts
 
-[`up.sh`](up.sh) installs. [`verify.sh`](verify.sh) asks whether each thing is
-**usable**, which is a different question: `helm --wait` already reported
-success, and an operator whose CRD is missing or a server running without the
-limit it needs both report healthy pods.
+[`up.sh`](up.sh) installs, idempotently — re-running it upgrades an existing
+cluster in place rather than starting over, which is what makes it a
+development loop rather than only a CI step.
 
-[`smoke.sh`](smoke.sh) is the third question and the one that matters: does
-an operator **act**. It creates a database, a stream and a bucket, waits for
-each to become real, and removes them. Everything lives in a namespace of its
-own, so the box is left as it was found.
+[`verify.sh`](verify.sh) asks each server a REAL question, not whether its
+pod is `Running`: a SQL query, a publish read back through JetStream, an
+object put and read back, an image pushed from the host and pulled by a
+node. A healthy pod answers none of these on its own — this is the same
+lesson the box's earlier, operator-carrying design learned the hard way
+(below), just asked of servers instead of controllers now that there is no
+controller to ask it of separately.
 
-## What the smoke test already caught
+## What this used to catch, and still would
 
-The box shipped with JetStream enabled and no memory store configured. The
-server was healthy, the controller connected, and every memory stream was
-refused with "insufficient memory resources available". A chart asking for
-one would have failed here and worked in production, which is the opposite of
-what a test environment is for.
+The box shipped, in its earlier design, with JetStream enabled and no
+memory store configured. The server was healthy, a controller connected,
+and every memory stream was refused with "insufficient memory resources
+available". A chart asking for one would have failed here and worked in
+production, which is the opposite of what a test environment is for.
 
-The fix exposed a second trap: JetStream's store limits are read at start-up
-and are not hot-reloadable, so an upgrade that changes them leaves the server
-running on the limit it booted with. `up.sh` restarts the server, and
-`verify.sh` asserts the limit the server is **running** with rather than the
-one its configuration holds.
-
-Both are the reason `smoke.sh` exists. Neither is visible from a manifest.
+The fix exposed a second trap: JetStream's store limits are read at
+start-up and are not hot-reloadable, so an upgrade that changes them leaves
+the server running on the limit it booted with. `up.sh` restarts the
+server after every upgrade for exactly this reason, and `verify.sh`'s
+round trip — not a `varz` limit it never checks any more — is what would
+catch the server refusing to hold it.
 
 ## What is deliberately absent
 
-- **A gateway implementation.** The CRDs are enough to render and apply a
-  route. Proving that traffic flows is a different test, and it belongs where
-  the traffic is.
-- **Authentication on the broker.** The box has one tenant and no secrets.
-  A deployment that authenticates its broker configures it; the schema has
-  the field.
-- **Anything cloud.** No identity, no managed services, no roles. A chart is
-  installed here with its cloud integration switched off, and the
+- **Every operator.** No CNPG, no NACK, no cert-manager. A chart that
+  describes an operator-managed resource is proved as far as a renderer
+  and the Kubernetes API's own admission can prove it (see the `charts`
+  job and `hack/kubeconform.sh`), and no further, on this box.
+- **Workload identity.** Transport identity testing (mTLS, SPIFFE) moved
+  off this box entirely; it belongs to a different tier, one with a real
+  certificate authority behind it. `examples/url-shortener/hack/identity-smoke.sh`
+  still exists and is not yet run anywhere — a later task ports it to
+  where it now belongs.
+- **A gateway implementation, and its CRDs.** Nothing here renders a route
+  by default, and nothing that does needs a controller acting on one.
+- **Anything cloud.** No managed services, no roles, no cloud objects. A
+  chart is installed here with its cloud integration switched off, and the
   configuration that integration needs is proved where it exists.
 
-That last absence is the honest boundary of this box: it proves the charts
-and the code, and it cannot prove the identity plane. What can only be proved
-against a real deployment is run by whoever has one, against their own.
-
-## Workload identity
-
-cert-manager, its SPIFFE driver and that driver's approver, over a
-self-signed authority. The trust domain is in `versions.env`.
-
-The driver asks for a certificate using the **pod's own account token**,
-which the kubelet hands it, and the approver refuses any request whose
-identity is not the one the requester holds. That is what makes an identity
-here an identity rather than a claim.
-
-**cert-manager's own approver is turned off, deliberately.** It approves
-every request for an authority it knows, so with it on the driver's approver
-never gets a say and any account that may create a request receives any
-identity it asks for. Nothing fails when this is wrong: certificates mount,
-services connect, every log line says success.
-
-Measured here before it was disabled: an account called `alice` submitted a
-request naming another account by hand and was issued a certificate for it.
-With the approver off, the same request sits inert and nothing is issued.
-`verify.sh` asserts the flag, because the two states are indistinguishable
-from any other angle.
+That absence is the honest boundary of this box: it proves what a chart
+RENDERS and what a plain server ANSWERS, and it cannot prove an operator's
+reconciliation, an identity plane, or a cloud integration. What only a real
+deployment can prove is run by whoever has one.

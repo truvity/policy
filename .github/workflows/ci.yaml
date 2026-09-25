@@ -46,8 +46,11 @@ jobs:
     with:
       recipes: '["charts"]'
 
-  # The local cluster, stood up from nothing, asked to prove that every
-  # operator acts, and then made to run the example end to end.
+  # The local cluster, stood up from nothing — servers only, no operator; see
+  # docs/decisions/0005-kind-is-the-gate.md and hack/kind/README.md — asked
+  # whether each server it carries is usable, and then made to run the
+  # example end to end, the example's own fixture standing in for the infra
+  # chart kind never installs.
   #
   # This is the gate decision 0005 describes. It runs on pull requests
   # because it is now the only place several things are checked at all: that
@@ -66,24 +69,24 @@ jobs:
           enable-cache: "true"
       - name: the box stands up
         run: devbox run -- just cluster
-      - name: every operator acts
-        run: devbox run -- just cluster-smoke
+      - name: every server answers
+        run: devbox run -- just cluster-verify
       - name: the example's images
         run: devbox run -- just example-images
+      - name: the example's fixture — what the infra chart would provide, by name
+        run: devbox run -- just example-fixture
       - name: the example installs
         run: devbox run -- just example-install
       - name: the example works
         run: devbox run -- just example-smoke
-      - name: identity is attested, checked, and refused when it should be
-        run: devbox run -- just example-identity
       - name: what the cluster saw, if it did not
         if: failure()
         run: |
           kubectl get pods -A || true
           kubectl -n shortener describe pods || true
           kubectl -n shortener logs -l app.kubernetes.io/name=url-shortener --all-containers --tail=50 || true
-          kubectl -n nats logs deploy/nack --tail=50 || true
-          kubectl -n cnpg-system logs deploy/cnpg-cloudnative-pg --tail=50 || true
+          kubectl -n postgres logs deploy/postgres --tail=50 || true
+          kubectl -n nats logs statefulset/nats --tail=50 || true
 
   # Stable name for branch protection: the matrix reports as "recipes / lint"
   # and so on, so a required context called "check" would never arrive and

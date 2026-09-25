@@ -108,3 +108,25 @@ probes rather than against an environment.
 - The stand-in for object storage is pinned by digest and is a community
   build. That is a supply-chain dependency like any other, and it is the
   reason the store is configured by endpoint rather than by product.
+
+## Amendment: the box installs no infra chart
+
+This cluster used to carry every operator a worked example's infra chart
+needed — CloudNativePG, NATS's own controller — so that chart could be
+installed here like any other. That bound the box to one example's platform
+choices: a `Cluster` resource, a managed role, a `Stream` custom resource
+are `url-shortener-infra`'s decisions, not this box's, and a second example
+would either fight them or need its own cluster.
+
+**The box is SERVERS ONLY now — a plain Postgres, NATS with JetStream, an
+S3 stand-in, a local registry — and installs no infra-shaped chart.** What
+such a chart would have provisioned is an example's own job: a FIXTURE,
+under the example's own directory, naming what it creates by the exact
+names the example's application chart takes as values. `hack/kind/README.md`
+says why; `examples/url-shortener/e2e/fixture` is the worked example.
+
+The infra chart itself is unaffected — it still renders, still has goldens,
+still gets validated against the Kubernetes API's own schemas in the
+`charts` job. It is simply never installed on a public repository's local
+cluster, because installing it would prove one platform's choices on
+infrastructure meant to outlive any one example.

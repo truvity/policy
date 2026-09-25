@@ -6,6 +6,20 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **The local cluster (`hack/kind`) installs no infra-shaped chart.** It now
+  carries servers only — a plain Postgres, NATS with JetStream, an S3
+  stand-in, a local registry — and no operator: no CloudNativePG, no NATS
+  controller, no cert-manager. `url-shortener-infra` still renders, still
+  has goldens, and is still validated against the Kubernetes API's own
+  schemas; it is simply never installed here, because doing so proved one
+  example's platform choices on infrastructure meant to outlive any one
+  example. What it would have provisioned is now the worked example's own
+  fixture (`examples/url-shortener/e2e/fixture`), which reads the names it
+  needs off the charts rather than repeating them. Workload-identity testing
+  (`example-identity`) is removed from this box for the same reason and
+  moves to another tier; `identity-smoke.sh` is unchanged and not yet run
+  anywhere.
+
 - **The archiver no longer crashes when the stream is quiet.** An empty
   fetch is reported by the client as the standard `TimeoutError`, and the
   archiver caught only the client's own subclass of it, so the first quiet
