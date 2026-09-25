@@ -14,6 +14,12 @@ and nothing else — and its GitHub Release lists the commits.
   "flaky" pod). It now catches the base class, in one small function with
   a test that fails on the old handler.
 
+- **The redirect service's request spans are named for the route that served
+  them.** Every span read `GET /`: the tracing middleware named it at the
+  start, when the only route the router has matched is the middleware's own.
+  It is now named after the handler has run, so a trace says which handler a
+  request reached. Still the route, never the path.
+
 - **The archiver's write now shows inside each request's trace.** The write
   and its S3 call are one span in one trace (a batch cannot be any single
   request's child), so a trace opened on a redirect ended at "received" and
