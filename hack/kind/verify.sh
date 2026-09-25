@@ -23,6 +23,24 @@ bad() { printf '  FAIL  %s\n' "$1"; fail=1; }
 
 step() { printf '\n\033[1m==> %s\033[0m\n' "$1"; }
 
+step "the control plane: no leader election to lose"
+# A single-node box has no second controller-manager or scheduler to hand
+# off to, so leader election only adds a way to die: under host load the
+# API server answers a lease renewal too slowly, the component exits on
+# "leaderelection lost", and nothing reconciles until it restarts — no
+# default ServiceAccount for a fresh namespace, no rollout progress.
+# hack/kind/cluster.yaml turns it off; this asks the RUNNING pods, not the
+# config that asked for it, on the same principle as every check above.
+for component in kube-controller-manager kube-scheduler; do
+  cmd=$(kubectl -n kube-system get pod -l "component=$component" \
+    -o jsonpath='{.items[0].spec.containers[0].command}' 2>/dev/null || true)
+  if echo "$cmd" | grep -q -- '--leader-elect=false'; then
+    ok "$component runs with --leader-elect=false"
+  else
+    bad "$component is not running with --leader-elect=false: $cmd"
+  fi
+done
+
 step "Postgres: a real query"
 # The container is named explicitly: without it `kubectl exec` still works
 # but prints "Defaulted container ..." on stdout ahead of the answer, which
