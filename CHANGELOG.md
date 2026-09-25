@@ -6,6 +6,35 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **The example's traces are one graph, not one fragment per service.**
+  Every service was exporting spans and no request could be followed
+  across them, because each hop began a trace of its own. Five joins,
+  each a place context was being dropped:
+
+  - **web to urls**: the web server's client now makes a client span per
+    call and puts the trace context on the request. urls **trusts** the
+    incoming parent (`otelconnect.WithTrustRemote()`); the default is to
+    only *link* to an untrusted caller, which is right for a service
+    facing the internet and wrong for one whose callers are its own
+    platform.
+  - **redirect to the broker to stat and log**: the publisher writes
+    `traceparent` into the message in lower case (NATS header names are
+    case-sensitive, and an HTTP-style carrier would have written
+    `Traceparent` where no other language looks). The Kotlin consumer
+    continues the trace; the Python archiver records a span per message
+    and one flush span that *links* to them, because a write of hundreds
+    of records cannot be the child of any one.
+  - **stat to urls**: the outbound call runs on another thread, and the
+    current span lives in a thread-local, so the client span had no
+    parent. The HTTP client's executor now captures the context where the
+    call is enqueued.
+  - **database and object store**: every query is a span under its
+    request (values are not recorded: they are the URLs people
+    shorten), and every S3 call is a span under the flush.
+
+  The header case and the thread hand-off are each covered by a test that
+  fails without the change.
+
 - **`platform.md` §11: two charts, and who installs each.** The split
   between the infrastructure chart and the application one has a second
   consequence that rule 6 does not state — the infrastructure chart is
