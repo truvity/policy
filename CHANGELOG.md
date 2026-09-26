@@ -6,6 +6,19 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **The url-shortener example's verification hook no longer fails on a real
+  install.** The hook Job's e2e suite unconditionally resolved a local test
+  fixture's names by rendering a chart with `helm` — a kind-tier concern the
+  suite carried into every environment, including the hook's own image, which
+  ships no `helm` binary on purpose. Run as the hook, in-cluster, the suite
+  now skips resolving that fixture altogether and relies only on what the Job
+  is actually given (its namespace and release); the one check that needs a
+  database or role name from that fixture skips cleanly instead of failing
+  the whole binary before any check runs. `just example-verify-hook` (part of
+  `just cluster-all`, and now also part of the kind lane's own CI job) runs
+  the hook exactly as a platform would, so a regression like this is caught
+  before the hook ships again.
+
 - **The url-shortener example's `log` archiver no longer crash-loops when its
   broker credential is rotated.** The credential is a short-lived file the
   platform replaces in place, and the archiver already re-read it on every

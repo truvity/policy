@@ -152,13 +152,24 @@ example-smoke:
     cd examples/url-shortener && E2E_NAMESPACE="${NS:-shortener}" E2E_APP_RELEASE="${APP:-example}" \
         E2E_BUCKET="${BUCKET:-url-shortener-archive}" go test ./e2e/suite/... -count=1 -v
 
+# Prove the chart's OWN post-install/post-upgrade verification hook — the
+# Job templates/verification.yaml renders under `verification.enabled=true`,
+# running the SAME e2e image `example-smoke` runs directly — completes on a
+# real install, through its own scoped RBAC and no fixture. `example-smoke`
+# alone cannot catch a suite that only breaks running AS that Job: the
+# fixture rendering the infra chart with `helm` (present on this box, absent
+# from the Job's image) is exactly such a bug.
+[doc("Prove the chart's own verification hook completes against a real install")]
+example-verify-hook:
+    bash examples/url-shortener/hack/verify-hook.sh
+
 # The whole cluster tier, from nothing.
 #
 # No identity step: transport identity testing moved off the box entirely
 # (0005) and examples/url-shortener/hack/identity-smoke.sh is not yet
 # ported to wherever it lands — a later task, not this one.
 [doc("The whole cluster tier, from nothing")]
-cluster-all: cluster cluster-verify example-snapshot example-fixture example-install example-smoke
+cluster-all: cluster cluster-verify example-snapshot example-fixture example-install example-smoke example-verify-hook
 
 # Remove it, and the registry container and the snapshot builder beside it —
 # disk is a shared resource on the machine this usually runs on, and a

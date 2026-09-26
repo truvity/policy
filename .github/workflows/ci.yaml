@@ -60,6 +60,13 @@ jobs:
   # was broken here at some point while the example was built, and not one
   # of them is visible to a renderer.
   #
+  # The `test` step also turns the chart's own post-install/post-upgrade
+  # verification hook on and proves ITS Job completes — the same e2e image,
+  # but run by the hook's own scoped ServiceAccount, inside the cluster, with
+  # no fixture and no `helm` in its image. `example-smoke` running the
+  # identical suite directly from this box's own devbox environment (helm on
+  # PATH there) does not exercise that path at all.
+  #
   # Through the shared integration workflow now, on its kind tier (this
   # repository is public — see truvity/ci-workflows' docs/tiers.md): the
   # workflow stands up the box itself, via truvity/ci-actions' `cluster`
@@ -91,7 +98,7 @@ jobs:
             "name": "example",
             "build": "devbox run -- just example-snapshot",
             "install": "devbox run -- just example-fixture && devbox run -- just example-install",
-            "test": "devbox run -- just example-smoke"
+            "test": "devbox run -- just example-smoke && devbox run -- just example-verify-hook"
           }
         ]
 
