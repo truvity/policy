@@ -113,9 +113,10 @@ jobs:
 
   # Stable name for branch protection: the matrix reports as "recipes / lint"
   # and so on, so a required context called "check" would never arrive and
-  # every pull request would hang waiting for it.
+  # every pull request would hang waiting for it. The cluster job gates merges:
+  # all tests, including the end-to-end suite, must be green.
   check:
-    needs: [recipes, ts, charts]
+    needs: [recipes, ts, charts, cluster]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -123,4 +124,5 @@ jobs:
       - run: |
           [ "${{ needs.recipes.result }}" = "success" ] &&
           [ "${{ needs.ts.result }}" = "success" ] &&
-          [ "${{ needs.charts.result }}" = "success" ]
+          [ "${{ needs.charts.result }}" = "success" ] &&
+          [ "${{ needs.cluster.result }}" = "success" ]

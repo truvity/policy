@@ -15,6 +15,7 @@ Not normative. This is how to tell whether a repository satisfies
 | [repository](../contracts/repository.md) | the gate needs nothing but the checkout | CI runs recipes by name; a recipe needing more is its own job |
 | repository | public repositories name no particulars | the leak canary, on every commit and in CI |
 | repository | public repositories run hosted | the shared workflow refuses a self-hosted runner for a public caller |
+| repository | the cluster lane is a required check | the CI gate requires the e2e suite to pass |
 | [release](../contracts/release.md) | one tag stamps everything | the release workflow, from the tag, in CI |
 
 ## What a reviewer checks
