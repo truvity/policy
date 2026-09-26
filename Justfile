@@ -108,9 +108,16 @@ example-install:
 # Prove the example WORKS. This is the question the whole box exists to
 # answer: a redirect is served, an event crosses the broker, and a counter a
 # different service owns moves. Rendering a chart cannot ask it.
+#
+# A Go suite (examples/url-shortener/e2e/suite), not a shell script: it
+# reaches every Service through github.com/truvity/gemaal/pkg/harness, the
+# same toolbox a private repository's shared-cluster suite and a
+# post-promotion suite use — see docs/guides/testing.md. E2E_NAMESPACE is
+# what turns it on; `go test ./...` on its own (`just test`) stays hermetic.
 [doc("Prove the example works end to end")]
 example-smoke:
-    bash examples/url-shortener/hack/smoke.sh
+    cd examples/url-shortener && E2E_NAMESPACE="${NS:-shortener}" E2E_APP_RELEASE="${APP:-example}" \
+        E2E_BUCKET="${BUCKET:-url-shortener-archive}" go test ./e2e/suite/... -count=1 -v
 
 # The whole cluster tier, from nothing.
 #
