@@ -21,14 +21,13 @@ containerdConfigPatches:
 # reconciles until it restarts — no default ServiceAccount for a fresh
 # namespace, no rollout progress. `verify.sh` asserts the RUNNING pods
 # carry this flag, not just that the config asked for it.
+# kind generates kubeadm v1beta3 config, which uses extraArgs as a map (not v1beta4 list).
 kubeadmConfigPatches:
   - |
     kind: ClusterConfiguration
     controllerManager:
       extraArgs:
-        - name: leader-elect
-          value: "false"
+        leader-elect: "false"
     scheduler:
       extraArgs:
-        - name: leader-elect
-          value: "false"
+        leader-elect: "false"
