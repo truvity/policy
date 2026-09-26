@@ -6,6 +6,18 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **The url-shortener example's `log` archiver no longer crash-loops when its
+  broker credential is rotated.** The credential is a short-lived file the
+  platform replaces in place, and the archiver already re-read it on every
+  reconnect — but `nats-py` treats a server closing the connection over an
+  expired credential as fatal rather than retryable: it closes the client
+  outright instead of handing the error to its own reconnect logic (unlike
+  the Go and Kotlin clients against the same broker), so every fetch after
+  that raised the same error forever. The archiver now dials again itself
+  the one time this happens, which reads the credential file fresh, and
+  only lets a second failure in a row surface. See
+  `examples/url-shortener/log/src/url_shortener_log/pull.py`.
+
 - **Every exported span now passes through an attribute allow-list.** Each
   language's telemetry starter (`telemetry.Start` in Go, `telemetry.start()`
   in Python, `start()` in TypeScript) drops any span attribute that is not
