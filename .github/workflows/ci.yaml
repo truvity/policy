@@ -67,14 +67,30 @@ jobs:
       - uses: jetify-com/devbox-install-action@22b0f5500b14df4ea357ce673fbd4ced940ed6a1 # v0.13.0
         with:
           enable-cache: "true"
-      - name: the box stands up
-        run: devbox run -- just cluster
-      - name: every server answers
-        run: devbox run -- just cluster-verify
-      - name: the example's images
-        run: devbox run -- just example-images
-      - name: the example's fixture — what the infra chart would provide, by name
-        run: devbox run -- just example-fixture
+      # The release build (images pushed, chart packaged) needs nothing the
+      # box provides — it only needs the box's registry, which `just cluster`
+      # starts within the first few seconds of standing the box up, long
+      # before the release build's own compile step finishes. So it runs
+      # IN THE BACKGROUND while the box comes up and the fixture provisions
+      # for the install, rather than after them: the two costs used to be
+      # serial and neither depends on the other's result, only on the
+      # registry existing before the build's push step is reached.
+      - name: the box and its fixture stand up while the release builds
+        run: |
+          devbox run -- just example-snapshot > /tmp/example-snapshot.log 2>&1 &
+          snapshot_pid=$!
+
+          devbox run -- just cluster
+          devbox run -- just cluster-verify
+          devbox run -- just example-fixture
+
+          if ! wait "$snapshot_pid"; then
+            echo "::group::example-snapshot"
+            cat /tmp/example-snapshot.log
+            echo "::endgroup::"
+            exit 1
+          fi
+          cat /tmp/example-snapshot.log
       - name: the example installs
         run: devbox run -- just example-install
       - name: the example works

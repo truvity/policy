@@ -70,6 +70,20 @@ The gate cannot see any of these, and each one has happened here:
   has no effect until a restart;
 - credentials that are correct and rights that are not.
 
+## What the cluster installs is what a release ships
+
+`just example-snapshot` runs `.goreleaser.yaml` itself — the release
+configuration, not a second build path — for one architecture, into the
+box's own registry, and packages the chart from what it pushed with the
+same tool a release uses, `helmctl`. `example-install` installs that
+`.tgz`, never the chart's source directory: the release contract's own
+rule (docs/contracts/release.md §7) is that a published artifact is tested
+as published, and a chart bug that only shows up once images are pushed
+and digests are baked in is exactly what a source-directory install would
+never see. See `hack/example-snapshot.sh` for the two things this loop
+does differently from a real release — where the images go, and one
+architecture instead of every one — and nothing else.
+
 ## The box installs no infra chart
 
 The local cluster carries SERVERS ONLY — a plain Postgres, NATS with
