@@ -63,7 +63,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      # Full history AND tags: `example-snapshot` runs `.goreleaser.yaml`
+      # itself, and GoReleaser resolves its own version from the nearest
+      # git tag even with validation skipped — a shallow checkout (this
+      # action's default) has none, and the release fails before it builds
+      # anything.
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
       - uses: jetify-com/devbox-install-action@22b0f5500b14df4ea357ce673fbd4ced940ed6a1 # v0.13.0
         with:
           enable-cache: "true"
