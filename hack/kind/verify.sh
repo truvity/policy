@@ -52,20 +52,38 @@ else
   bad "the server did not answer a query it was asked: $out"
 fi
 
-step "NATS: a stream, a publish, a consume"
+step "NATS: a stream, a durable consumer, a publish, a consume"
 # A throwaway client, the same way the S3 checks below exec into a pod
 # rather than installing a client on the host. Everything it creates is
 # named for THIS run and removed at the end, so the box is left as it was
 # found.
+#
+# The consumer is created — durable, pull, "deliver all" — BEFORE the
+# message is published, and the read is a bounded pull against that
+# consumer, not a one-shot "get me the last message". `nats pub` is a plain
+# core-NATS publish: it does not wait for JetStream to have stored the
+# message, only for the server to have accepted it, so a publish is always
+# followed by a short, asynchronous hop before the stream holds it. Reading
+# immediately with no wait raced that hop; a durable consumer already
+# waiting on the subject, fetched with an explicit timeout, does not — the
+# fetch blocks until the message lands or the timeout is spent, instead of
+# checking once and giving up.
 ns=verify-$RANDOM
 subject="verify.$ns"
 if out=$(kubectl -n nats run "$ns" --rm -i --restart=Never --image "$NATS_BOX_IMAGE" --command -- sh -c "
     n() { nats --server nats://nats.nats.svc:4222 \"\$@\"; }
     n stream add '$ns' --subjects '$subject' --storage memory --retention limits --max-msgs=-1 --max-bytes=-1 --max-age=-1 --max-msg-size=-1 --discard=old --dupe-window=2m --defaults >/dev/null
+    n consumer add '$ns' '$ns' --pull --deliver=all --ack=none --filter='$subject' --replicas=1 --defaults >/dev/null
     n pub '$subject' 'hello' >/dev/null
-    n stream get '$ns' --last-for '$subject' 2>/dev/null
-    got=\$?
-    n stream rm '$ns' -f >/dev/null
+    got=0
+    reply=\$(n consumer next '$ns' '$ns' --no-ack --timeout=10s 2>&1) || got=\$?
+    echo \"\$reply\"
+    if [ \$got -ne 0 ] || echo \"\$reply\" | grep -q 'Status: 408'; then
+      echo '--- stream info, for a reader who was not there ---'
+      n stream info '$ns' 2>&1 || true
+      got=1
+    fi
+    n stream rm '$ns' -f >/dev/null 2>&1
     exit \$got
   " 2>&1) && echo "$out" | grep -q hello; then
   ok "a message published to $subject was read back from the stream"

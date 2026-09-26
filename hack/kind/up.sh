@@ -133,6 +133,34 @@ helm upgrade --install nats nats/nats \
 kubectl -n nats rollout restart statefulset/nats
 kubectl -n nats rollout status statefulset/nats --timeout=5m
 
+# `rollout status` only proves the NEW pod passed its readiness probe — it
+# says nothing about whether a client outside the pod can already reach it.
+# The Service's ClusterIP does not change across the restart, but the rule
+# that routes it to the new pod's IP is written by kube-proxy AFTER the API
+# server marks the pod ready, and that write is not instant. A client that
+# connects in the gap between "pod ready" and "route written" gets
+# `no servers available for connection` — measured here, reproduced by
+# restarting and immediately exec'ing into the box's own long-lived
+# nats-box pod. `server check jetstream` is asked instead of pinging the
+# port: it round-trips through the JetStream API, so a route that exists but
+# lands on a JetStream subsystem still finishing start-up also counts as not
+# ready yet.
+attempt=0
+until kubectl -n nats exec deploy/nats-box -- \
+    nats --server nats://nats.nats.svc:4222 server check jetstream >/dev/null 2>&1; do
+  attempt=$((attempt + 1))
+  if [ "$attempt" -ge 30 ]; then
+    echo "NATS did not answer a JetStream check after ${attempt} retries (30s):" >&2
+    kubectl -n nats exec deploy/nats-box -- \
+      nats --server nats://nats.nats.svc:4222 server check jetstream >&2 || true
+    exit 1
+  fi
+  sleep 1
+done
+if [ "$attempt" -gt 0 ]; then
+  echo "NATS answered after ${attempt} retr$([ "$attempt" = 1 ] && echo y || echo ies) ($((attempt))s)"
+fi
+
 step "S3"
 sed "s|LOCALSTACK_IMAGE_PLACEHOLDER|${LOCALSTACK_IMAGE}|" localstack.yaml | kubectl apply -f -
 kubectl -n object-store rollout status deployment/s3 --timeout=5m
