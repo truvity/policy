@@ -6,6 +6,20 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **The url-shortener example's cluster suite is now one Go program, not a
+  shell script.** `just example-smoke` runs
+  `examples/url-shortener/e2e/suite` in place of the retired
+  `hack/smoke.sh`. It reaches every Service through
+  `github.com/truvity/gemaal/pkg/harness` (>=0.24.0, which added a kind
+  tier: a port-forward to the exact Pod behind a Service stands in for the
+  direct ClusterIP a shared cluster reaches), asserts through Service
+  endpoints only — never `kubectl exec` — and is meant to run unchanged
+  wherever this example is next installed: a private repository's shared
+  cluster, or a cluster after a promotion. See `docs/guides/testing.md`.
+  The two RPC-serving Services that had no way to answer a probe question
+  (`urls`, `redirect`, `web`) now also expose their `probes` port, which
+  the suite uses and a chart render could not otherwise prove.
+
 - **The kind lane now tests the release's own artifacts.** `just
   example-snapshot` runs `.goreleaser.yaml` itself — one architecture,
   pushed into the box's own registry — and packages the chart from what it

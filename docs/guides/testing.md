@@ -108,6 +108,49 @@ the broker, and a counter another service owns moves by exactly the number of
 requests made. Exactly, not at least — an upsert that overwrote instead of
 incrementing passes "the row exists".
 
+The url-shortener example's suite
+(`examples/url-shortener/e2e/suite`) is ONE Go program, meant to run
+unchanged in three places: the kind lane above, a private repository's
+own shared cluster, and a cluster a release has just been promoted to.
+Only the environment differs — it reaches every Service through
+`github.com/truvity/gemaal/pkg/harness`, whose `(*Cluster).ServiceURL`
+opens a port-forward to the exact Pod behind a Service on a kind-tier
+context and dials the ClusterIP directly everywhere else. Nothing in the
+suite branches on which tier it is running against.
+
+It is inert unless `E2E_NAMESPACE` is set — `just example-smoke` sets it,
+`go test ./...` on its own does not — so `just test` stays hermetic. Set
+it (and, on a namespace or release that is not this box's own defaults,
+`E2E_APP_RELEASE`/`E2E_BUCKET`) and run it directly:
+
+```sh
+E2E_NAMESPACE=shortener go test ./examples/url-shortener/e2e/suite/... -v
+```
+
+It asserts, through Service endpoints only:
+
+- the migration Job completed and the owner and runtime roles are really
+  separate — reached by connecting to the box's own Postgres through the
+  harness as each role in turn, since a table's rights are not something
+  an HTTP Service can be asked about;
+- `urls` creates a short link over Connect, generates one when none is
+  given, and shortening the same URL twice returns the same link;
+- `redirect` answers 302 with the long URL;
+- `stat`'s consumer moves the click counter, read back through `urls` —
+  `stat` carries no Service of its own; this is its effect, not its
+  endpoint;
+- `log` archives the record to the fixture's bucket within its batch
+  window;
+- `urls`, `redirect` and `web` answer their liveness and readiness
+  probes through their Service (which is why those three charts also
+  expose the `probes` port on the Service now, not only the Pod).
+
+A further test asks a Jaeger-API query endpoint (`E2E_TRACES_URL`) for
+the redirect's own trace, by a trace id the test injects itself via a
+`traceparent` header, and asserts every hop contributed a span. The kind
+box carries no trace store (0005's amendment), so this is a `t.Skip`
+there — it is meant for the two tiers that do have one.
+
 ## Traps
 
 **A test that shells out is cached on a stale pass.** When only the rendered
