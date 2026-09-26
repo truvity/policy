@@ -157,6 +157,42 @@ the redirect's own trace, by a trace id the test injects itself via a
 box carries no trace store (0005's amendment), so this is a `t.Skip`
 there — it is meant for the two tiers that do have one.
 
+## The suite, as an image
+
+`.goreleaser.yaml` also publishes the compiled suite itself
+(`examples/url-shortener/e2e/Dockerfile`, `e2e/hack/build.sh`) — a
+`go test -c` binary with a pinned `kubectl` beside it, so a third caller
+can run it as a Job rather than as `go test`: a post-promotion
+verification, on a cluster whose names are not this box's own defaults.
+
+Every name it needs is an environment variable with a fixture fallback —
+`E2E_NAMESPACE`, `E2E_APP_RELEASE`, `E2E_BUCKET`, `E2E_TRACES_URL` as
+above, plus:
+
+- `E2E_KCTX` — set it to the EMPTY STRING (present in the Job's env, not
+  merely unset) to run with no `--context` at all, so `kubectl` and the
+  harness fall back to the Pod's own ServiceAccount instead of this
+  package's `kind-policy` default, which does not exist off the box.
+- `E2E_S3_ENDPOINT` / `E2E_S3_REGION` — a real S3(-compatible) endpoint
+  for the archive check, read with the process's own default AWS
+  credential chain rather than the kind box's static test credentials.
+
+Two checks need more than a caller running THIS suite should be handed by
+default, and skip cleanly rather than fail when it is absent, so a Job
+scoped narrowly still passes on everything else:
+
+- the role-separation check (`db_test.go`) reads a Secret; a `kubectl get
+  secret` that comes back `Forbidden` skips that one test rather than
+  failing `TestMain` for the whole binary (see `appPasswordOrSkip`);
+- the archive check (`log_test.go`) reads a bucket; with no
+  `E2E_S3_ENDPOINT` set and no kind fixture to fall back to, it skips
+  rather than reaching for credentials nobody asked to grant it (see
+  `s3ClientOrSkip`).
+
+A caller that wants either to run sets the matching env and grants the
+matching permission — nothing here decides that for every caller by
+running unconditionally.
+
 ## Traps
 
 **A test that shells out is cached on a stale pass.** When only the rendered

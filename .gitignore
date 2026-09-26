@@ -27,6 +27,10 @@ node_modules/
 # the committed lock, so it is a build output like any other.
 examples/url-shortener/log/build/
 
+# What the e2e verification image copies: the compiled test binary and a
+# pinned kubectl, assembled by e2e/hack/build.sh outside the image.
+examples/url-shortener/e2e/build/
+
 # Python, for the third loader. The lock IS committed — `uv sync --frozen`
 # is what makes the gate hermetic — but nothing the interpreter or the
 # tools write is.

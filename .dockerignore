@@ -12,3 +12,4 @@
 !examples/url-shortener/log/build/site-packages-*
 !examples/url-shortener/stat/build/libs/stat.jar
 !examples/url-shortener/web/dist
+!examples/url-shortener/e2e/build

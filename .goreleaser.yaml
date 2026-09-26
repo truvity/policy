@@ -32,6 +32,7 @@ version: 2
 before:
   hooks:
     - bash examples/url-shortener/log/hack/build.sh
+    - bash examples/url-shortener/e2e/hack/build.sh
     - gradle --project-dir examples/url-shortener/stat bootJar --console=plain --quiet
     - yarn --cwd ts install --immutable
     - yarn --cwd ts build
@@ -118,6 +119,18 @@ dockers_v2:
     tags: ["{{ .Env.IMAGE_TAG }}"]
     extra_files:
       - examples/url-shortener/web/dist
+  # The e2e verification suite, compiled and published as an image the same
+  # way as every other component — see examples/url-shortener/e2e/Dockerfile
+  # and its hack/build.sh: a Job running THIS image at the promoted chart's
+  # own version is how a post-promotion verification proves the release,
+  # not only that it rendered.
+  - id: e2e
+    images: ["{{ .Env.IMAGE_REPO }}/e2e"]
+    dockerfile: examples/url-shortener/e2e/Dockerfile
+    platforms: [linux/amd64, linux/arm64]
+    tags: ["{{ .Env.IMAGE_TAG }}"]
+    extra_files:
+      - examples/url-shortener/e2e/build
 
 changelog:
   sort: asc
