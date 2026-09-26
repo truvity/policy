@@ -95,6 +95,69 @@ already stored, and logs that exist only over OTLP vanish exactly when the
 exporter is the thing that broke. Turn them on only for records that must
 carry a span id, and send only those.
 
+### The span-attribute allow-list
+
+**The rule.** Telemetry carries no end-user personal data. Reviewing every
+call site for it does not scale, and an instrumentation library adds
+attributes on its own — a URL path, a query string, a header, a peer
+address, a statement's arguments — that nobody at this service chose. So
+the default for an attribute nobody thought about is **ABSENT**, not
+exported because a library happened to add it: each starter installs a
+filter that drops every span attribute that is not on an allow-list before
+the span leaves the process.
+
+**The default list** is short on purpose, and never grows to accommodate one
+caller:
+
+```
+http.request.method, http.route, http.response.status_code,
+rpc.system, rpc.service, rpc.method,
+rpc.grpc.status_code, rpc.connect_rpc.error_code,
+db.system(.name), db.operation(.name), db.query.text, db.response.returned_rows,
+messaging.system, messaging.destination.name, messaging.operation(.type),
+server.port, error.type, otel.status_code, otel.status_description
+```
+
+Deliberately **not** on it: `url.path`, `url.query`, `url.full` (the request
+line itself — ids, search terms, tokens), any header, any database or
+messaging **payload**, and any peer address. `db.query.text` is the
+statement's text, with its placeholders, never its arguments — the same
+rule "Databases and object stores" states above, now enforced rather than
+only reviewed.
+
+**A service extends the list in code, in one place: an argument to the
+starter.** There is no configuration key and no environment variable for
+it — decision 0006 is about the SDK's own environment, not this list. It is
+additive only: it can never remove a default.
+
+| | |
+|---|---|
+| Go | `telemetry.Start(ctx, telemetry.WithAllowedAttributes("your.key"))` |
+| Python | `telemetry.start(extra_attributes=("your.key",))` |
+| TypeScript | `start({ extraAttributes: ["your.key"] })` |
+| Kotlin | none needed in the example — see below |
+
+**Where the filter runs.** A `SpanProcessor`'s end-of-span hook hands code an
+already read-only view of the span in Go, Python and TypeScript's SDKs —
+there is no hook there that lets code remove an attribute instrumentation
+added earlier. So in all three the filter wraps the **exporter** instead:
+the last point before spans leave the process where the shape is still
+ours to change, built by copying the span with its attributes replaced.
+Kotlin's example uses the OpenTelemetry Spring Boot starter, whose own
+extension point (`AutoConfigurationCustomizerProvider`, exposed as a
+`@Bean`) does the same thing — `addSpanExporterCustomizer` wraps the
+exporter it builds from the environment.
+
+**What the example loses and keeps.** The archiver's `archive.flush` span
+sets `archive.records` and `archive.key` — its own, non-personal facts
+about a batch — so it extends the Python starter's list with both. The API
+middleware's failure flag (`error`, a plain boolean) is the Go example's
+own extension. The Kotlin example's `messaging.*` attributes and every
+other attribute this example sets anywhere are already on the default list,
+so it adds nothing. Everything an instrumentation library adds beyond that
+— a request path, a header, a peer address — is dropped, by design, whether
+or not anyone reviewed it.
+
 ### Verifying
 
 **A 200 from the exporter is not evidence.** It means a collector queued
