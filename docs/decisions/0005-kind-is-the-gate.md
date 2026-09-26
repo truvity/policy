@@ -29,9 +29,10 @@ the cheap one becomes the one people run.
 
 ## Decision
 
-**A local Kubernetes cluster is the gate.** It carries the same operators a
-deployment carries, and the one stand-in it uses (an S3 implementation) is
-addressed by endpoint, so swapping it for a real store is configuration.
+**A local Kubernetes cluster is the gate, and a required check for merges.** It
+carries the same operators a deployment carries, and the one stand-in it uses
+(an S3 implementation) is addressed by endpoint, so swapping it for a real
+store is configuration.
 
 **There is no container-only tier.** One environment, run by CI and by a
 contributor, from the same recipe.
