@@ -59,62 +59,41 @@ jobs:
   # bound to a subject moves a counter it has rights on. Every one of those
   # was broken here at some point while the example was built, and not one
   # of them is visible to a renderer.
+  #
+  # Through the shared integration workflow now, on its kind tier (this
+  # repository is public — see truvity/ci-workflows' docs/tiers.md): the
+  # workflow stands up the box itself, via truvity/ci-actions' `cluster`
+  # action, mode: kind, fetching THIS repository's own hack/kind/ at a
+  # pinned release tag — so the recipe this job runs is exactly what a
+  # laptop runs, one lane's build/install/test, and standing the box up
+  # is no longer this repository's own job to script.
+  #
+  # `check` below still names this job — a reusable workflow cannot supply
+  # a required status context of its own (bar#706; the same comment lives
+  # in ci-workflows' integration.yaml), so the fan-in has to be the
+  # calling job, exactly as it already was.
+  #
+  # Pinned to ci-workflows PR #155's head commit for now
+  # (feat/integration-tier-by-visibility) — bump to the merge commit once
+  # that pull request lands.
   cluster:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      # Full history AND tags: `example-snapshot` runs `.goreleaser.yaml`
-      # itself, and GoReleaser resolves its own version from the nearest
-      # git tag even with validation skipped — a shallow checkout (this
-      # action's default) has none, and the release fails before it builds
-      # anything.
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          fetch-depth: 0
-      - uses: jetify-com/devbox-install-action@22b0f5500b14df4ea357ce673fbd4ced940ed6a1 # v0.13.0
-        with:
-          enable-cache: "true"
-      # The release build (images pushed, chart packaged) needs nothing the
-      # box provides — it only needs the box's registry, which `just cluster`
-      # starts within the first few seconds of standing the box up, long
-      # before the release build's own compile step finishes. So it runs
-      # IN THE BACKGROUND while the box comes up and the fixture provisions
-      # for the install, rather than after them: the two costs used to be
-      # serial and neither depends on the other's result, only on the
-      # registry existing before the build's push step is reached (which
-      # hack/example-snapshot.sh now waits on explicitly, rather than
-      # betting that the box gets there first).
-      #
-      # ONE `devbox run`, not four: each `devbox run` invocation generates
-      # its own copy of .devbox/gen/scripts/.cmd.sh and then executes it.
-      # Two invocations started at the same time — the backgrounded
-      # example-snapshot and this shell's own `just cluster` — can each be
-      # mid-(over)write of that shared file while the other is mid-exec of
-      # it, and the loser sees "Text file busy" — seen on this job in CI,
-      # and reproduced locally by racing `devbox run -- true` against
-      # itself.
-      #
-      # `just cluster-and-snapshot` carries the whole sequence — the
-      # backgrounding included — as ONE recipe entered through ONE `devbox
-      # run`, so there is only ever one .cmd.sh. It is a recipe rather than
-      # `devbox run -- bash -c '...'` inline here: devbox does not pass a
-      # multi-line single-quoted `bash -c` argument through intact (it
-      # mangles the newlines — a `just` recipe script has no such problem,
-      # since it is a file devbox hands to bash whole).
-      - name: the box and its fixture stand up while the release builds
-        run: devbox run -- just cluster-and-snapshot
-      - name: the example installs
-        run: devbox run -- just example-install
-      - name: the example works
-        run: devbox run -- just example-smoke
-      - name: what the cluster saw, if it did not
-        if: failure()
-        run: |
-          kubectl get pods -A || true
-          kubectl -n shortener describe pods || true
-          kubectl -n shortener logs -l app.kubernetes.io/name=url-shortener --all-containers --tail=50 || true
-          kubectl -n postgres logs deploy/postgres --tail=50 || true
-          kubectl -n nats logs statefulset/nats --tail=50 || true
+    uses: truvity/ci-workflows/.github/workflows/integration.yaml@f1eb1501c22d2839945d685bd737f0a4cb17fa20 # feat/integration-tier-by-visibility
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      policy-version: v0.8.1
+      gemaal-namespace: shortener
+      timeout-minutes: 30
+      lanes: |
+        [
+          {
+            "name": "example",
+            "build": "devbox run -- just example-snapshot",
+            "install": "devbox run -- just example-fixture && devbox run -- just example-install",
+            "test": "devbox run -- just example-smoke"
+          }
+        ]
 
   # Stable name for branch protection: the matrix reports as "recipes / lint"
   # and so on, so a required context called "check" would never arrive and
