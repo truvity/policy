@@ -127,7 +127,7 @@ it (and, on a namespace or release that is not this box's own defaults,
 E2E_NAMESPACE=shortener go test ./examples/url-shortener/e2e/suite/... -v
 ```
 
-It asserts, through Service endpoints only:
+Most of it asserts through Service endpoints only:
 
 - the migration Job completed and the owner and runtime roles are really
   separate — reached by connecting to the box's own Postgres through the
@@ -140,10 +140,16 @@ It asserts, through Service endpoints only:
   `stat` carries no Service of its own; this is its effect, not its
   endpoint;
 - `log` archives the record to the fixture's bucket within its batch
-  window;
-- `urls`, `redirect` and `web` answer their liveness and readiness
-  probes through their Service (which is why those three charts also
-  expose the `probes` port on the Service now, not only the Pod).
+  window.
+
+One test does not go through a Service at all: every Deployment of the
+release (`urls`, `redirect`, `web`, `stat` and `log`) is Available with
+every replica ready, read through the harness's own kubectl runner. That
+is deliberately NOT a Service probe of `/health/live`/`/health/ready` — a
+Pod is only marked Ready after the kubelet has already run that exact
+probe, so asking the same question again through a Service widens who can
+reach the probe listener and proves nothing new. It is also the only test
+that covers `stat` and `log`, since neither carries a Service at all.
 
 A further test asks a Jaeger-API query endpoint (`E2E_TRACES_URL`) for
 the redirect's own trace, by a trace id the test injects itself via a

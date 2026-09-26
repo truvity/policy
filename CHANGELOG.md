@@ -16,9 +16,13 @@ and nothing else — and its GitHub Release lists the commits.
   endpoints only — never `kubectl exec` — and is meant to run unchanged
   wherever this example is next installed: a private repository's shared
   cluster, or a cluster after a promotion. See `docs/guides/testing.md`.
-  The two RPC-serving Services that had no way to answer a probe question
-  (`urls`, `redirect`, `web`) now also expose their `probes` port, which
-  the suite uses and a chart render could not otherwise prove.
+  Readiness is asserted directly — every Deployment of the release is
+  Available with every replica ready, read through the harness's kubectl
+  runner — rather than by probing `/health/live`/`/health/ready` through a
+  Service: a Pod is only Ready once the kubelet has already run that exact
+  probe, so a Service would only widen who can reach the probe listener
+  without proving anything new. This also covers `stat` and `log`, which
+  carry no Service of their own.
 
 - **The kind lane now tests the release's own artifacts.** `just
   example-snapshot` runs `.goreleaser.yaml` itself — one architecture,
