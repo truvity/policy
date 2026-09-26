@@ -15,7 +15,7 @@ needs, an operator that accepted a manifest and did nothing.
 | Tier | Needs | Runs |
 |---|---|---|
 | the gate | the checkout | `just check`: build, test, lint, vulnerabilities, drift, the canary |
-| the cluster | a container runtime | `just cluster-all`: stand up, verify, prove each operator acts, then install the example and exercise it |
+| the cluster (required) | a container runtime | `just cluster-all`: stand up, verify, prove each operator acts, then install the example and exercise it |
 
 Both run on ordinary hosted runners. Nothing here needs a machine of ours,
 which is what lets a stranger reproduce the whole thing.
