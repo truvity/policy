@@ -77,7 +77,7 @@ jobs:
   # (feat/integration-tier-by-visibility) — bump to the merge commit once
   # that pull request lands.
   cluster:
-    uses: truvity/ci-workflows/.github/workflows/integration.yaml@f1eb1501c22d2839945d685bd737f0a4cb17fa20 # feat/integration-tier-by-visibility
+    uses: truvity/ci-workflows/.github/workflows/integration.yaml@1deba8589700d0d5ba433f4790cdacc208f166c5 # v3.13.0
     permissions:
       contents: read
       id-token: write
