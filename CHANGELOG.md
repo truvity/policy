@@ -6,6 +6,10 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **The cluster lane is now a required check for merges.** All tests, including
+  the end-to-end suite, must be green before a pull request can merge. Run
+  `just cluster-all` locally to verify before pushing.
+
 - **The url-shortener example's cluster suite is now one Go program, not a
   shell script.** `just example-smoke` runs
   `examples/url-shortener/e2e/suite` in place of the retired

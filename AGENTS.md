@@ -29,8 +29,10 @@ canary.
 
 Two recipes are **not** in the gate because they need more than a checkout:
 `just ts` fetches from a registry, and `just cluster-*` needs a container
-runtime. CI runs them as their own jobs. The cluster lane is a pull-request
-gate, so a change that breaks the example breaks the build.
+runtime. CI runs them as their own jobs. The cluster lane is a required check
+for merges: run `just cluster-all` locally to test before pushing. It does not
+cover cloud identity, IAM provisioning, or network-policy enforcement — those
+belong to a private repository's test against a shared cluster.
 
 Four things the gate checks that surprise people:
 
