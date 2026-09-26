@@ -81,23 +81,28 @@ jobs:
       # IN THE BACKGROUND while the box comes up and the fixture provisions
       # for the install, rather than after them: the two costs used to be
       # serial and neither depends on the other's result, only on the
-      # registry existing before the build's push step is reached.
+      # registry existing before the build's push step is reached (which
+      # hack/example-snapshot.sh now waits on explicitly, rather than
+      # betting that the box gets there first).
+      #
+      # ONE `devbox run`, not four: each `devbox run` invocation generates
+      # its own copy of .devbox/gen/scripts/.cmd.sh and then executes it.
+      # Two invocations started at the same time — the backgrounded
+      # example-snapshot and this shell's own `just cluster` — can each be
+      # mid-(over)write of that shared file while the other is mid-exec of
+      # it, and the loser sees "Text file busy" — seen on this job in CI,
+      # and reproduced locally by racing `devbox run -- true` against
+      # itself.
+      #
+      # `just cluster-and-snapshot` carries the whole sequence — the
+      # backgrounding included — as ONE recipe entered through ONE `devbox
+      # run`, so there is only ever one .cmd.sh. It is a recipe rather than
+      # `devbox run -- bash -c '...'` inline here: devbox does not pass a
+      # multi-line single-quoted `bash -c` argument through intact (it
+      # mangles the newlines — a `just` recipe script has no such problem,
+      # since it is a file devbox hands to bash whole).
       - name: the box and its fixture stand up while the release builds
-        run: |
-          devbox run -- just example-snapshot > /tmp/example-snapshot.log 2>&1 &
-          snapshot_pid=$!
-
-          devbox run -- just cluster
-          devbox run -- just cluster-verify
-          devbox run -- just example-fixture
-
-          if ! wait "$snapshot_pid"; then
-            echo "::group::example-snapshot"
-            cat /tmp/example-snapshot.log
-            echo "::endgroup::"
-            exit 1
-          fi
-          cat /tmp/example-snapshot.log
+        run: devbox run -- just cluster-and-snapshot
       - name: the example installs
         run: devbox run -- just example-install
       - name: the example works

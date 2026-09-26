@@ -88,6 +88,39 @@ cluster-verify:
 example-snapshot:
     bash hack/example-snapshot.sh
 
+# CI's own entry point: the release snapshot build needs nothing the box
+# provides beyond a registry to push to (which example-snapshot now waits
+# for explicitly), and neither of these depends on the other's RESULT — so
+# they run side by side instead of one after the other.
+#
+# ONE recipe, not the caller backgrounding one `devbox run` beside another:
+# every `devbox run` invocation generates its own copy of
+# .devbox/gen/scripts/.cmd.sh and then executes it, so two started at the
+# same time can each be mid-(over)write of that shared file while the other
+# is mid-exec of it — "text file busy" (measured in CI). Recipe scripts
+# under `just` do not have that problem: this one script, entered through a
+# single `devbox run`, backgrounds `example-snapshot` itself with plain
+# shell `&`, which shares the one devbox environment `just` already
+# resolved rather than asking devbox to resolve a second one concurrently.
+[doc("Stand the box and its fixture up while the release snapshot builds, in the ONE devbox environment")]
+cluster-and-snapshot:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just example-snapshot > /tmp/example-snapshot.log 2>&1 &
+    snapshot_pid=$!
+
+    just cluster
+    just cluster-verify
+    just example-fixture
+
+    if ! wait "$snapshot_pid"; then
+        echo "::group::example-snapshot"
+        cat /tmp/example-snapshot.log
+        echo "::endgroup::"
+        exit 1
+    fi
+    cat /tmp/example-snapshot.log
+
 # Stand in for the url-shortener-infra chart, which kind never installs (see
 # docs/decisions/0005-kind-is-the-gate.md): the database, the two roles, the
 # stream and the bucket the application chart's values point at, under the

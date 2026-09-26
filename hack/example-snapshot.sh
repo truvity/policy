@@ -68,6 +68,21 @@ go run ./hack/goreleaser-snapshot-config \
     -in .goreleaser.yaml \
     -out "$scratch/goreleaser.yaml"
 
+step "waiting for ${SNAPSHOT_REGISTRY} to answer"
+# This used to run concurrently with `just cluster` on the bet that the
+# registry the box starts within its first few seconds would always be up
+# well before the build reaches its push step. That bet is exactly the kind
+# of race that holds under a warm cache and fails under a cold one — the
+# push step should never find out which by getting a connection refused.
+registry_deadline=$((SECONDS + 60))
+until curl --fail --silent --output /dev/null "http://${SNAPSHOT_REGISTRY}/v2/"; do
+    if [ "$SECONDS" -ge "$registry_deadline" ]; then
+        echo "the registry at ${SNAPSHOT_REGISTRY} never answered /v2/ within 60s" >&2
+        exit 1
+    fi
+    sleep 1
+done
+
 step "the images, built and pushed to ${SNAPSHOT_REGISTRY}"
 goreleaser release --config "$scratch/goreleaser.yaml" --clean --skip=validate,announce
 
