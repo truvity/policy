@@ -47,18 +47,26 @@ type Shutdown func(context.Context) error
 // these signals land, so it has to be stable for the life of the process
 // and carry no request, tenant or version — which is a deployment's
 // decision to make, not a program's.
-func Start(ctx context.Context) (Shutdown, error) {
+//
+// Every exported span passes through an allow-list first: an attribute
+// nobody thought about is ABSENT, not exported because an instrumentation
+// library happened to add it. [DefaultAllowedAttributes] covers the
+// semantic-convention keys that carry no request data; a caller with more
+// of its own extends it with [WithAllowedAttributes].
+func Start(ctx context.Context, opts ...Option) (Shutdown, error) {
 	spans, err := autoexport.NewSpanExporter(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("trace exporter: %w", err)
 	}
+
+	filtered := &filteringExporter{SpanExporter: spans, allowed: newOptions(opts...).allowed}
 
 	metrics, err := autoexport.NewMetricReader(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("metric reader: %w", err)
 	}
 
-	tracer := tracesdk.NewTracerProvider(tracesdk.WithBatcher(spans))
+	tracer := tracesdk.NewTracerProvider(tracesdk.WithBatcher(filtered))
 	meter := metricsdk.NewMeterProvider(metricsdk.WithReader(metrics))
 
 	otel.SetTracerProvider(tracer)

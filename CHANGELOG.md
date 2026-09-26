@@ -6,6 +6,19 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **Every exported span now passes through an attribute allow-list.** Each
+  language's telemetry starter (`telemetry.Start` in Go, `telemetry.start()`
+  in Python, `start()` in TypeScript) drops any span attribute that is not
+  on a short default list of OpenTelemetry semantic-convention keys before
+  the span leaves the process — an attribute nobody thought about is now
+  ABSENT, not exported because some instrumentation library happened to add
+  it. A service extends the list in code, as an argument to the starter;
+  there is no configuration key or environment variable for it. The example
+  service wires its own additions the same way (see the diff for exactly
+  which keys). Kotlin's example wires the same rule through the
+  OpenTelemetry Spring Boot starter's own extension point, needing no
+  additions of its own. See `docs/guides/logging-and-telemetry.md`.
+
 - **The cluster lane is now a required check for merges.** All tests, including
   the end-to-end suite, must be green before a pull request can merge. Run
   `just cluster-all` locally to verify before pushing.
