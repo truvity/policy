@@ -79,58 +79,14 @@ cluster:
 cluster-verify:
     bash hack/kind/verify.sh
 
-# Build the example's three images straight into the cluster's nodes. No
-# registry: ko loads them, and the chart is installed with `Never` as the
-# pull policy, so nothing is fetched and nothing is pushed.
-[doc("Build the example's images into the local cluster")]
-example-images:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    cd examples/url-shortener
-    export KO_DOCKER_REPO=kind.local KIND_CLUSTER_NAME=policy
-    # HOST ARCHITECTURE ONLY, and that is a local optimisation rather than a
-    # different rule: these images are loaded straight into the local box's
-    # single node, so a second architecture would be built and discarded. A
-    # RELEASE always publishes every architecture — see .goreleaser.yaml,
-    # whose platform lists are asserted by `just release-config`.
-    #
-    # The build CONTEXT is the repository root (`../..`), not each
-    # component's directory. That is not a preference: the release stages
-    # these files into GoReleaser's own context keeping their paths, and a
-    # Dockerfile can only be written for one context. One `COPY` line that
-    # both builds agree on beats two that can drift.
-    for c in migrate redirect urls; do
-        ko build -B --platform linux/amd64 --tags latest "./cmd/$c"
-    done
-
-    # The Kotlin component. Like the Python one, the artifact is built
-    # OUTSIDE the image and the Dockerfile copies it — a jar on a JRE base,
-    # no RUN line, nothing that executes while the image is assembled.
-    ( cd stat && gradle bootJar --console=plain --quiet )
-    docker build --quiet --file stat/Dockerfile --tag kind.local/stat:latest ../.. >/dev/null
-    kind load docker-image kind.local/stat:latest --name policy
-
-    # The TypeScript component: the page is built and the server is bundled
-    # into one file, so the image carries no node_modules — which is not
-    # only tidiness, because the dependency on this repository's own loader
-    # is a symlink in a checkout and a symlink cannot be copied into a
-    # container.
-    # The loader package FIRST. The front end depends on it through a
-    # portal, which resolves to that package's built entry point — and a
-    # fresh checkout has none, so the bundler reports it as an unresolved
-    # import of a dependency that is plainly right there in the lockfile.
-    ( cd ../../ts && yarn install --immutable && yarn build )
-    ( cd web && yarn install --immutable && yarn build )
-    docker build --quiet --file web/Dockerfile --tag kind.local/web:latest ../.. >/dev/null
-    kind load docker-image kind.local/web:latest --name policy
-
-    # The Python component. ko builds an image around a static binary and
-    # has no equivalent here, so the same property — nothing executes while
-    # the image is assembled — is kept by doing the install OUTSIDE it and
-    # leaving the Dockerfile with a COPY and nothing else.
-    bash log/hack/build.sh
-    docker build --quiet --file log/Dockerfile --tag kind.local/log:latest ../.. >/dev/null
-    kind load docker-image kind.local/log:latest --name policy
+# Build the example's images and package its chart exactly the way a release
+# does — `.goreleaser.yaml` itself, then `helmctl` — into the box's own
+# registry, one architecture instead of every one. See
+# hack/example-snapshot.sh and docs/guides/testing.md for why: what the
+# cluster installs must be what a release ships.
+[doc("Build the example's images and chart exactly as a release does, into the local registry")]
+example-snapshot:
+    bash hack/example-snapshot.sh
 
 # Stand in for the url-shortener-infra chart, which kind never installs (see
 # docs/decisions/0005-kind-is-the-gate.md): the database, the two roles, the
@@ -141,7 +97,9 @@ example-images:
 example-fixture:
     bash examples/url-shortener/e2e/fixture/apply.sh
 
-# Install the example's APPLICATION chart, on top of what example-fixture
+# Install the example's PACKAGED application chart — the .tgz `example-snapshot`
+# produced, never the source directory (docs/contracts/release.md §7: a
+# published artifact is tested as published) — on top of what example-fixture
 # provisioned.
 [doc("Install the example into the local cluster")]
 example-install:
@@ -160,15 +118,17 @@ example-smoke:
 # (0005) and examples/url-shortener/hack/identity-smoke.sh is not yet
 # ported to wherever it lands — a later task, not this one.
 [doc("The whole cluster tier, from nothing")]
-cluster-all: cluster cluster-verify example-images example-fixture example-install example-smoke
+cluster-all: cluster cluster-verify example-snapshot example-fixture example-install example-smoke
 
-# Remove it, and the registry container beside it — disk is a shared
-# resource on the machine this usually runs on, and a container `up.sh`
-# started is this recipe's to remove.
+# Remove it, and the registry container and the snapshot builder beside it —
+# disk is a shared resource on the machine this usually runs on, and a
+# container `up.sh` or `example-snapshot.sh` started is this recipe's to
+# remove.
 [doc("Remove the local cluster")]
 cluster-down:
     kind delete cluster --name policy
     docker rm -f kind-registry >/dev/null 2>&1 || true
+    docker buildx rm policy-example-snapshot >/dev/null 2>&1 || true
 
 # Render and validate every chart.
 #

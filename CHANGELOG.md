@@ -6,6 +6,17 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **The kind lane now tests the release's own artifacts.** `just
+  example-snapshot` runs `.goreleaser.yaml` itself — one architecture,
+  pushed into the box's own registry — and packages the chart from what it
+  pushed with `helmctl`, the same tool a release uses. `example-install`
+  installs that packaged `.tgz`, never the chart's source directory. The
+  old `example-images` recipe (`ko build` + `docker build` + `kind load`, a
+  second, independent build path) is gone, and with it every `kind load`
+  and every override that existed only for it — a packaging bug can no
+  longer ship while this lane stays green, which happened once. See
+  `docs/guides/testing.md` and `hack/kind/README.md`.
+
 - **The local cluster (`hack/kind`) installs no infra-shaped chart.** It now
   carries servers only — a plain Postgres, NATS with JetStream, an S3
   stand-in, a local registry — and no operator: no CloudNativePG, no NATS

@@ -48,6 +48,15 @@ for the worked example.
 | An S3 implementation | the one stand-in this box has ever needed one for: no vendor runs a licensed object store for a laptop. It is an endpoint, not a product — a schema addresses a store by endpoint, region and path style, so swapping it for a real bucket is configuration |
 | A local registry | kind's own documented recipe (https://kind.sigs.k8s.io/docs/user/local-registry/): every node resolves `localhost:5001` to it, so a chart's `images.*.registry` value can be proved against a real push and pull rather than `kind load` |
 
+What pushes to that registry is `.goreleaser.yaml` itself, run by
+[`hack/example-snapshot.sh`](../example-snapshot.sh) for one architecture
+instead of every one — the same release configuration a tag builds,
+pointed at this box instead of a real registry, never a second build
+definition kept beside it. See
+[`docs/guides/testing.md`](../../docs/guides/testing.md) for why the
+example is installed from the packaged chart that produces, and not from
+its source directory.
+
 Versions live in one file, [`versions.env`](versions.env), so "which version
 is the box on" has an answer that is not a grep through three scripts.
 

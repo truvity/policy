@@ -4,7 +4,13 @@
 # Build output. `just lint` refuses any file large enough to be one that
 # slipped past this list: a binary in a public repository's history is in
 # every clone forever.
-bin/
+#
+# `bin/helmctl` is the one exception: it is a checked-in wrapper script, not
+# a build output — see docs/guides/testing.md and ocictl's own
+# docs/consuming.md for why a tool pinned by `go.mod`'s `tool` directive is
+# invoked through a committed `exec go run` wrapper rather than installed.
+bin/*
+!bin/helmctl
 /dist/
 coverage.out
 
