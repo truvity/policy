@@ -95,3 +95,13 @@ consumer's problem to handle anyway, but not one to cause on purpose.
 authorisation not yet enforced accepts anonymous clients, so the omission is
 invisible until the day it is turned on, and then every such service fails at
 once.
+
+**`nats-py`'s own reconnect logic never runs on an expired credential.** The
+Go and Kotlin clients on this same broker treat the server closing a
+connection over a rotated credential as a retryable error and reconnect on
+their own; `nats-py` 2.x closes the client outright on that one server error
+instead — `max_reconnect_attempts` and `allow_reconnect` are never
+consulted — so every fetch after that raises `ConnectionClosedError`
+forever. The Python consumer dials again itself when that one error
+appears; see
+[`pull.pull_or_reconnect`](../../examples/url-shortener/log/src/url_shortener_log/pull.py).
