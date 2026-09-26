@@ -53,10 +53,21 @@ else
 fi
 
 step "NATS: a stream, a durable consumer, a publish, a consume"
-# A throwaway client, the same way the S3 checks below exec into a pod
-# rather than installing a client on the host. Everything it creates is
-# named for THIS run and removed at the end, so the box is left as it was
-# found.
+# Exec into the box's own long-lived nats-box pod (the same one up.sh polls
+# for JetStream readiness) rather than `kubectl run --rm -i` a throwaway
+# one. `run --rm -i` starts a pod, attaches to it, and streams its output
+# over that attach connection; when the attach loses the race with the
+# container actually running (measured here: reproduced by looping the old
+# form until it happened, then confirmed with `kubectl logs` on a kept copy
+# of the same pod that the round trip HAD completed with the message read
+# back — the attach connection had simply missed catching the output before
+# `--rm` tore the pod down), whatever was printed before the client caught
+# up is gone, and a caller reading `$out` sees a truncated transcript that
+# looks exactly like a failed round trip. `kubectl exec` into a pod that is
+# already running and stays running has no such window: the exec attaches
+# to a shell that hasn't produced any output yet, so nothing before "now"
+# can be lost. Everything this creates is named for THIS run and removed at
+# the end, so the box is left as it was found.
 #
 # The consumer is created — durable, pull, "deliver all" — BEFORE the
 # message is published, and the read is a bounded pull against that
@@ -70,7 +81,7 @@ step "NATS: a stream, a durable consumer, a publish, a consume"
 # checking once and giving up.
 ns=verify-$RANDOM
 subject="verify.$ns"
-if out=$(kubectl -n nats run "$ns" --rm -i --restart=Never --image "$NATS_BOX_IMAGE" --command -- sh -c "
+if out=$(kubectl -n nats exec deploy/nats-box -- sh -c "
     n() { nats --server nats://nats.nats.svc:4222 \"\$@\"; }
     n stream add '$ns' --subjects '$subject' --storage memory --retention limits --max-msgs=-1 --max-bytes=-1 --max-age=-1 --max-msg-size=-1 --discard=old --dupe-window=2m --defaults >/dev/null
     n consumer add '$ns' '$ns' --pull --deliver=all --ack=none --filter='$subject' --replicas=1 --defaults >/dev/null
