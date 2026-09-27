@@ -6,6 +6,18 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **A third chart, `url-shortener-e2e`, ships alongside `url-shortener` and
+  `url-shortener-infra`.** It renders a plain Job that runs the example's
+  own e2e suite — the same `e2e` image the outside-in loop already runs —
+  against an application release already installed in the same namespace,
+  reading every name the suite needs (the database, its two roles, the
+  runtime role's password Secret, the stream and its subjects and durable
+  consumers, the archive bucket) as values rather than by rendering another
+  chart. `mode: full | tenant` picks whether the one case that issues DDL
+  directly at the database runs. Released, versioned and packaged the same
+  way as the other two, by the same `.goreleaser.yaml` + `helmctl` flow.
+  See `docs/guides/testing.md`, "The suite, as a released test chart".
+
 - **This repository's own tag line now starts at v1.25.0, not v1.0.0.** The
   url-shortener chart continues a line that used to be published from
   another repository, whose last release was in the 1.22.x series; see

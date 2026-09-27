@@ -86,11 +86,20 @@ done
 step "the images, built and pushed to ${SNAPSHOT_REGISTRY}"
 goreleaser release --config "$scratch/goreleaser.yaml" --clean --skip=validate,announce
 
-step "the chart, packaged from what was just pushed"
+step "the charts, packaged from what was just pushed"
 rm -rf dist/charts
 helmctl goreleaser-manifest --goreleaser-dist dist -o dist/goreleaser-manifest.json
 helmctl package \
     --chart examples/url-shortener/charts/url-shortener \
+    --manifest dist/goreleaser-manifest.json \
+    --require-image-digests \
+    --output dist/charts
+# The test chart carries only the e2e image (helmctl narrows the manifest
+# to what each chart actually declares — see RestrictImagesToDeclared),
+# released and packaged the SAME way as the pair above rather than as a
+# second build path.
+helmctl package \
+    --chart examples/url-shortener/charts/url-shortener-e2e \
     --manifest dist/goreleaser-manifest.json \
     --require-image-digests \
     --output dist/charts

@@ -98,7 +98,7 @@ jobs:
             "name": "example",
             "build": "devbox run -- just example-snapshot",
             "install": "devbox run -- just example-fixture && devbox run -- just example-install",
-            "test": "devbox run -- just example-smoke && devbox run -- just example-verify-hook"
+            "test": "devbox run -- just example-smoke && devbox run -- just example-e2e-chart && devbox run -- just example-verify-hook"
           }
         ]
 

@@ -218,6 +218,68 @@ A caller that wants either to run sets the matching env and grants the
 matching permission — nothing here decides that for every caller by
 running unconditionally.
 
+## The suite, as a released test chart
+
+The suite runs two ways, both against a real install, and both the exact
+same binary described above — only how it reaches its names differs:
+
+- **outside-in**, from this box's own devbox environment or a laptop
+  (`just example-smoke`, or `go test` directly): the suite resolves its
+  names by rendering `charts/url-shortener-infra` with `helm`
+  (`e2e/fixture.Resolve`), since `helm` is on PATH there and this box's own
+  fixture stands in for a real infra chart (see "The box installs no infra
+  chart" above);
+- **as a Job**, rendered by `charts/url-shortener-e2e` — a THIRD chart,
+  released and packaged alongside the other two by the exact same
+  `.goreleaser.yaml` + `helmctl` flow, carrying the SAME `e2e` image the
+  outside-in loop runs directly. Installed into the SAME namespace as an
+  application release already there, it runs the suite against that
+  release from inside the cluster.
+
+The Job cannot render the infra chart either — same reason
+`templates/verification.yaml`'s hook Job cannot (no `helm` in the `e2e`
+image, no copy of the charts' embedded source there) — so it does not try
+to. `charts/url-shortener-e2e/values.yaml` takes every name the suite
+needs directly: the database's host, name, and its owner and runtime
+roles; the runtime role's password Secret (read into the suite as
+`E2E_APP_PASSWORD`, via `secretKeyRef` — no RBAC on Secrets, because the
+kubelet resolves it, never this Job's own ServiceAccount token); the
+stream, its two subjects and the two durable consumer names; the archive
+bucket, its region and endpoint; and, optionally, a traces URL. Setting
+`E2E_NAMES_FROM_ENV=1` (which the chart's Job always does) is what tells
+the suite to build its names from THOSE environment variables instead of
+either rendering a chart or — `verificationHookMode`'s own path — leaving
+every chart-derived name empty so the tests that need one skip. Every
+case the suite carries runs; nothing here is missing on purpose.
+
+`mode` picks which cases run:
+
+| `mode` | Runs |
+|---|---|
+| `full` (the default) | every case the suite carries |
+| `tenant` | every case EXCEPT `TestMigrationRanAndRolesAreSeparate`, which issues DDL directly at the database (`CREATE TABLE`, then `DROP TABLE`, to prove the runtime role cannot) — a probing write that assumes this install owns its database outright, which a tenant sharing one under a prefix (`url-shortener-infra`'s `tier: test`) should not be handed rights to make true |
+
+The Job carries no `helm.sh/hook` annotations at all — it is a PLAIN Job,
+applied the same way by `helm upgrade --install` and by a GitOps
+controller's `helm template` + apply (see "Two install paths" above). Its
+own name folds in THIS CHART'S version
+(`charts/url-shortener-e2e/templates/_helpers.tpl`'s
+`"url-shortener-e2e.jobName"`), because a Job's spec is immutable: without
+that, re-applying an upgraded chart under the same name would be refused
+rather than converge. Each release of this chart is therefore a Job
+nothing before it ever created; the one before it is left for
+`job.ttlSecondsAfterFinished` (minimum 120s, default 600s) to clean up.
+
+`just example-e2e-chart` runs it on the kind box, after
+`just example-install`: installing the packaged `.tgz` under the release
+under test's own names (read the same way `hack/install.sh` reads them —
+`e2e/fixture/cmd/resolve`, never repeated by hand), waiting for the Job it
+renders to reach `Complete`, and printing the Job's own log either way. It
+is part of `just cluster-all` and the CI `cluster` job's test step,
+alongside `example-smoke` — proving the suite runs as the chart's own Job,
+through that Job's scoped RBAC, exactly like `example-verify-hook` proves
+it for the application chart's post-install hook.
+
 ## Traps
 
 **A test that shells out is cached on a stale pass.** When only the rendered
