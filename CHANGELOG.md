@@ -6,6 +6,21 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **The `url-shortener-e2e` chart's Job no longer sets
+  `ttlSecondsAfterFinished` by default.** It is now optional, and UNSET
+  unless a deployment sets it (still floored at 120s by the schema when
+  it does). A GitOps controller applying this chart with self-heal on
+  treats a Job that deleted itself as missing from the live state and
+  recreates it — running the whole suite, including its DDL case, again
+  on a loop, forever, at a fixed version. The chart already names the Job
+  after its own version so a plain `apply` converges at every version;
+  the previous version's Job is left for the next version's apply to
+  prune, or for `helm uninstall`, never a TTL. See
+  `docs/guides/conformance.md`, and a new conformance check
+  (`examples/url-shortener/charts/conformance_test.go`) that fails on any
+  plain (non-hook) Job a chart renders that still sets
+  `ttlSecondsAfterFinished`.
+
 - **The `url-shortener-e2e` chart can now run an always-on prober beside
   its e2e Job.** `prober.enabled` (default `false`) turns on a Deployment
   that walks the same three journeys the e2e suite proves once — create a

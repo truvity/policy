@@ -21,6 +21,7 @@ Not normative. This is how to tell whether a repository satisfies
 | platform | a chart's objects are found by the `app.kubernetes.io/instance` label, never by the `meta.helm.sh/release-name` annotation — that annotation is stamped by `helm install`/`upgrade` and is simply absent from a render-and-apply install | chart test: every rendered workload and Service carries the label; the static scan refuses a template that selects by the annotation |
 | platform | no value is generated once inside a template — a random password, a key or a certificate minted in a template regenerates on every render and never converges to one value | static scan of every chart's templates for `randAlphaNum`/`randAlpha`/`randNumeric`/`randAscii`/`genPrivateKey`/`genCA`/`genSelfSignedCert`/`derivePassword` |
 | platform | a hook is idempotent and safe to run on every sync — a GitOps controller maps `post-install`/`post-upgrade` to one phase and runs it on every sync, not only on the first install or a version change | review |
+| platform | a plain (non-hook) Job a chart renders does not set `ttlSecondsAfterFinished` by default — a GitOps controller with self-heal on recreates a Job that deleted itself, running whatever it does again on a loop, forever, at a fixed version | chart test: every Job without a `helm.sh/hook` annotation is rejected if it carries `ttlSecondsAfterFinished` |
 
 See
 [testing.md](testing.md#two-install-paths-and-why-both-must-render-the-same)
