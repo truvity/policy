@@ -280,6 +280,70 @@ alongside `example-smoke` — proving the suite runs as the chart's own Job,
 through that Job's scoped RBAC, exactly like `example-verify-hook` proves
 it for the application chart's post-install hook.
 
+## The prober
+
+The e2e Job proves a release **IS** healthy, once, and exits. Nothing here
+proves it **STAYS** healthy — and a fresh install with no traffic always
+looks green, which is exactly the gap a monitoring gate (a bake window a
+promotion tool reads before calling a rollout safe) cannot tolerate: it
+needs signal before, during and after the rollout, not a single Job's exit
+code from before it began.
+
+`charts/url-shortener-e2e/templates/prober.yaml` is that signal: a
+Deployment, off by default (`prober.enabled`), that walks the SAME three
+journeys the suite proves once — create a short link (`urls`), resolve it
+(`redirect`, expecting a 302 back to the long URL), read its click count
+back and see it move (`stat`, which carries no Service of its own — this is
+its effect, exactly as the suite's own `TestStatMovesTheCounter` reads it)
+— in a loop, forever, against the release named by `.Values.appRelease`.
+
+**A separate workload from the suite's Job, deliberately.** They answer two
+different questions and belong to two different lifetimes: the Job runs
+once and its result is a Job condition; the prober runs for as long as the
+release does and its result is a stream of outcomes over time. Folding the
+loop into the Job would make "prove it once" and "watch it forever" one
+component with two settings fighting over what `mode` even means.
+
+**The request-making code is not duplicated.** Before this existed, the
+suite held its own copy of "how to ask `urls` to create a link, how to read
+a redirect's status and Location, how to read a click count back" — and the
+prober would have needed a second copy, which is exactly the drift a
+shared library exists to rule out. `examples/url-shortener/e2e/journey` is
+that library: three functions, no `*testing.T`, imported by
+`examples/url-shortener/e2e/suite` (which wraps each call with `t.Fatalf`
+and the harness's pod-aware error wrapping) and by
+`examples/url-shortener/e2e/cmd/prober` (which wraps each call with an
+OpenTelemetry metric and a structured log line instead). A protocol change
+either would need to follow now has exactly one place to make it.
+
+**Metrics, on the same terms as every other component here (decision
+0006).** The prober starts the OpenTelemetry SDK
+(`telemetry.Start`, decision 0006 again — see "Telemetry" in
+[logging-and-telemetry.md](logging-and-telemetry.md)) and reports a counter
+and a histogram: a Prometheus reader sees them as
+`probe_journey_total{journey,result}` (`journey` is `urls`, `redirect` or
+`stat`; `result` is `success` or `failure`) and
+`probe_journey_duration_seconds{journey}`. No endpoint configured — the
+chart's default — means no export, exactly like every other exporter here;
+nothing about the prober itself decides whether metrics leave the process.
+
+**On kind, read the log, not the metrics.** The local cluster carries no
+OpenTelemetry collector (0005's amendment), so a metric this prober
+computes is never exported anywhere off the box. What IS always there is
+the structured log line `record` in `examples/url-shortener/e2e/cmd/prober`
+writes for every pass — `"probe journey succeeded"` or `"probe journey
+failed"`, with `journey`, `result` and `duration_seconds` fields — which
+`just example-prober` (`examples/url-shortener/hack/install-prober.sh`)
+reads back with `kubectl logs` to prove the loop is actually running,
+within a bounded time, rather than asking a collector this box does not
+have for a series it would never receive.
+
+`just example-prober` runs after `just example-e2e-chart`, on the SAME
+release that installed: it enables the prober with `helm upgrade
+--reuse-values`, waits for its Deployment to become ready, and fails unless
+a successful pass shows up in its log within 60 seconds. It is part of
+`just cluster-all` and the CI kind test step, alongside `example-e2e-chart`.
+
 ## Traps
 
 **A test that shells out is cached on a stale pass.** When only the rendered

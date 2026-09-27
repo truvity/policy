@@ -61,6 +61,16 @@ builds:
     env: [CGO_ENABLED=0]
     goos: [linux]
     goarch: [amd64, arm64]
+  # Always-on synthetic traffic (docs/guides/testing.md) — an ordinary Go
+  # binary like the three above, not the `go test -c` shape the e2e image
+  # needs, so it is a `kos:` entry rather than another Dockerfile.
+  - id: prober
+    dir: examples/url-shortener
+    main: ./e2e/cmd/prober
+    binary: prober
+    env: [CGO_ENABLED=0]
+    goos: [linux]
+    goarch: [amd64, arm64]
 
 # The Go components need no Dockerfile at all: ko builds the image from the
 # package, cross-compiling rather than emulating.
@@ -84,6 +94,11 @@ kos:
     base_import_paths: true
   - id: urls
     build: urls
+    platforms: [linux/amd64, linux/arm64]
+    tags: ["{{ .Env.IMAGE_TAG }}"]
+    base_import_paths: true
+  - id: prober
+    build: prober
     platforms: [linux/amd64, linux/arm64]
     tags: ["{{ .Env.IMAGE_TAG }}"]
     base_import_paths: true
