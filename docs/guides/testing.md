@@ -267,8 +267,11 @@ own name folds in THIS CHART'S version
 `"url-shortener-e2e.jobName"`), because a Job's spec is immutable: without
 that, re-applying an upgraded chart under the same name would be refused
 rather than converge. Each release of this chart is therefore a Job
-nothing before it ever created; the one before it is left for
-`job.ttlSecondsAfterFinished` (minimum 120s, default 600s) to clean up.
+nothing before it ever created; the one before it is left for the NEXT
+version's apply to prune, or for `helm uninstall` — not for
+`job.ttlSecondsAfterFinished`, which is UNSET by default (see
+[conformance.md](conformance.md)) precisely so a GitOps controller's
+self-heal cannot recreate a Job that deleted itself.
 
 `just example-e2e-chart` runs it on the kind box, after
 `just example-install`: installing the packaged `.tgz` under the release
