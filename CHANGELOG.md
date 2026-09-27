@@ -21,6 +21,26 @@ and nothing else — and its GitHub Release lists the commits.
   plain (non-hook) Job a chart renders that still sets
   `ttlSecondsAfterFinished`.
 
+- **The `url-shortener-infra` chart's database and its two role names can
+  now be derived from the tenant's namespace and installName, opt-in via a
+  new `postgres.tenantScopedNames` (default `false`), instead of always
+  being a fixed `url_shortener` / `_owner` / `_app`.** The chart's local
+  Postgres server is shared by every install the same way its NATS broker
+  already is, and only the stream was scoped to the tenant before this — a
+  `primary` install's own dedicated CNPG Cluster never noticed, but two
+  installs on a box with one shared Postgres (the kind lane's own fixture,
+  standing in for that Cluster) collided on all three names, and the second
+  install's fixture run reset the credentials the first one was already
+  connected with. The default stays exactly what it always was — every
+  existing consumer keeps its fixed names unchanged — and an explicit
+  `postgres.database`/`ownerRole`/`runtimeRole` always wins over the derived
+  name regardless of the flag. Kind/fixture installs opt in
+  (`e2e/fixture/names.go`); nothing else needs to. See
+  `templates/_helpers.tpl`'s `url-shortener-infra.postgresBase` for the
+  exact derivation (a valid Postgres identifier, truncated with a hash
+  suffix past 57 bytes so two tenants never collide even there) and
+  `docs/guides/testing.md`.
+
 - **The `url-shortener-e2e` chart can now run an always-on prober beside
   its e2e Job.** `prober.enabled` (default `false`) turns on a Deployment
   that walks the same three journeys the e2e suite proves once — create a

@@ -125,6 +125,32 @@ chart, not repeated by hand, so the fixture cannot drift from the
 interface it stands in for. See `examples/url-shortener/e2e/fixture` and
 `docs/decisions/0005-kind-is-the-gate.md`'s amendment.
 
+The box's Postgres is shared the same way its NATS broker is — ONE server
+for every install on the box, not one per tenant — so on this box, and only
+on this box, the database and its two role names need to be cluster-global
+on the same terms [docs/guides/events.md](events.md#naming) already
+describes for the stream. `url-shortener-infra`'s `postgres.tenantScopedNames`
+is what turns that on: OFF by default, so every real platform keeps the
+chart's fixed names (`url_shortener`, `_owner`, `_app`) exactly as before —
+a `primary` install's own CNPG Cluster is never shared with anything, so a
+fixed name there costs it nothing, and flipping the default would have
+handed an already-bootstrapped Cluster a database and owner that no longer
+match what it was created with. The fixture turns it ON (see
+`e2e/fixture/names.go`'s call to `Resolve`), which derives whichever of the
+three a caller left at its own default from this install's namespace and
+installName together — folded into a valid Postgres identifier (lower-cased,
+`-` to `_`, started with a letter, and — past 57 of Postgres' 63-byte
+identifier limit, leaving room for the longer of the two role suffixes —
+truncated with an 8-character hash suffix from its own scope, so two tenants
+that truncate to the same prefix still do not collide). An explicit value
+always wins over the derived one, flag or no flag. See
+`examples/url-shortener/charts/url-shortener-infra/templates/_helpers.tpl`'s
+`"url-shortener-infra.postgresBase"` and `"url-shortener-infra.resolvedDatabase"`
+for the exact rules. Before this, the fixture created the database and both
+roles under the chart's fixed names regardless; two installs in different
+namespaces shared all three, and the second one's fixture run reset the
+passwords the first one's pods were already connected with.
+
 ## The suite
 
 The cluster suite does not assert that things installed. It asserts that the
