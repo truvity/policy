@@ -6,6 +6,17 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **The url-shortener example's e2e readiness check now finds a release's
+  Deployments when the chart was rendered by a GitOps controller rather
+  than installed by helm.** `TestDeploymentsAreReady` reaches
+  `github.com/truvity/gemaal/pkg/harness`'s `ReleaseDeployments` and
+  `WaitForDeployments`, which used to decide a Deployment's release only
+  by the `meta.helm.sh/release-name` annotation `helm install/upgrade`
+  stamps. A release deployed with `helm template` and applied directly
+  never gets that annotation, only the standard `app.kubernetes.io/instance`
+  label every chart carries — bumped to gemaal v0.24.1, which falls back
+  to that label when the annotation is absent.
+
 - **The url-shortener example's verification hook no longer fails on a real
   install.** The hook Job's e2e suite unconditionally resolved a local test
   fixture's names by rendering a chart with `helm` — a kind-tier concern the
