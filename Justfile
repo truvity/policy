@@ -163,13 +163,25 @@ example-smoke:
 example-verify-hook:
     bash examples/url-shortener/hack/verify-hook.sh
 
+# Prove the url-shortener-e2e TEST CHART: install its packaged .tgz after
+# the application (`example-install`), wait for the Job it renders to
+# reach Complete, and dump the Job's own log either way. This is the
+# SECOND way the suite runs (docs/guides/testing.md) — a plain Job this
+# chart's own release owns, through its own scoped RBAC, reading every
+# name from values rather than from this box's fixture directly. Distinct
+# from `example-verify-hook`, which proves the APPLICATION chart's own
+# post-install hook; this proves the separate test chart instead.
+[doc("Prove the url-shortener-e2e test chart's Job completes against a real install")]
+example-e2e-chart:
+    bash examples/url-shortener/hack/install-e2e-chart.sh
+
 # The whole cluster tier, from nothing.
 #
 # No identity step: transport identity testing moved off the box entirely
 # (0005) and examples/url-shortener/hack/identity-smoke.sh is not yet
 # ported to wherever it lands — a later task, not this one.
 [doc("The whole cluster tier, from nothing")]
-cluster-all: cluster cluster-verify example-snapshot example-fixture example-install example-smoke example-verify-hook
+cluster-all: cluster cluster-verify example-snapshot example-fixture example-install example-smoke example-e2e-chart example-verify-hook
 
 # Remove it, and the registry container and the snapshot builder beside it —
 # disk is a shared resource on the machine this usually runs on, and a

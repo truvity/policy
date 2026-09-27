@@ -44,20 +44,23 @@ jobs:
       # And a chart whose images.* entries are not all digest-pinned is
       # refused outright.
       require-image-digests: true
-      # BOTH charts, and they are a pair rather than a chart and an extra.
-      #
-      # The split is an ordering requirement: Helm runs every hook before
+      # THREE charts, released under ONE version. url-shortener and
+      # url-shortener-infra are a pair rather than a chart and an extra —
+      # the split is an ordering requirement: Helm runs every hook before
       # anything else in the same release, so the chart that migrates a
       # database cannot be the chart that creates it. A consumer installing
       # only the application would get a migration hook waiting on a
       # database nobody made.
       #
-      # They release under ONE version, which is what lets a deployment
-      # track a single number for the pair.
+      # url-shortener-e2e is the third: a Job that runs this SAME release's
+      # e2e image against an application release already installed, in the
+      # same namespace — see docs/guides/testing.md. It carries the e2e
+      # image's digest, the same way the pair above carries theirs, which
+      # is why it releases alongside them rather than separately.
       #
       # They live with the components they deploy rather than at this
       # repository's root — `chart-root` exists so that they can.
-      charts: '["url-shortener", "url-shortener-infra"]'
+      charts: '["url-shortener", "url-shortener-infra", "url-shortener-e2e"]'
       chart-root: examples/url-shortener/charts
 
   packages:
