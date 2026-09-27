@@ -6,6 +6,23 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **The `url-shortener-e2e` chart can now run an always-on prober beside
+  its e2e Job.** `prober.enabled` (default `false`) turns on a Deployment
+  that walks the same three journeys the e2e suite proves once — create a
+  short link, resolve it, watch its counter move — in a loop, against a
+  release nobody is otherwise calling: a fresh install with no traffic
+  always looks healthy, and a bake window needs steady signal to read
+  before, during and after a rollout. It is a SEPARATE workload from the
+  suite's Job on purpose (one proves a release IS healthy, once; the other
+  proves it STAYS healthy) and shares its request-making code with the
+  suite through a new package, `examples/url-shortener/e2e/journey`, so the
+  two can never drift on what a journey even is. Metrics are OpenTelemetry
+  (`probe_journey_total{journey,result}`, `probe_journey_duration_seconds{journey}`),
+  wired the same way as every other component here (decision 0006): no
+  endpoint configured, no export. A new image, `url-shortener/prober`,
+  ships alongside the others from the same `.goreleaser.yaml`. See
+  `docs/guides/testing.md`.
+
 - **A third chart, `url-shortener-e2e`, ships alongside `url-shortener` and
   `url-shortener-infra`.** It renders a plain Job that runs the example's
   own e2e suite — the same `e2e` image the outside-in loop already runs —

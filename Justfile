@@ -175,13 +175,24 @@ example-verify-hook:
 example-e2e-chart:
     bash examples/url-shortener/hack/install-e2e-chart.sh
 
+# Prove the url-shortener-e2e chart's OTHER workload: enable the prober
+# (charts/url-shortener-e2e/templates/prober.yaml) on the SAME release
+# `example-e2e-chart` just installed, and assert its journeys succeed
+# within a bounded time. Deliberately AFTER `example-e2e-chart`, not
+# instead of it: the two workloads make two different claims
+# (docs/guides/testing.md), and this one needs the release the Job proved
+# healthy to already be up.
+[doc("Prove the url-shortener-e2e chart's prober runs and succeeds against a real install")]
+example-prober:
+    bash examples/url-shortener/hack/install-prober.sh
+
 # The whole cluster tier, from nothing.
 #
 # No identity step: transport identity testing moved off the box entirely
 # (0005) and examples/url-shortener/hack/identity-smoke.sh is not yet
 # ported to wherever it lands — a later task, not this one.
 [doc("The whole cluster tier, from nothing")]
-cluster-all: cluster cluster-verify example-snapshot example-fixture example-install example-smoke example-e2e-chart example-verify-hook
+cluster-all: cluster cluster-verify example-snapshot example-fixture example-install example-smoke example-e2e-chart example-prober example-verify-hook
 
 # Remove it, and the registry container and the snapshot builder beside it —
 # disk is a shared resource on the machine this usually runs on, and a
@@ -212,15 +223,16 @@ charts:
 # Regenerate the chart goldens. Read the diff BEFORE running this: a golden
 # updated without being read is a golden that records whatever happened.
 #
-# The pattern matches BOTH chart render tests. `TestWhatTheChartRenders`
+# The pattern matches all THREE chart render tests. `TestWhatTheChartRenders`
 # alone does not: the infrastructure chart's is
-# `TestWhatTheInfraChartRenders`, which that pattern does not contain, so
-# this recipe regenerated one chart's goldens and silently left the other's
-# stale. The only symptom was a CI failure on a change the author had
-# already run `just golden` for.
+# `TestWhatTheInfraChartRenders` and the test chart's is
+# `TestWhatTheE2EChartRenders`, neither of which that narrower pattern
+# contains, so this recipe would regenerate one chart's goldens and
+# silently leave the others' stale. The only symptom was a CI failure on a
+# change the author had already run `just golden` for.
 [doc("Regenerate the chart goldens")]
 golden:
-    cd examples/url-shortener && UPDATE_GOLDEN=1 go test ./charts/... -run 'TestWhatThe(Infra)?ChartRenders' -count=1
+    cd examples/url-shortener && UPDATE_GOLDEN=1 go test ./charts/... -run 'TestWhatThe(Infra|E2E)?ChartRenders' -count=1
 
 # Regenerate the RPC code from the schema.
 [doc("Regenerate the RPC code from the schema")]
