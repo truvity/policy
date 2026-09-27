@@ -6,6 +6,24 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **This repository's own tag line now starts at v1.25.0, not v1.0.0.** The
+  url-shortener chart continues a line that used to be published from
+  another repository, whose last release was in the 1.22.x series; see
+  `docs/contracts/release.md`.
+
+- **A repository-wide chart test now enforces the rules a chart needs to
+  behave the same whether it is installed with `helm install`/`upgrade` or
+  rendered with `helm template` and applied directly, with no Helm release
+  record at all — the shape a GitOps controller uses.** It statically scans
+  every chart's templates for `lookup`, `.Release.IsUpgrade`/`.IsInstall`/
+  `.Revision`, a value generated once in a template (`randAlphaNum` and
+  friends, `genPrivateKey`, `genCA`, `genSelfSignedCert`,
+  `derivePassword`), and a template selecting an object by the
+  `meta.helm.sh/release-name` annotation — and asserts every rendered
+  workload and Service carries the `app.kubernetes.io/instance` label
+  instead. See `docs/guides/conformance.md` and
+  `docs/guides/testing.md#two-install-paths-and-why-both-must-render-the-same`.
+
 - **The url-shortener example's e2e readiness check now finds a release's
   Deployments when the chart was rendered by a GitOps controller rather
   than installed by helm.** `TestDeploymentsAreReady` reaches

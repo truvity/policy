@@ -84,6 +84,31 @@ never see. See `hack/example-snapshot.sh` for the two things this loop
 does differently from a real release — where the images go, and one
 architecture instead of every one — and nothing else.
 
+## Two install paths, and why both must render the same
+
+The cluster lane here installs a chart the way `just example-install`
+(`examples/url-shortener/hack/install.sh`) does it: `helm upgrade
+--install`, which holds a Helm release record. That
+record is what makes `lookup` return something, `.Release.IsUpgrade` and
+`.Release.IsInstall` tell the truth, and `helm install`/`upgrade` stamp the
+`meta.helm.sh/release-name` annotation on every object.
+
+A consumer's own platform commonly does something else entirely: a GitOps
+controller renders the chart with `helm template` and applies the output
+directly, with **no Helm release record at all**. `lookup` returns empty,
+those `.Release` fields are meaningless, and the annotation is never
+stamped — the only thing that identifies a release's objects there is the
+`app.kubernetes.io/instance` label the chart itself renders. A hook is
+affected too: such a controller has no first-install/upgrade distinction of
+its own, so it maps `post-install` and `post-upgrade` to one phase and runs
+it on **every** sync, not only the first install or a version change.
+
+Nothing here exercises that second path directly — see
+[docs/guides/conformance.md](conformance.md#what-ci-already-checks) for the
+rows that enforce it by static scan and by chart test instead, so that a
+chart which happens to pass under `helm upgrade --install` cannot rely on
+what only that path provides.
+
 ## The box installs no infra chart
 
 The local cluster carries SERVERS ONLY — a plain Postgres, NATS with
