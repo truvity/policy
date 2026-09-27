@@ -17,6 +17,16 @@ Not normative. This is how to tell whether a repository satisfies
 | repository | public repositories run hosted | the shared workflow refuses a self-hosted runner for a public caller |
 | repository | the cluster lane is a required check | the CI gate requires the e2e suite to pass |
 | [release](../contracts/release.md) | one tag stamps everything | the release workflow, from the tag, in CI |
+| [platform](../contracts/platform.md) | a chart names no `lookup`, and nothing depends on `.Release.IsUpgrade`/`.Release.IsInstall`/`.Release.Revision` — a GitOps controller renders with `helm template`, which leaves `lookup` empty and those fields meaningless | static scan of every chart's templates |
+| platform | a chart's objects are found by the `app.kubernetes.io/instance` label, never by the `meta.helm.sh/release-name` annotation — that annotation is stamped by `helm install`/`upgrade` and is simply absent from a render-and-apply install | chart test: every rendered workload and Service carries the label; the static scan refuses a template that selects by the annotation |
+| platform | no value is generated once inside a template — a random password, a key or a certificate minted in a template regenerates on every render and never converges to one value | static scan of every chart's templates for `randAlphaNum`/`randAlpha`/`randNumeric`/`randAscii`/`genPrivateKey`/`genCA`/`genSelfSignedCert`/`derivePassword` |
+| platform | a hook is idempotent and safe to run on every sync — a GitOps controller maps `post-install`/`post-upgrade` to one phase and runs it on every sync, not only on the first install or a version change | review |
+
+See
+[testing.md](testing.md#two-install-paths-and-why-both-must-render-the-same)
+for what a chart installed by `helm upgrade --install` and one rendered by a
+GitOps controller do differently, and why a chart must not be able to tell
+which one it is in.
 
 ## What a reviewer checks
 

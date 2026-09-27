@@ -30,6 +30,19 @@ A module whose language requires a major suffix in its path carries it
 can never be fetched, and a tag that has been fetched once cannot be taken
 back.
 
+### The current line starts at v1.25.0
+
+This repository's url-shortener chart continues a line that used to be
+published from another repository, whose last release on that line was in
+the 1.22.x series. **The next tag this repository cuts is v1.25.0**, not a
+reset to 1.0.0 and not a continuation of this repository's own 0.x tags —
+so that a consumer's version range stays meaningful across the move. A 0.x
+→ 1.22.x comparison would tell that consumer nothing about continuity, and
+it would make the chart that replaces the old one look OLDER than what it
+replaces, which is backwards for anything a semver range picks by. From
+v1.25.0 on, this repository's tags follow ordinary semver exactly as
+described above — no more starting lines to account for.
+
 ## 3. The changelog is written for the consumer
 
 `CHANGELOG.md`, newest first, one heading per version, prose bullets. The
