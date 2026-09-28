@@ -6,6 +6,21 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **The `url-shortener-e2e` chart's `traces.url` can now be an
+  authenticated trace store.** New, optional values:
+  `traces.tokenExchange.{tokenURL,client,audience,expirationSeconds}` and
+  `traces.caConfigMap`/`traces.caConfigMapKey`. Set, the Job projects a
+  ServiceAccount token and trades it at `tokenURL` for a bearer token
+  scoped to `client` (RFC 8693 token exchange), which
+  `examples/url-shortener/e2e/suite`'s `TestRedirectTraceCrossesEveryComponent`
+  now sends as `Authorization: Bearer` when it queries the trace store —
+  optionally verified against a CA bundle from `caConfigMap`, independent
+  of the trust store the token exchange itself is verified against (the
+  new `examples/url-shortener/e2e/traceauth` package doc comment explains
+  why the two are never the same). Unset (the default, and the only shape
+  the kind tier ever renders), nothing changes: the chart wires no auth
+  and the suite sends no Authorization header, exactly as before.
+
 - **REMOVAL: the `url-shortener` application chart no longer has a
   `verification` block, and no longer renders a post-install/post-upgrade
   hook Job (nor the ServiceAccount/Role/RoleBinding it ran under).** The
