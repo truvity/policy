@@ -6,6 +6,20 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **The `url-shortener-infra` chart tags every AWS resource it creates
+  with `project`, not just `cluster`.** Found on an install whose
+  platform's permissions boundary denied `iam:CreateRole` outright
+  because the Role's request carried `cluster` but not `project` — a
+  boundary that requires both, common enough to be worth the chart
+  carrying by default rather than every consumer discovering it the same
+  way. The Role, the Policy, the Bucket's own `tagging.tagSet` and the
+  PodIdentityAssociation all get both tags now. New, optional
+  `cloud.project` value: unset (the default), it is this release's own
+  namespace, which is what "the project" already means on the platforms
+  this chart targets; set, it wins. Also new: `cloud.tags`, a map of
+  extra tags folded into every one of those resources, which can never
+  override `cluster` or `project`.
+
 - **The url-shortener example's `urls` service no longer extends its
   span-attribute allow-list with `error`.** `urls` serves only Connect
   RPC through otelconnect and never imports `internal/api`, so nothing in
