@@ -125,13 +125,28 @@ func (a *authority) write(t *testing.T, dir, namespace, account string) {
 }
 
 // serve stands up a real TLS listener with the given identity and returns
-// its URL and a client presenting its own.
+// its URL, a client presenting its own, the server's own captured errors,
+// and a channel that receives a value each time one of the server's
+// connections reaches net/http's StateClosed.
 //
 // Not httptest's TLS helper: that one substitutes its own certificate when
 // the configuration carries none in `Certificates`, and this package
 // deliberately supplies GetCertificate instead — so the helper would test
 // its own certificate rather than the one under test.
-func serve(t *testing.T, server, client *transport.Identity) (string, *http.Client, *serverLog) {
+//
+// The closed channel exists because a connection is handled entirely by its
+// own goroutine (net/http's own per-connection `serve`, spawned from
+// `Serve`): on a handshake failure that goroutine writes to `errs` — via
+// the Server's own `ErrorLog` — and only THEN, as that goroutine unwinds,
+// does net/http mark the connection StateClosed and invoke `ConnState`. A
+// test that waits for StateClosed is therefore reading `errs` only after
+// the write it depends on has already happened in that other goroutine,
+// rather than racing it — which reading `errs` right after the CLIENT's
+// request merely failed does not guarantee: the client only needs the TLS
+// alert the library sends BEFORE it ever gets around to logging the
+// handshake failure, so under load the client can observe the refusal and
+// a test can go on to read `errs` before the server has written to it.
+func serve(t *testing.T, server, client *transport.Identity) (string, *http.Client, *serverLog, <-chan struct{}) {
 	t.Helper()
 
 	ln, err := tls.Listen("tcp", "127.0.0.1:0", server.Server())
@@ -142,12 +157,27 @@ func serve(t *testing.T, server, client *transport.Identity) (string, *http.Clie
 	// that it was refused — so this is the only place a test can read it.
 	errs := &serverLog{}
 
+	// Buffered generously rather than blocking: nothing here needs every
+	// transition delivered, only that at least one StateClosed arrives
+	// after the one connection each of these tests drives, and a hook that
+	// blocked on a full channel would wedge the connection's own goroutine
+	// (and so net/http's shutdown) on tests that never read it at all.
+	closed := make(chan struct{}, 16)
+
 	srv := &http.Server{
 		Handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			_, _ = io.WriteString(w, "served")
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
 		ErrorLog:          log.New(errs, "", 0),
+		ConnState: func(_ net.Conn, state http.ConnState) {
+			if state == http.StateClosed {
+				select {
+				case closed <- struct{}{}:
+				default:
+				}
+			}
+		},
 	}
 
 	go func() { _ = srv.Serve(ln) }()
@@ -156,7 +186,22 @@ func serve(t *testing.T, server, client *transport.Identity) (string, *http.Clie
 
 	return "https://" + ln.Addr().String(), &http.Client{
 		Transport: &http.Transport{TLSClientConfig: client.Client()},
-	}, errs
+	}, errs, closed
+}
+
+// waitClosed blocks until serve's ConnState hook has observed a connection
+// reach http.StateClosed — the deterministic point, explained on serve's
+// own doc comment, after which it is safe to read what the server logged
+// about that connection. The bound is a safety net for a genuine hang, not
+// a timing guess: the transition it waits for follows immediately behind
+// the write it is ordering against, in the same goroutine.
+func waitClosed(t *testing.T, closed <-chan struct{}) {
+	t.Helper()
+	select {
+	case <-closed:
+	case <-time.After(10 * time.Second):
+		t.Fatal("timed out waiting for the server to close the connection")
+	}
 }
 
 // serverLog collects what the server wrote, safely enough for a test that
@@ -207,7 +252,7 @@ func TestAnAdmittedPeerIsServed(t *testing.T) {
 		transport.Peer{Namespace: "shop", ServiceAccount: "api"}), nil)
 	must(t, err)
 
-	url, httpClient, _ := serve(t, server, client)
+	url, httpClient, _, _ := serve(t, server, client)
 
 	resp, err := httpClient.Get(url)
 	must(t, err)
@@ -240,7 +285,7 @@ func TestAPeerNotOnTheListIsClosedAtTheHandshake(t *testing.T) {
 		transport.Peer{Namespace: "shop", ServiceAccount: "api"}), nil)
 	must(t, err)
 
-	url, httpClient, serverErrs := serve(t, server, stranger)
+	url, httpClient, serverErrs, closed := serve(t, server, stranger)
 
 	_, err = httpClient.Get(url)
 	mustFail(t, err)
@@ -248,6 +293,13 @@ func TestAPeerNotOnTheListIsClosedAtTheHandshake(t *testing.T) {
 	// The CALLER is told only that it was refused. Leaking which rule
 	// rejected it would tell an attacker what the allow-list contains.
 	mustFailWith(t, err, "tls:")
+
+	// The client above only needed the TLS alert the server sends BEFORE
+	// it logs anything — see serve's own doc comment — so reading
+	// serverErrs here without waiting for the connection to actually close
+	// would race the server's own goroutine under load. This makes the
+	// ordering the two checks below depend on explicit instead.
+	waitClosed(t, closed)
 
 	// The SERVER knows why, and says so where an operator will read it.
 	// Without this half, a service that refused everyone for an unrelated
@@ -283,7 +335,7 @@ func TestAnIdentityFromAnotherTrustDomainIsRefused(t *testing.T) {
 	client, err := transport.Load(other, nil)
 	must(t, err)
 
-	url, httpClient, _ := serve(t, server, client)
+	url, httpClient, _, _ := serve(t, server, client)
 
 	_, err = httpClient.Get(url)
 	mustFail(t, err)
@@ -388,7 +440,7 @@ func TestAnEmptyPeerListAdmitsNobody(t *testing.T) {
 		transport.Peer{Namespace: "shop", ServiceAccount: "api"}), nil)
 	must(t, err)
 
-	url, httpClient, _ := serve(t, server, client)
+	url, httpClient, _, _ := serve(t, server, client)
 
 	_, err = httpClient.Get(url)
 	mustFail(t, err)
@@ -455,7 +507,7 @@ func TestAClientRefusesAServerOutsideItsTrustBundle(t *testing.T) {
 		transport.Peer{Namespace: "shop", ServiceAccount: "api"}), nil)
 	must(t, err)
 
-	url, httpClient, _ := serve(t, server, client)
+	url, httpClient, _, _ := serve(t, server, client)
 
 	_, err = httpClient.Get(url)
 	mustFail(t, err)
@@ -477,7 +529,7 @@ func TestAClientRefusesAServerItWasNotToldToTrust(t *testing.T) {
 		transport.Peer{Namespace: "shop", ServiceAccount: "api"}), nil)
 	must(t, err)
 
-	url, httpClient, _ := serve(t, server, client)
+	url, httpClient, _, _ := serve(t, server, client)
 
 	_, err = httpClient.Get(url)
 	mustFail(t, err)

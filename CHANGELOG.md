@@ -6,6 +6,15 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **The `url-shortener-e2e` chart has a new, optional `job.annotations`
+  value** (empty by default), rendered on the Job's own metadata only,
+  never the pod template's. A Job's spec is immutable, so a GitOps
+  controller applying this chart with a values change at an already
+  deployed version — turning on `traces.tokenExchange`, say — fails to
+  patch it; `job.annotations` lets a platform put its own
+  force/replace-on-change annotation there for a controller that reads
+  one to decide it may delete and recreate the Job instead.
+
 - **The `url-shortener-e2e` chart's `traces.url` can now be an
   authenticated trace store.** New, optional values:
   `traces.tokenExchange.{tokenURL,client,audience,expirationSeconds}` and

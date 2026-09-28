@@ -307,7 +307,13 @@ nothing before it ever created; the one before it is left for the NEXT
 version's apply to prune, or for `helm uninstall` — not for
 `job.ttlSecondsAfterFinished`, which is UNSET by default (see
 [conformance.md](conformance.md)) precisely so a GitOps controller's
-self-heal cannot recreate a Job that deleted itself.
+self-heal cannot recreate a Job that deleted itself. The name alone does
+not cover a platform changing only the chart's VALUES at a version
+already deployed (Kubernetes still refuses that patch as immutable), so
+`job.annotations` — empty by default, rendered on the Job's own metadata
+only — lets a platform put its own force/replace annotation there for a
+controller that reads one to decide it may delete and recreate the Job
+rather than apply in place.
 
 `just example-e2e-chart` runs it on the kind box, after
 `just example-install`: installing the packaged `.tgz` under the release
