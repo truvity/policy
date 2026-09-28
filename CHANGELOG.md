@@ -6,6 +6,12 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **The url-shortener example's `urls` service no longer extends its
+  span-attribute allow-list with `error`.** `urls` serves only Connect
+  RPC through otelconnect and never imports `internal/api`, so nothing in
+  it ever set that attribute — `redirect` is the one that does, through
+  `internal/api.Tracing`, and keeps the extension.
+
 - **REMOVAL: the `url-shortener` application chart no longer has an
   `images.e2e` value.** Left over from the in-chart verification hook
   removed earlier in this file, it was unread by every template in the
