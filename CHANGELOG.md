@@ -6,6 +6,17 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **REMOVAL: the `url-shortener` application chart no longer has an
+  `images.e2e` value.** Left over from the in-chart verification hook
+  removed earlier in this file, it was unread by every template in the
+  chart — the suite's image is stamped into the separate
+  `url-shortener-e2e` TEST CHART's own `images.e2e` instead (see
+  `docs/guides/testing.md`). `helmctl package` already narrows a
+  release's image manifest to what each chart declares
+  (`RestrictImagesToDeclared`), so dropping the key here only stops this
+  chart from being stamped with a digest it never used; a chart install
+  refuses an `images.e2e` value now (`additionalProperties: false`).
+
 - **The `url-shortener-e2e` chart has a new, optional `job.annotations`
   value** (empty by default), rendered on the Job's own metadata only,
   never the pod template's. A Job's spec is immutable, so a GitOps
