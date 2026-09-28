@@ -208,6 +208,17 @@ the redirect's own trace, by a trace id the test injects itself via a
 box carries no trace store (0005's amendment), so this is a `t.Skip`
 there — it is meant for the two tiers that do have one.
 
+That trace store may authenticate its readers. `E2E_TRACES_TOKEN_URL`,
+`E2E_TRACES_CLIENT` and `E2E_TRACES_TOKEN_FILE`, set together, tell the
+test to trade a projected ServiceAccount token at `E2E_TRACES_TOKEN_URL`
+for a bearer token scoped to `E2E_TRACES_CLIENT` (RFC 8693 token
+exchange, `examples/url-shortener/e2e/traceauth`) before it queries
+`E2E_TRACES_URL`; `E2E_TRACES_CA_FILE`, independently, names a CA bundle
+for `E2E_TRACES_URL` alone — never for the token exchange, which is
+verified against the suite image's own default trust store, appropriate
+for a public issuer. All four unset (the kind tier's only case) sends the
+same unauthenticated request this test always sent.
+
 ## The suite, as an image
 
 `.goreleaser.yaml` also publishes the compiled suite itself
@@ -270,8 +281,9 @@ roles; the runtime role's password Secret (read into the suite as
 `E2E_APP_PASSWORD`, via `secretKeyRef` — no RBAC on Secrets, because the
 kubelet resolves it, never this Job's own ServiceAccount token); the
 stream, its two subjects and the two durable consumer names; the archive
-bucket, its region and endpoint; and, optionally, a traces URL. Setting
-`E2E_NAMES_FROM_ENV=1` (which the chart's Job always does) is what tells
+bucket, its region and endpoint; and, optionally, a traces URL and how to
+authenticate to it (`traces.tokenExchange.*`, `traces.caConfigMap` — see
+"The suite, as an image" above for what each becomes). Setting
 the suite to build its names from THOSE environment variables instead of
 rendering a chart. Every case the suite carries runs; nothing here is
 missing on purpose.
