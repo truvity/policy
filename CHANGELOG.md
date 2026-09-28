@@ -6,6 +6,15 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **The `url-shortener-e2e` chart's prober Deployment now sets
+  `strategy: {type: Recreate}`.** With one replica, RollingUpdate's default
+  `maxUnavailable` of 25% rounds down to 0, so a new prober version that
+  cannot start (bad image, crash) left the OLD pod running indefinitely —
+  still producing synthetic traffic, which hides a broken prober from any
+  monitoring gate reading its metrics. Recreate stops the old pod first, so
+  a broken rollout shows up as missing traffic instead. Not configurable —
+  see `templates/prober.yaml`'s own comment.
+
 - **The `url-shortener-e2e` chart's Job no longer sets
   `ttlSecondsAfterFinished` by default.** It is now optional, and UNSET
   unless a deployment sets it (still floored at 120s by the schema when
