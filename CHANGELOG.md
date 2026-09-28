@@ -6,6 +6,23 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **REMOVAL: the `url-shortener` application chart no longer has a
+  `verification` block, and no longer renders a post-install/post-upgrade
+  hook Job (nor the ServiceAccount/Role/RoleBinding it ran under).** The
+  hook duplicated what the separate `url-shortener-e2e` TEST CHART now
+  does as a plain Job — see `docs/guides/testing.md`'s "The suite, as a
+  released test chart" — with none of a hook's own sharp edges: a GitOps
+  controller maps every `post-install`/`post-upgrade` hook to one phase
+  and runs it on **every** sync, not only the first install or a version
+  change, which a plain Job does not. This is a **breaking values
+  change**: `verification.*` is refused by the chart's schema now
+  (`additionalProperties: false`), not silently ignored. Run the e2e suite
+  with the `url-shortener-e2e` test chart instead. The e2e suite itself
+  keeps exactly two ways to run — outside-in
+  (`e2e/fixture.Resolve`, the kind/local loop) and as the test chart's Job
+  (`E2E_NAMES_FROM_ENV=1`) — the hook was a third, and is gone from
+  `examples/url-shortener/e2e/suite` along with it.
+
 - **The `url-shortener-e2e` chart's prober Deployment now sets
   `strategy: {type: Recreate}`.** With one replica, RollingUpdate's default
   `maxUnavailable` of 25% rounds down to 0, so a new prober version that
@@ -107,19 +124,6 @@ and nothing else — and its GitHub Release lists the commits.
   never gets that annotation, only the standard `app.kubernetes.io/instance`
   label every chart carries — bumped to gemaal v0.24.1, which falls back
   to that label when the annotation is absent.
-
-- **The url-shortener example's verification hook no longer fails on a real
-  install.** The hook Job's e2e suite unconditionally resolved a local test
-  fixture's names by rendering a chart with `helm` — a kind-tier concern the
-  suite carried into every environment, including the hook's own image, which
-  ships no `helm` binary on purpose. Run as the hook, in-cluster, the suite
-  now skips resolving that fixture altogether and relies only on what the Job
-  is actually given (its namespace and release); the one check that needs a
-  database or role name from that fixture skips cleanly instead of failing
-  the whole binary before any check runs. `just example-verify-hook` (part of
-  `just cluster-all`, and now also part of the kind lane's own CI job) runs
-  the hook exactly as a platform would, so a regression like this is caught
-  before the hook ships again.
 
 - **The url-shortener example's `log` archiver no longer crash-loops when its
   broker credential is rotated.** The credential is a short-lived file the

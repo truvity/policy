@@ -262,9 +262,8 @@ same binary described above — only how it reaches its names differs:
   application release already there, it runs the suite against that
   release from inside the cluster.
 
-The Job cannot render the infra chart either — same reason
-`templates/verification.yaml`'s hook Job cannot (no `helm` in the `e2e`
-image, no copy of the charts' embedded source there) — so it does not try
+The Job cannot render the infra chart either — no `helm` in the `e2e`
+image, no copy of the charts' embedded source there — so it does not try
 to. `charts/url-shortener-e2e/values.yaml` takes every name the suite
 needs directly: the database's host, name, and its owner and runtime
 roles; the runtime role's password Secret (read into the suite as
@@ -274,9 +273,8 @@ stream, its two subjects and the two durable consumer names; the archive
 bucket, its region and endpoint; and, optionally, a traces URL. Setting
 `E2E_NAMES_FROM_ENV=1` (which the chart's Job always does) is what tells
 the suite to build its names from THOSE environment variables instead of
-either rendering a chart or — `verificationHookMode`'s own path — leaving
-every chart-derived name empty so the tests that need one skip. Every
-case the suite carries runs; nothing here is missing on purpose.
+rendering a chart. Every case the suite carries runs; nothing here is
+missing on purpose.
 
 `mode` picks which cases run:
 
@@ -306,8 +304,7 @@ under test's own names (read the same way `hack/install.sh` reads them —
 renders to reach `Complete`, and printing the Job's own log either way. It
 is part of `just cluster-all` and the CI `cluster` job's test step,
 alongside `example-smoke` — proving the suite runs as the chart's own Job,
-through that Job's scoped RBAC, exactly like `example-verify-hook` proves
-it for the application chart's post-install hook.
+through that Job's scoped RBAC, and not only outside-in.
 
 ## The prober
 
