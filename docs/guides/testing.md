@@ -202,6 +202,24 @@ probe, so asking the same question again through a Service widens who can
 reach the probe listener and proves nothing new. It is also the only test
 that covers `stat` and `log`, since neither carries a Service at all.
 
+Before any of that: `TestMain` itself will not run a single test until
+`e2e/rollout` (`WaitForPromoted`) says the release has finished rolling
+out — closing a race found on a real cluster, where the test chart's own
+Job (below) is a separate Application a GitOps controller can sync while
+the application release's own Deployments are still catching up. A plain
+`kubectl rollout status` wait, called at that moment, sees the OLD
+generation already fully rolled out and returns immediately — the suite
+would go on to exercise, and `trace_test.go` to inspect a trace produced
+by, the PREVIOUS version's pods. When the Job sets `E2E_APP_VERSION` (see
+below), `WaitForPromoted` instead waits until every pod carries THAT
+version's `app.kubernetes.io/version` label (stamped by every chart's own
+`_helpers.tpl`) as well as being fully rolled out; outside-in, with no
+separately promoted version to know, it falls back to the plain wait —
+still run once, up front, rather than left to whichever test happens to
+run first. `E2E_ROLLOUT_TIMEOUT` (a Go duration, e.g. `3m`) overrides how
+long each Deployment is given; unset is `harness.DefaultRolloutTimeout`
+(2m).
+
 A further test asks a Jaeger-API query endpoint (`E2E_TRACES_URL`) for
 the redirect's own trace, by a trace id the test injects itself via a
 `traceparent` header, and asserts every hop contributed a span. The kind
@@ -287,6 +305,15 @@ authenticate to it (`traces.tokenExchange.*`, `traces.caConfigMap` — see
 the suite to build its names from THOSE environment variables instead of
 rendering a chart. Every case the suite carries runs; nothing here is
 missing on purpose.
+
+It also sets `E2E_APP_VERSION` to its OWN `.Chart.AppVersion` — which is
+the application chart's too, since the two (plus `url-shortener-infra`)
+release under one version together (`.github/workflows/release.yaml`).
+That is what lets `WaitForPromoted` (above) prove a run is judging the
+version THIS release actually promoted rather than whatever generation
+happened to be live when the Job started; `rolloutTimeout` (a Go
+duration, e.g. `3m`, empty by default) overrides how long it waits per
+Deployment.
 
 `mode` picks which cases run:
 
