@@ -152,25 +152,15 @@ example-smoke:
     cd examples/url-shortener && E2E_NAMESPACE="${NS:-shortener}" E2E_APP_RELEASE="${APP:-example}" \
         E2E_BUCKET="${BUCKET:-url-shortener-archive}" go test ./e2e/suite/... -count=1 -v
 
-# Prove the chart's OWN post-install/post-upgrade verification hook — the
-# Job templates/verification.yaml renders under `verification.enabled=true`,
-# running the SAME e2e image `example-smoke` runs directly — completes on a
-# real install, through its own scoped RBAC and no fixture. `example-smoke`
-# alone cannot catch a suite that only breaks running AS that Job: the
-# fixture rendering the infra chart with `helm` (present on this box, absent
-# from the Job's image) is exactly such a bug.
-[doc("Prove the chart's own verification hook completes against a real install")]
-example-verify-hook:
-    bash examples/url-shortener/hack/verify-hook.sh
-
 # Prove the url-shortener-e2e TEST CHART: install its packaged .tgz after
 # the application (`example-install`), wait for the Job it renders to
 # reach Complete, and dump the Job's own log either way. This is the
 # SECOND way the suite runs (docs/guides/testing.md) — a plain Job this
 # chart's own release owns, through its own scoped RBAC, reading every
-# name from values rather than from this box's fixture directly. Distinct
-# from `example-verify-hook`, which proves the APPLICATION chart's own
-# post-install hook; this proves the separate test chart instead.
+# name from values rather than from this box's fixture directly.
+# `example-smoke` alone cannot catch a suite that only breaks running AS
+# this Job: the fixture rendering the infra chart with `helm` (present on
+# this box, absent from the Job's image) is exactly such a bug.
 [doc("Prove the url-shortener-e2e test chart's Job completes against a real install")]
 example-e2e-chart:
     bash examples/url-shortener/hack/install-e2e-chart.sh
@@ -192,7 +182,7 @@ example-prober:
 # (0005) and examples/url-shortener/hack/identity-smoke.sh is not yet
 # ported to wherever it lands — a later task, not this one.
 [doc("The whole cluster tier, from nothing")]
-cluster-all: cluster cluster-verify example-snapshot example-fixture example-install example-smoke example-e2e-chart example-prober example-verify-hook
+cluster-all: cluster cluster-verify example-snapshot example-fixture example-install example-smoke example-e2e-chart example-prober
 
 # Remove it, and the registry container and the snapshot builder beside it —
 # disk is a shared resource on the machine this usually runs on, and a
