@@ -325,6 +325,30 @@ lint:
     # exempt from the rules it demonstrates is a reference to nothing.
     ( cd examples/url-shortener && golangci-lint run ./... ) || fail=1
 
+    # The TypeScript in this repository: one tool for lint AND formatting
+    # (docs/canon/node.md), so a style disagreement is never a second
+    # opinion from a separate formatter. Each package's own biome.jsonc
+    # extends lint/biome.base.jsonc and excludes what it generates — see
+    # lint/README.md. Needs no `yarn install`: Biome reads source, not
+    # node_modules, which is what keeps this in the hermetic gate.
+    for tsdir in ts examples/url-shortener/web; do
+        ( cd "$tsdir" && biome check ) || fail=1
+    done
+
+    # The whitespace rules every file holds to, whatever language it is
+    # written in (lint/.editorconfig, copied to the root as this
+    # repository's own copy — lint/README.md): a final newline, LF, UTF-8,
+    # no stray trailing whitespace but a Markdown hard break. Indentation
+    # WIDTH is deliberately NOT checked here — that is gofmt's, Biome's,
+    # ruff's and ktlint's job, each already run above. A line-count check
+    # cannot tell a real violation from a raw string, a docstring or a
+    # template that legitimately indents differently, and this repository
+    # has all three; chasing that false-positive class file by file is not
+    # what a gate is for. The one exclusion is the chart goldens: rendered
+    # output the `golden` recipe regenerates byte for byte, never hand-edited.
+    editorconfig-checker -disable-indentation -disable-indent-size \
+        -exclude 'testdata/golden/' || fail=1
+
     # The toolchain is declared once and resolves to what it declares.
     # Node is the case that needs saying: corepack's shims take precedence
     # over anything devbox installed and fetch their own yarn, so a pin can

@@ -7,6 +7,22 @@ commit subjects alone changed nothing a consumer needed a sentence about.
 
 ## Unreleased
 
+### Changes
+
+- **New: `lint/biome.base.jsonc` and `lint/.editorconfig`, beside the
+  existing `lint/golangci-depguard.yaml`.** A repository's own
+  `biome.jsonc` extends the Biome base — indent, quotes and line width
+  chosen to match code nobody wrote against this file, and Biome's
+  `recommended` lint preset with nothing added, since the canon
+  ([node.md](docs/canon/node.md)) names no TypeScript rule of its own.
+  `.editorconfig` is copy-only, like the depguard block: EditorConfig has
+  no `extends`. This repository dogfoods both — `ts/biome.jsonc` and
+  `examples/url-shortener/web/biome.jsonc` extend the base, and the root
+  `.editorconfig` is the copy — and `just lint` runs `biome check` and
+  `editorconfig-checker` (the universal checks only; indentation WIDTH
+  stays each language's own formatter's job). See
+  [lint/README.md](lint/README.md).
+
 ### Documentation
 
 - **New guide: `docs/guides/private-consumer.md`.** What a private

@@ -12,6 +12,7 @@ gate runs and *where* a release is published, never in which rules apply.
 | Contract | Rule | Mechanism |
 |---|---|---|
 | [service](../contracts/service.md) | no dependency-injection container | the [depguard block](../../lint/README.md) refuses the imports |
+| [node](../canon/node.md) | linting and formatting is Biome, one tool for both | each TypeScript package's `biome.jsonc` extends [lint/biome.base.jsonc](../../lint/README.md); `just lint` runs `biome check`, needing no `node_modules` |
 | service | configuration is a validated file | the loader refuses anything else; the schema golden fails on drift |
 | service | no build step in a runtime image | the image lint; the release builds every platform in one job |
 | [config](../contracts/config.md) | the binary and the chart read one schema | the chart's tests validate what they render with the binary's schema |
