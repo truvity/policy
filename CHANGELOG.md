@@ -1,25 +1,61 @@
 # Changelog
 
-What changed for someone consuming this repository, newest first. A version
-missing from this file changed nothing a consumer can see — a dependency bump
-and nothing else — and its GitHub Release lists the commits.
+What changed for someone consuming this repository, newest first, one
+heading per tag. The prose bullets are written for a consumer; the commit
+subjects under them are the GitHub Release's own list. A tag that carries
+commit subjects alone changed nothing a consumer needed a sentence about.
 
-## Unreleased
+## v1.29.0 — 2026-09-29
 
-- **The example's Go services log to stderr, not stdout.** The service
-  contract (§4) has always said stderr; `internal/runtime/runtime.go` wrote
-  to stdout. A collector that reads both streams sees no difference; one
-  that reads only stdout stops seeing the Go components' logs, as it
-  already did not see the Kotlin, TypeScript and Python components'.
-- **Every image base is pinned by digest.** The four Dockerfiles, the
-  release's `kos:` block (which never read `.ko.yaml`, so the Go images
-  were built on whatever `latest` was) and `.ko.yaml` name
-  `cgr.dev/chainguard/<image>:latest@sha256:…`; renovate moves the pins.
-- **`just check` no longer runs `vuln`.** Vulnerability scanning is its own
-  workflow, `security.yaml`, on push, pull request and a daily schedule —
-  a new advisory no longer turns every pull request red. Every
-  `devbox.json` entry names a version, and the toolchain lint refuses
-  `latest`.
+### Contracts
+
+- **New: the component contract,
+  [`docs/contracts/component.md`](docs/contracts/component.md).** The
+  rules C1–C13 every public repository that ships charts, images, Go
+  libraries, Pulumi components, CLIs or actions is held to. It replaces
+  the two doctrines that used to live beside the shared CI
+  (`ci-workflows/docs/component-contract.md` and
+  `ci-plane/docs/normalization.md`); where they disagreed, it decides:
+  a committed chart version is `0.0.0` (`0.0.0-dev` is retired), and the
+  CHANGELOG has one `## vX.Y.Z` heading per tag (grouped headings are
+  retired).
+- **New: [`docs/glossary.md`](docs/glossary.md)** — estate, platform,
+  ring, tier, lane, component, service, consumer and the environment
+  names, as these documents use them.
+- **Every contract carries a version header** (`Version: 1.0 ·
+  Effective: 2026-09-29`). A change to a contract is an entry under this
+  sub-heading; [`release.md`](docs/contracts/release.md) §3 says so.
+- **`repository.md` §2 names what `check` actually runs** — `build`,
+  `test`, `lint`, `drift` and `leak-canary` — and says it needs no
+  credentials and no cluster, rather than no network: a first build
+  downloads modules. `vuln` is its own scheduled workflow, never part of
+  the gate (component contract C10).
+- **`release.md` §7 cites the right rule** for the kind install:
+  [decision 0005](docs/decisions/0005-kind-is-the-gate.md) and rule 2 of
+  the repository contract, not rule 6 (which is dependency bumps).
+
+### Documentation
+
+- **The README answers a newcomer's questions in the component contract's
+  order**, with an install section pinned to a tag, `Consumers` and
+  `Neighbours` sections, and a `Status` that is true: the repository has
+  been tagged since v0.1.0, the Kotlin loader is not published, and two
+  guides remain. The Python wheel and the Kotlin loader join the "What
+  ships" table.
+- **Stale claims removed**: a `just cluster-smoke` recipe that no longer
+  exists, an `infra.enabled` flag replaced by the two-chart split, guides
+  listed as "still to come" that shipped, a counter described as Go that is
+  Kotlin, and `just ts-schemas` (the recipe is `just schemas`).
+- **This file has one heading per tag.** It stopped at v0.4.6 behind three
+  `Unreleased` sections while v0.4.7 to v1.28.7 shipped. Each of those
+  sections' bullets now sits under the first tag that contained it, and
+  every tag lists its GitHub Release's commit subjects.
+
+## v1.28.7 — 2026-09-29
+
+- fix(url-shortener-e2e): skip the archive check's S3 lookup in-cluster before it shells out
+
+## v1.28.6 — 2026-09-28
 
 - **The `url-shortener-infra` chart tags every AWS resource it creates
   with `project`, not just `cluster`.** Found on an install whose
@@ -35,11 +71,32 @@ and nothing else — and its GitHub Release lists the commits.
   extra tags folded into every one of those resources, which can never
   override `cluster` or `project`.
 
+Commits in this release:
+
+- fix(url-shortener-infra): tag every AWS resource with cluster AND project
+
+## v1.28.5 — 2026-09-28
+
+- fix(url-shortener e2e): wait for the PROMOTED rollout, not whatever generation was already live
+
+## v1.28.4 — 2026-09-28
+
 - **The url-shortener example's `urls` service no longer extends its
   span-attribute allow-list with `error`.** `urls` serves only Connect
   RPC through otelconnect and never imports `internal/api`, so nothing in
   it ever set that attribute — `redirect` is the one that does, through
   `internal/api.Tracing`, and keeps the extension.
+
+Commits in this release:
+
+- Wire the stat client's outbound span through the filtered OpenTelemetry SDK
+- url-shortener: drop urls' unused error span-attribute extension
+
+## v1.28.3 — 2026-09-28
+
+- Assert no span attribute escapes its service's own allow-list on a live trace
+
+## v1.28.2 — 2026-09-28
 
 - **REMOVAL: the `url-shortener` application chart no longer has an
   `images.e2e` value.** Left over from the in-chart verification hook
@@ -52,6 +109,13 @@ and nothing else — and its GitHub Release lists the commits.
   chart from being stamped with a digest it never used; a chart install
   refuses an `images.e2e` value now (`additionalProperties: false`).
 
+Commits in this release:
+
+- Drop the unused images.e2e value from the url-shortener app chart
+- Fix TestRedirectTraceCrossesEveryComponent to seed a real redirect
+
+## v1.28.1 — 2026-09-28
+
 - **The `url-shortener-e2e` chart has a new, optional `job.annotations`
   value** (empty by default), rendered on the Job's own metadata only,
   never the pod template's. A Job's spec is immutable, so a GitOps
@@ -60,6 +124,12 @@ and nothing else — and its GitHub Release lists the commits.
   patch it; `job.annotations` lets a platform put its own
   force/replace-on-change annotation there for a controller that reads
   one to decide it may delete and recreate the Job instead.
+
+Commits in this release:
+
+- Let a platform set annotations on the url-shortener-e2e Job; fix a flaky transport test
+
+## v1.28.0 — 2026-09-28
 
 - **The `url-shortener-e2e` chart's `traces.url` can now be an
   authenticated trace store.** New, optional values:
@@ -75,6 +145,12 @@ and nothing else — and its GitHub Release lists the commits.
   why the two are never the same). Unset (the default, and the only shape
   the kind tier ever renders), nothing changes: the chart wires no auth
   and the suite sends no Authorization header, exactly as before.
+
+Commits in this release:
+
+- Let the e2e trace test authenticate to a private trace store
+
+## v1.27.0 — 2026-09-28
 
 - **REMOVAL: the `url-shortener` application chart no longer has a
   `verification` block, and no longer renders a post-install/post-upgrade
@@ -93,6 +169,12 @@ and nothing else — and its GitHub Release lists the commits.
   (`E2E_NAMES_FROM_ENV=1`) — the hook was a third, and is gone from
   `examples/url-shortener/e2e/suite` along with it.
 
+Commits in this release:
+
+- Remove the url-shortener app chart's verification hook
+
+## v1.26.3 — 2026-09-28
+
 - **The `url-shortener-e2e` chart's prober Deployment now sets
   `strategy: {type: Recreate}`.** With one replica, RollingUpdate's default
   `maxUnavailable` of 25% rounds down to 0, so a new prober version that
@@ -102,20 +184,11 @@ and nothing else — and its GitHub Release lists the commits.
   a broken rollout shows up as missing traffic instead. Not configurable —
   see `templates/prober.yaml`'s own comment.
 
-- **The `url-shortener-e2e` chart's Job no longer sets
-  `ttlSecondsAfterFinished` by default.** It is now optional, and UNSET
-  unless a deployment sets it (still floored at 120s by the schema when
-  it does). A GitOps controller applying this chart with self-heal on
-  treats a Job that deleted itself as missing from the live state and
-  recreates it — running the whole suite, including its DDL case, again
-  on a loop, forever, at a fixed version. The chart already names the Job
-  after its own version so a plain `apply` converges at every version;
-  the previous version's Job is left for the next version's apply to
-  prune, or for `helm uninstall`, never a TTL. See
-  `docs/guides/conformance.md`, and a new conformance check
-  (`examples/url-shortener/charts/conformance_test.go`) that fails on any
-  plain (non-hook) Job a chart renders that still sets
-  `ttlSecondsAfterFinished`.
+Commits in this release:
+
+- Recreate the url-shortener-e2e prober Deployment instead of rolling
+
+## v1.26.2 — 2026-09-28
 
 - **The `url-shortener-infra` chart's database and its two role names can
   now be derived from the tenant's namespace and installName, opt-in via a
@@ -136,6 +209,33 @@ and nothing else — and its GitHub Release lists the commits.
   exact derivation (a valid Postgres identifier, truncated with a hash
   suffix past 57 bytes so two tenants never collide even there) and
   `docs/guides/testing.md`.
+
+Commits in this release:
+
+- Scope the kind fixture's Postgres database and roles to the tenant
+
+## v1.26.1 — 2026-09-27
+
+- **The `url-shortener-e2e` chart's Job no longer sets
+  `ttlSecondsAfterFinished` by default.** It is now optional, and UNSET
+  unless a deployment sets it (still floored at 120s by the schema when
+  it does). A GitOps controller applying this chart with self-heal on
+  treats a Job that deleted itself as missing from the live state and
+  recreates it — running the whole suite, including its DDL case, again
+  on a loop, forever, at a fixed version. The chart already names the Job
+  after its own version so a plain `apply` converges at every version;
+  the previous version's Job is left for the next version's apply to
+  prune, or for `helm uninstall`, never a TTL. See
+  `docs/guides/conformance.md`, and a new conformance check
+  (`examples/url-shortener/charts/conformance_test.go`) that fails on any
+  plain (non-hook) Job a chart renders that still sets
+  `ttlSecondsAfterFinished`.
+
+Commits in this release:
+
+- Stop the url-shortener-e2e Job from setting ttlSecondsAfterFinished by default
+
+## v1.26.0 — 2026-09-27
 
 - **The `url-shortener-e2e` chart can now run an always-on prober beside
   its e2e Job.** `prober.enabled` (default `false`) turns on a Deployment
@@ -166,6 +266,13 @@ and nothing else — and its GitHub Release lists the commits.
   way as the other two, by the same `.goreleaser.yaml` + `helmctl` flow.
   See `docs/guides/testing.md`, "The suite, as a released test chart".
 
+Commits in this release:
+
+- Add an always-on synthetic-traffic prober to url-shortener-e2e
+- Add url-shortener-e2e test chart: run the suite as a Job after deploy
+
+## v1.25.0 — 2026-09-27
+
 - **This repository's own tag line now starts at v1.25.0, not v1.0.0.** The
   url-shortener chart continues a line that used to be published from
   another repository, whose last release was in the 1.22.x series; see
@@ -184,6 +291,12 @@ and nothing else — and its GitHub Release lists the commits.
   instead. See `docs/guides/conformance.md` and
   `docs/guides/testing.md#two-install-paths-and-why-both-must-render-the-same`.
 
+Commits in this release:
+
+- Add render-and-apply chart conformance rules; set the next tag to v1.25.0
+
+## v0.9.3 — 2026-09-27
+
 - **The url-shortener example's e2e readiness check now finds a release's
   Deployments when the chart was rendered by a GitOps controller rather
   than installed by helm.** `TestDeploymentsAreReady` reaches
@@ -194,6 +307,16 @@ and nothing else — and its GitHub Release lists the commits.
   never gets that annotation, only the standard `app.kubernetes.io/instance`
   label every chart carries — bumped to gemaal v0.24.1, which falls back
   to that label when the annotation is absent.
+
+Commits in this release:
+
+- fix(url-shortener): bump gemaal to v0.24.1 for the instance-label fallback
+
+## v0.9.2 — 2026-09-26
+
+- fix(url-shortener): verification hook no longer needs helm
+
+## v0.9.1 — 2026-09-26
 
 - **The url-shortener example's `log` archiver no longer crash-loops when its
   broker credential is rotated.** The credential is a short-lived file the
@@ -206,6 +329,12 @@ and nothing else — and its GitHub Release lists the commits.
   the one time this happens, which reads the credential file fresh, and
   only lets a second failure in a row surface. See
   `examples/url-shortener/log/src/url_shortener_log/pull.py`.
+
+Commits in this release:
+
+- Fix log archiver crash loop on NATS credential rotation
+
+## v0.9.0 — 2026-09-26
 
 - **Every exported span now passes through an attribute allow-list.** Each
   language's telemetry starter (`telemetry.Start` in Go, `telemetry.start()`
@@ -223,6 +352,14 @@ and nothing else — and its GitHub Release lists the commits.
 - **The cluster lane is now a required check for merges.** All tests, including
   the end-to-end suite, must be green before a pull request can merge. Run
   `just cluster-all` locally to verify before pushing.
+
+Commits in this release:
+
+- Drop span attributes not on an allow-list before export
+- feat(url-shortener): optional post-sync verification hook
+- feat(url-shortener): publish the e2e suite as a verification image
+
+## v0.8.1 — 2026-09-26
 
 - **The url-shortener example's cluster suite is now one Go program, not a
   shell script.** `just example-smoke` runs
@@ -252,6 +389,18 @@ and nothing else — and its GitHub Release lists the commits.
   and every override that existed only for it — a packaging bug can no
   longer ship while this lane stays green, which happened once. See
   `docs/guides/testing.md` and `hack/kind/README.md`.
+
+Commits in this release:
+
+- feat(kind): install the release's own artifacts, not a second build
+- feat(url-shortener): replace hack/smoke.sh with a Go e2e suite
+- fix(ci): fetch full history for the cluster job's release build
+- fix(ci): one devbox run for cluster+snapshot, and wait for the registry
+- fix(kind): exec into nats-box for the NATS check, not run --rm -i
+- fix(kind): make the NATS round trip race-free, not merely pod-ready
+- fix(url-shortener): readiness via Deployments, not a widened Service
+
+## v0.8.0 — 2026-09-26
 
 - **The local cluster (`hack/kind`) installs no infra-shaped chart.** It now
   carries servers only — a plain Postgres, NATS with JetStream, an S3
@@ -298,6 +447,17 @@ and nothing else — and its GitHub Release lists the commits.
   `logging-and-telemetry.md` gains a section naming the fields and the
   degradation.
 
+Commits in this release:
+
+- Fix kubeadmConfigPatches to use v1beta3 extraArgs format
+- Slim the kind box to servers only; give url-shortener its own e2e fixture
+- Turn off leader election on the single-node box
+- feat(logs): carry trace context (trace_id/span_id) onto every log line
+- fix(url-shortener): pair the two releases' installName on the local box
+- fix(url-shortener): scope JetStream names to namespace and install
+
+## v0.7.6 — 2026-09-25
+
 - **The archiver no longer crashes when the stream is quiet.** An empty
   fetch is reported by the client as the standard `TimeoutError`, and the
   archiver caught only the client's own subclass of it, so the first quiet
@@ -311,6 +471,13 @@ and nothing else — and its GitHub Release lists the commits.
   start, when the only route the router has matched is the middleware's own.
   It is now named after the handler has run, so a trace says which handler a
   request reached. Still the route, never the path.
+
+Commits in this release:
+
+- fix(log): a quiet stream is an empty batch, not a crash
+- fix(redirect): name request spans for the route that served them
+
+## v0.7.5 — 2026-09-25
 
 - **The archiver's write now shows inside each request's trace.** The write
   and its S3 call are one span in one trace (a batch cannot be any single
@@ -328,6 +495,12 @@ and nothing else — and its GitHub Release lists the commits.
   caller or link to it; parent a single message but *link* a batch), the
   lower-case `traceparent` header NATS needs, and the check that proves it:
   fetch one trace by id and read its tree.
+
+Commits in this release:
+
+- fix(log): show the archive write inside each request's trace
+
+## v0.7.4 — 2026-09-25
 
 - **The example's traces are one graph, not one fragment per service.**
   Every service was exporting spans and no request could be followed
@@ -358,36 +531,39 @@ and nothing else — and its GitHub Release lists the commits.
   The header case and the thread hand-off are each covered by a test that
   fails without the change.
 
-- **`platform.md` §11: two charts, and who installs each.** The split
-  between the infrastructure chart and the application one has a second
-  consequence that rule 6 does not state — the infrastructure chart is
-  **per install**, so anything running per *cluster* cannot supply what
-  it supplies. There is no "the install" at that level, and a store
-  minted there serves the deployment while leaving every test install
-  with nothing.
+Commits in this release:
 
-  Written down because it was got wrong: an attempt to move those
-  resources to a per-cluster provisioning stack covered one tier and
-  silently broke the other two. The section also records why a chart
-  takes a **tier** (an engineer's namespace often cannot create custom
-  resources at all, so a chart that always mints them is one they cannot
-  install), and why generating a password is the wrong instinct — it
-  invents a provider that only the deployment has.
+- Connect the example's traces across services, the broker, the database and the store
 
-- **`guides/conformance.md`** gains the checklist that follows from it,
-  for a repository whose service owns a database or a stream.
+## v0.7.3 — 2026-09-25
 
-- **§11 places every resource this example has**, in a table, by scope —
-  because the abstract rule is easy to agree with and hard to apply. Two
-  entries answer questions that kept coming back: the **store is at
-  namespace scope** even though each install writes to its own prefix
-  (which is what lets one namespace serve an engineer's copy and a CI run
-  without either provisioning anything), and **nothing in the
-  infrastructure chart names a vendor** — a database and a stream are
-  custom resources some operator reconciles, while "bucket" is one
-  cloud's word, and this chart has to install on a laptop too.
+- fix(migrate): the migration Job spans its run, the fourth service to need it
 
-## Unreleased
+## v0.7.2 — 2026-09-25
+
+- fix(stat): the service publishes the SDK itself; the chart stays generic
+- fix(ts): import the module under test the way this library does
+- fix(ts): the Node SDK ignored OTEL_SERVICE_NAME, so the service was filed as a stranger
+- fix(urls): shortening a URL twice is the same link, not a panic
+
+## v0.7.1 — 2026-09-25
+
+- fix(urls): Create generates a key when none is given, as advertised
+
+## v0.7.0 — 2026-09-25
+
+- feat(charts): the chart can mint the runtime role's credential
+- fix(charts): the generated secret uses the given name, not a derived one
+- fix(log): the archiver spans its flush, the same gap as the other two
+- fix(stat): the counter was completely dark, not just missing a span
+- fix(telemetry): installing exporters is not instrumenting
+
+## v0.6.0 — 2026-09-25
+
+- feat(web): the front end is a front end again
+- fix(events): read the broker token on every connect, and resubscribe
+
+## v0.5.0 — 2026-09-24
 
 - **The infrastructure chart provisions the objects an install owns**, and
   takes a `tier` that decides whether it provisions them at all. A `test`
@@ -417,7 +593,17 @@ and nothing else — and its GitHub Release lists the commits.
   bar is that it RENDERS without that cloud, not that it installs on one,
   and the tier is what keeps that honest.
 
-## Unreleased — packaging
+Commits in this release:
+
+- feat(charts): ring2 owns the objects the install owns, credential included
+- fix(charts): route the front end, and keep the resolver a separate rule
+- fix(charts): withdraw the certificate mode, which nobody can turn on
+
+## v0.4.8 — 2026-09-24
+
+- fix(charts): the managed role declares what the API server defaults
+
+## v0.4.7 — 2026-09-24
 
 - **v0.4.6's `url-shortener-infra` chart cannot be installed. Use v0.4.7.**
   It reached the registry carrying a top-level `images:` map it never
@@ -441,6 +627,10 @@ and nothing else — and its GitHub Release lists the commits.
   `contracts/release.md` because of this class, and the test that now
   guards it renders the **packaged** artifact, since rendering the
   source tree cannot see a defect that packaging introduces.
+
+Commits in this release:
+
+- chore(ci): ci-workflows v3.12.2, so the charts package correctly
 
 ## v0.4.6 — 2026-09-24
 
@@ -497,6 +687,8 @@ and nothing else — and its GitHub Release lists the commits.
   "nothing is arriving" and "this service is quiet" look identical.
 
 ## v0.4.4 — 2026-09-24
+
+v0.4.4 was never tagged; what is listed here first shipped in v0.4.5.
 
 - **A route can name its parent's KIND.** It could only ever attach to a
   Gateway, which is the API's default and silently wrong on a cluster

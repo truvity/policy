@@ -15,9 +15,9 @@ retention is an operational decision.
 
 | Language | Publish | Consume |
 |---|---|---|
-| Go | [`internal/events/publisher.go`](../../examples/url-shortener/internal/events/publisher.go), called from the redirect service | the durable consumer in the counter's `main` |
-| TypeScript | follows | follows |
-| Kotlin | | the counter, once rewritten |
+| Go | [`internal/events/publisher.go`](../../examples/url-shortener/internal/events/publisher.go), called from the redirect service | |
+| TypeScript | | |
+| Kotlin | | the counter's durable consumer, in [`Stat.kt`](../../examples/url-shortener/stat/src/main/kotlin/com/truvity/example/stat/Stat.kt) |
 | Python | | the pull consumer in [`__main__.py`](../../examples/url-shortener/log/src/url_shortener_log/__main__.py): durable by name, acknowledged only after the batch is stored |
 
 The connection helper, including authentication, is

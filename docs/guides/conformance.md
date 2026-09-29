@@ -12,7 +12,7 @@ Not normative. This is how to tell whether a repository satisfies
 | service | no build step in a runtime image | the image lint; the release builds every platform in one job |
 | [config](../contracts/config.md) | the binary and the chart read one schema | the chart's tests validate what they render with the binary's schema |
 | config | strictness | a negative fixture per schema: an unknown key must fail |
-| [repository](../contracts/repository.md) | the gate needs nothing but the checkout | CI runs recipes by name; a recipe needing more is its own job |
+| [repository](../contracts/repository.md) | the gate needs no credentials, no container and no cluster | CI runs recipes by name; a recipe needing more is its own job |
 | repository | public repositories name no particulars | the leak canary, on every commit and in CI |
 | repository | public repositories run hosted | the shared workflow refuses a self-hosted runner for a public caller |
 | repository | the cluster lane is a required check | the CI gate requires the e2e suite to pass |
@@ -49,7 +49,7 @@ The rest, in the order that finds problems fastest:
    becomes a large one.
 5. **Does SIGTERM drain?** Nothing in a test suite notices when it does not.
    The signal is what a rolling upgrade sends.
-6. **Are the log lines JSON, on stdout, at one level?** This is checked by
+6. **Are the log lines JSON, on stderr, at one level?** This is checked by
    eye today, and the conformance table in the service contract says so
    rather than implying otherwise.
 7. **Is each service-to-service call the right shape?** An ownership boundary

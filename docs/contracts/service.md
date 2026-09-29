@@ -1,5 +1,7 @@
 # The service contract
 
+Version: 1.0 · Effective: 2026-09-29 · Changes: see [CHANGELOG](../../CHANGELOG.md)
+
 **Normative.** A service that satisfies this contract can be configured,
 started, observed, upgraded and stopped by anyone who has met another one,
 without reading its source.

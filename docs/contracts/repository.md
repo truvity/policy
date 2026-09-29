@@ -1,5 +1,7 @@
 # The repository contract
 
+Version: 1.0 · Effective: 2026-09-29 · Changes: see [CHANGELOG](../../CHANGELOG.md)
+
 **Normative.** What a repository looks like, so that someone who has
 worked in one can work in the next without being told anything.
 
@@ -12,10 +14,13 @@ budget, and none of those are things they have in common.
 The exception is a product and the example or tooling that exists only to
 serve it, which are the same thing released together.
 
-## 2. The gate is one command, and it needs nothing
+## 2. The gate is one command, and it needs nothing a stranger lacks
 
-`just check` is the gate. It runs what CI runs, and it needs **nothing but
-the checkout**: no network, no containers, no cluster, no credentials.
+`just check` is the gate. It runs what CI runs, and it needs **no
+credentials, no container runtime and no cluster**. It may download what
+the manifests and lock files name — a first `go build` fetches modules, a
+first `uv sync` or `gradle` run fetches packages — because anyone with the
+checkout can fetch those too.
 
 That constraint is the whole value. A gate that needs a cluster is a gate
 people run once a week and then argue with. Everything heavier — a suite
@@ -33,14 +38,20 @@ find out what the linter is called here:
 
 | Recipe | Does |
 |---|---|
-| `check` | the gate: depends on everything below that needs nothing |
+| `check` | the gate: `build`, `test`, `lint`, `drift` and `leak-canary` |
 | `build` | compiles everything |
-| `test` | the tests that need nothing |
+| `test` | the tests that need no credentials, no container and no cluster |
 | `lint` | every static check, including the ones that are not a linter |
-| `vuln` | known vulnerabilities in what this depends on |
+| `drift` | regenerates committed generated code; fails if it moved |
+| `leak-canary` | refuses a particular that must never be published |
+| `vuln` | known vulnerabilities in what this depends on — its own scheduled workflow, **never** part of `check` ([component.md C10](component.md)) |
 | `charts` | renders and validates every chart |
 | `golden` | regenerates committed renders; fails if they moved |
-| `leak-canary` | refuses a particular that must never be published |
+
+`vuln` is outside the gate on purpose. A new advisory is news about the
+world, not about the change under review, and an advisory with no released
+fix would otherwise turn every pull request red on a finding nobody can act
+on.
 
 A repository without one of these jobs does not have the recipe. A
 repository that has the job under another name has made every caller special.

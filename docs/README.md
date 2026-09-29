@@ -18,6 +18,13 @@ The index, by what you are here to do.
 - [guides/](guides/README.md) — how to satisfy the above, one guide per
   aspect, each pointing at the file in the worked example where it is done.
 
+## Authoring a component
+
+- [contracts/component.md](contracts/component.md) — every public
+  repository that ships charts, images, Go libraries, Pulumi components,
+  CLIs or actions: the rules C1–C13, how each is checked, and the forms
+  they retired.
+
 ## Reviewing a service
 
 - [contracts/release.md](contracts/release.md) — one tag stamps every
@@ -44,10 +51,20 @@ The index, by what you are here to do.
 
 - [decisions/](decisions/README.md) — the decision records behind the
   contracts.
+- [glossary.md](glossary.md) — the words these documents use narrowly:
+  estate, platform, ring, tier, lane, component, service, consumer, and
+  the environment names.
+
+## How a contract changes
+
+Each contract carries a header with its version and the date it took
+effect. A change to one is an entry under `### Contracts` in the
+[CHANGELOG](../CHANGELOG.md), in the version it ships in
+([release.md §3](contracts/release.md)).
 
 ---
 
-A few guides are still to come — object storage, keys, RPC and schemas,
-transport security, and migrating off a framework. Each arrives with the
-component that proves it, because writing one earlier means describing code
-nobody has run. [guides/README.md](guides/README.md) says which is which.
+Two guides are still to come — keys and signing, and migrating off a
+framework. Each arrives with the component that proves it, because writing
+one earlier means describing code nobody has run.
+[guides/README.md](guides/README.md) says which is which.

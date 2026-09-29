@@ -1,5 +1,7 @@
 # The platform contract
 
+Version: 1.0 · Effective: 2026-09-29 · Changes: see [CHANGELOG](../../CHANGELOG.md)
+
 **Normative.** [service.md](service.md) says what a service does at its own
 process boundary. This says what it asks of whatever runs it, and what that
 platform owes back.

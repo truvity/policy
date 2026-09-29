@@ -1,7 +1,7 @@
 # Testing
 
-**The rule.** Two tiers. A hermetic gate that needs nothing but the checkout,
-and a cluster tier that runs the thing.
+**The rule.** Two tiers. A gate that needs no credentials, no container and
+no cluster, and a cluster tier that runs the thing.
 [repository.md §2](../contracts/repository.md) and
 [0005](../decisions/0005-kind-is-the-gate.md).
 
