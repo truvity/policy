@@ -25,6 +25,21 @@ commit subjects alone changed nothing a consumer needed a sentence about.
   ConfigMap for the broker. A service that does not declare the key ignores
   it: `stat` and `log` keep their tokens.
 
+### Dependencies
+
+- **chore(url-shortener): the `stat` component moves to OpenTelemetry
+  instrumentation 2.31.1.** OpenTelemetry's OkHttp library dropped
+  `OkHttpTelemetry.newInterceptor`; its only entry point is now
+  `createCallFactory`, which returns a `Call.Factory` where the Connect Kotlin
+  client wants an `OkHttpClient`. `stat` wraps the finished client (identity
+  socket factory and trust manager included) and routes `newCall` through the
+  instrumented factory, so the spans, metrics and trace propagation are
+  unchanged and a test now proves an outgoing Connect call carries a
+  `traceparent` and a client span. `opentelemetry.version` is pinned to 1.65.0
+  next to the other Spring BOM overrides: without it the BOM resolves the
+  OpenTelemetry API and SDK down to 1.49.0 under an instrumentation built on
+  1.65.0.
+
 ## v1.31.0 — 2026-09-29
 
 ### Behaviour change
