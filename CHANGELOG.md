@@ -5,7 +5,30 @@ heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list. A tag that carries
 commit subjects alone changed nothing a consumer needed a sentence about.
 
-## Unreleased
+## v1.29.1 — 2026-09-29
+
+### Contracts
+
+- **The component contract names three exceptions and how a repository
+  declares one.** C2 exempts a `type: library` chart (it renders no
+  values.yaml surface of its own); C9 exempts a fork of a non-MIT
+  upstream (a derivative work cannot relicense itself); C11 clarifies
+  that a component named after its own repository is only wrong when it
+  is the sole image published under that prefix. A repository declares an
+  exception in `.github/policy-conformance.yaml`'s new `exempt:` map — see
+  the contract's new [Exemptions](docs/contracts/component.md#exemptions)
+  section — which `truvity/ci-actions`' `policy-conformance` action now
+  reads.
+
+
+### Security
+
+- **`examples/url-shortener/web`'s `@opentelemetry/exporter-metrics-otlp-http`
+  and `@opentelemetry/exporter-trace-otlp-http` bumped to v0.222.0**
+  (from v0.205.0), which pulls `@opentelemetry/core` to v2.11.0. The
+  version in use resolved `@opentelemetry/core` v2.1.0, affected by
+  GHSA-8988-4f7v-96qf (unbounded memory allocation parsing an inbound W3C
+  `baggage` header); fixed upstream in v2.8.0.
 
 ### Changes
 
@@ -42,15 +65,6 @@ commit subjects alone changed nothing a consumer needed a sentence about.
   shared development cluster per 0005; the release goes to a private
   registry; Go/npm/pip package access each work differently), and the order
   to migrate an existing service onto the shape.
-
-### Security
-
-- **`examples/url-shortener/web`'s `@opentelemetry/exporter-metrics-otlp-http`
-  and `@opentelemetry/exporter-trace-otlp-http` bumped to v0.222.0**
-  (from v0.205.0), which pulls `@opentelemetry/core` to v2.11.0. The
-  version in use resolved `@opentelemetry/core` v2.1.0, affected by
-  GHSA-8988-4f7v-96qf (unbounded memory allocation parsing an inbound W3C
-  `baggage` header); fixed upstream in v2.8.0.
 
 ## v1.29.0 — 2026-09-29
 
