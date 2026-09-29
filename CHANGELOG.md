@@ -33,6 +33,15 @@ commit subjects alone changed nothing a consumer needed a sentence about.
   registry; Go/npm/pip package access each work differently), and the order
   to migrate an existing service onto the shape.
 
+### Security
+
+- **`examples/url-shortener/web`'s `@opentelemetry/exporter-metrics-otlp-http`
+  and `@opentelemetry/exporter-trace-otlp-http` bumped to v0.222.0**
+  (from v0.205.0), which pulls `@opentelemetry/core` to v2.11.0. The
+  version in use resolved `@opentelemetry/core` v2.1.0, affected by
+  GHSA-8988-4f7v-96qf (unbounded memory allocation parsing an inbound W3C
+  `baggage` header); fixed upstream in v2.8.0.
+
 ## v1.29.0 — 2026-09-29
 
 ### Contracts
