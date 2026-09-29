@@ -24,6 +24,15 @@ commit subjects alone changed nothing a consumer needed a sentence about.
   exactly once, and a peer with another identity sees no request. Anyone who
   copied the interceptor-based check needs the same change. The Go and
   Python packages already verify in the handshake and are unaffected.
+- **The e2e prober and suite now fail on over-counting.** Both waited for the
+  click count to read the expected number and passed at the first look, which
+  is why a click counted five times went unnoticed. The `stat` journey and
+  the suite's stat test now require the count to stay at the expected number
+  for a hold afterwards, long enough to outlast a redelivery (the consumer's
+  ack wait is 30s). In the e2e chart the prober's hold is
+  `prober.statSettle`, default `60s`, `0s` to turn it off; a pass therefore
+  takes about that much longer, and `prober.interval` is the pause between
+  passes.
 
 ## v1.30.1 — 2026-09-29
 
