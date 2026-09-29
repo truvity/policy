@@ -1,6 +1,44 @@
 {
   "lockfile_version": "1",
   "packages": {
+    "biome@2.5.14": {
+      "last_modified": "2026-09-28T04:45:22Z",
+      "resolved": "github:NixOS/nixpkgs/419fe0f449b3fbe3bdd53d9840288db4509ec32e#biome",
+      "source": "devbox-search",
+      "version": "2.5.14",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/74slxvjjsg1kpa1msv8npd8y40l2y53p-biome-2.5.14",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/74slxvjjsg1kpa1msv8npd8y40l2y53p-biome-2.5.14"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/2g9393hwd5kk2zv145adyjawxy75lmk0-biome-2.5.14",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/2g9393hwd5kk2zv145adyjawxy75lmk0-biome-2.5.14"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/q023q90mdzvilx75vysba6lkky1dqin9-biome-2.5.14",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/q023q90mdzvilx75vysba6lkky1dqin9-biome-2.5.14"
+        }
+      }
+    },
     "buf@1.72.0": {
       "last_modified": "2026-08-27T07:16:00Z",
       "resolved": "github:NixOS/nixpkgs/c27cdad491a991b11ed731760aa2ef8db0cb0410#buf",
@@ -36,6 +74,44 @@
             }
           ],
           "store_path": "/nix/store/ayci2h427579cj5ak1ibv54r3yvp1jmj-buf-1.72.0"
+        }
+      }
+    },
+    "editorconfig-checker@4.0.2": {
+      "last_modified": "2026-09-28T04:45:22Z",
+      "resolved": "github:NixOS/nixpkgs/419fe0f449b3fbe3bdd53d9840288db4509ec32e#editorconfig-checker",
+      "source": "devbox-search",
+      "version": "4.0.2",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/xlnnd3b6kjkvam8w5cz2dv85my3hapwq-editorconfig-checker-4.0.2",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/xlnnd3b6kjkvam8w5cz2dv85my3hapwq-editorconfig-checker-4.0.2"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/16g0lj4ik1yaza8ay2shply8g8w2sjdv-editorconfig-checker-4.0.2",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/16g0lj4ik1yaza8ay2shply8g8w2sjdv-editorconfig-checker-4.0.2"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/5my4yri7pphdx1p483akribmy7q10q1q-editorconfig-checker-4.0.2",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/5my4yri7pphdx1p483akribmy7q10q1q-editorconfig-checker-4.0.2"
         }
       }
     },
