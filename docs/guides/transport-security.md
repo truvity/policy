@@ -70,6 +70,16 @@ runtime. An edge then migrates in three commits with no coordinated window:
 the server adds its authenticated port, its clients move to it, the server
 drops the cleartext one.
 
+**A mode is per serving component, not per release.** The example chart takes
+`tls.mode` as the default and `tls.components.<name>.mode` as an override for
+the two components that serve (`urls`, `redirect`). It exists because the two
+have different edges: a component that a gateway fronts terminates nothing
+itself and forwards cleartext, so it may be `permissive` but never `strict`,
+while a component only other workloads call in-cluster (the URL service here)
+can be `strict` at once. The chart refuses the impossible combination
+rather than rendering it. A component that only calls out has no mode of its
+own: it presents an identity whenever what it calls authenticates.
+
 **The chart's default is `off`, and stays that way.** A chart is installable
 by someone whose platform provides none of this, and a default that assumes a
 platform produces a pod waiting forever for a volume nobody serves. Turning

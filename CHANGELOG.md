@@ -26,6 +26,42 @@ commit subjects alone changed nothing a consumer needed a sentence about.
   the product's own configuration, and says a chart must not rely on it
   for anything this contract should name instead.
 
+### Example
+
+- **The url-shortener chart takes a transport mode per serving component, so
+  the URL service can be `strict` while the redirect service stays
+  `permissive`.** `tls.components.urls.mode` and
+  `tls.components.redirect.mode` (`off | permissive | strict`, unset means
+  `tls.mode`) override the release-wide default for the two components that
+  serve an authenticated boundary; `web` and `stat` only call out and have no
+  mode of their own (they present an identity whenever the URL service
+  authenticates, and dial its port for its effective mode). The schema
+  refuses `strict` for `redirect` and a key for any other component, and the
+  render refuses a `strict` redirect that is only inherited. Default renders
+  are byte-identical.
+- **Behaviour change: `tls.mode: strict` on the url-shortener chart is now
+  refused unless `tls.components.redirect.mode` is set.** The redirect
+  service is fronted by a gateway that terminates TLS and forwards
+  cleartext, so a strict redirect refuses its only caller; the render says
+  so and names the fix. To make only the URL service strict, set
+  `tls.mode: permissive` and `tls.components.urls.mode: strict`. The same
+  rule applies to the e2e chart's `tls` block, which gains the same
+  `tls.components` (so the prober dials `urls` and `redirect` each on its own
+  port) and refuses a `strict` redirect target, written or inherited.
+  `hack/identity-smoke.sh` now proves the counter over `strict` for the URL
+  service alone.
+- **The url-shortener-e2e suite Job can present a workload identity.**
+  `job.tls.enabled` (off by default; byte-identical when off) mounts the CSI
+  identity into the Job, requests it as the Job's own ServiceAccount (with a
+  Role to ask for it, unless `tls.grantRequest` is false) and hands the suite
+  `E2E_URLS_TLS`, `E2E_REDIRECT_TLS` and `E2E_TLS_*`, which the suite reads
+  through the new `e2e/tlsenv` package so every call it makes presents the
+  certificate and dials the target's port for its mode. It reads the same
+  `tls` block as the prober. As with the prober, the consumer adds the Job's
+  ServiceAccount to the application chart's `tls.peers.urls` and
+  `tls.peers.redirect` before making `urls` strict; see
+  `docs/guides/testing.md`.
+
 ### Documentation
 
 - **New: `docs/landscape.md`, one page for the 20 public repositories the
