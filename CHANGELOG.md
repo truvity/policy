@@ -5,6 +5,18 @@ heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list. A tag that carries
 commit subjects alone changed nothing a consumer needed a sentence about.
 
+## Unreleased
+
+### Documentation
+
+- **New guide: `docs/guides/private-consumer.md`.** What a private
+  repository keeps identical to a public consumer (the service contract,
+  the chart interface, the telemetry variables, the depguard copy, the test
+  chart and prober shape), what it replaces (the PR gate moves to the
+  shared development cluster per 0005; the release goes to a private
+  registry; Go/npm/pip package access each work differently), and the order
+  to migrate an existing service onto the shape.
+
 ## v1.29.0 — 2026-09-29
 
 ### Contracts

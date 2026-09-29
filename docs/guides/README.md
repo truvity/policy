@@ -24,6 +24,7 @@ that look like something else.
 | [transport-security.md](transport-security.md) | mutual TLS, whose identity, and the three modes |
 | [twelve-factor.md](twelve-factor.md) | the factors mapped, and the two deviations argued |
 | [conformance.md](conformance.md) | the checklist, and what CI checks for you |
+| [private-consumer.md](private-consumer.md) | what a private repository keeps, what it replaces, and the order to migrate an existing service |
 
 ## Arriving with their components
 

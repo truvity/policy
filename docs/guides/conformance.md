@@ -3,6 +3,10 @@
 Not normative. This is how to tell whether a repository satisfies
 [the contracts](../README.md), and which parts a machine does for you.
 
+This checklist is the same for a private repository as for a public one —
+[private-consumer.md](private-consumer.md) says what differs in *where* the
+gate runs and *where* a release is published, never in which rules apply.
+
 ## What CI already checks
 
 | Contract | Rule | Mechanism |
