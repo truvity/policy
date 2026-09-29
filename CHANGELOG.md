@@ -40,6 +40,19 @@ commit subjects alone changed nothing a consumer needed a sentence about.
   OpenTelemetry API and SDK down to 1.49.0 under an instrumentation built on
   1.65.0.
 
+### Fixes
+
+- **A peer certificate must be a single-identity leaf.** The transport
+  packages (Go, Python, and the Kotlin example's trust manager) now hold a
+  peer to two rules of the SPIFFE X509-SVID specification they did not
+  check: the leaf is not a certificate authority and may not sign
+  certificates or revocation lists, and it carries exactly one URI name, of
+  any scheme (before, a second URI of another scheme was skipped and the
+  first `spiffe` one read). A certificate that fails either is refused, on
+  the server side and the client side alike. In Python, pass
+  `getpeercert(binary_form=True)` as `der=` to `verify_peer` so the
+  authority check can run; the URI rule needs nothing new.
+
 ## v1.31.0 — 2026-09-29
 
 ### Behaviour change
