@@ -69,18 +69,18 @@ documents use narrowly — estate, platform, ring, tier, lane.
 
 ## Install and a worked example
 
-Pin one version; every artifact carries the same one. v1.28.7 is the latest
+Pin one version; every artifact carries the same one. v1.29.0 is the latest
 tag at the time of writing — the
 [releases page](https://github.com/truvity/policy/releases) lists every one.
 
 ```sh
-go get github.com/truvity/policy@v1.28.7
+go get github.com/truvity/policy@v1.29.0
 
 # GitHub Packages: map the @truvity scope to npm.pkg.github.com, with a
 # token that can read packages — the registry asks for one even here.
-yarn add @truvity/policy@1.28.7
+yarn add @truvity/policy@1.29.0
 
-uv add https://github.com/truvity/policy/releases/download/v1.28.7/truvity_policy-1.28.7-py3-none-any.whl
+uv add https://github.com/truvity/policy/releases/download/v1.29.0/truvity_policy-1.29.0-py3-none-any.whl
 ```
 
 A service loads its configuration in three lines, and a misconfiguration is
@@ -114,7 +114,7 @@ archive:
 ```
 
 ```sh
-helm template example oci://ghcr.io/truvity/charts/url-shortener --version 1.28.7 -f values.yaml
+helm template example oci://ghcr.io/truvity/charts/url-shortener --version 1.29.0 -f values.yaml
 ```
 
 What provides those names is the infrastructure chart's job, installed per
@@ -130,7 +130,7 @@ versions: each consumer's own pin is the record of that.
 | Consumer | Surface |
 |---|---|
 | `truvity/ci-actions` | the `cluster` action fetches `hack/kind/` at a pinned release tag |
-| nine repositories | copy [`lint/golangci-depguard.yaml`](lint/golangci-depguard.yaml) into their `.golangci.yaml` |
+| 14 repositories | copy [`lint/golangci-depguard.yaml`](lint/golangci-depguard.yaml) into their `.golangci.yaml` |
 | `truvity/gitops` | deploys the url-shortener example's charts |
 | every public component repository | is held to [the component contract](docs/contracts/component.md) |
 
