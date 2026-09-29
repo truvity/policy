@@ -163,7 +163,7 @@ they fit together. The contracts:
 - [config](docs/contracts/config.md) — one typed configuration per binary
 - [platform](docs/contracts/platform.md) — what a service asks of what runs it
 - [release](docs/contracts/release.md) — one tag, what a version means
-- [component](docs/contracts/component.md) — the rules C1–C13 for every
+- [component](docs/contracts/component.md) — the rules C1–C14 for every
   public repository that ships charts, images, libraries, CLIs or actions
 
 ## The rule that makes this repository public

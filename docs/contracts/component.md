@@ -26,12 +26,14 @@ contradicted each other on two; this page decides both (see
 here rather than restating a rule, because a restated rule is a second
 version of it.
 
-Every rule has an ID, **C1** to **C13**, so that a review comment, a
+Every rule has an ID, **C1** to **C14**, so that a review comment, a
 ticket and a failing check can say "C5" instead of paraphrasing. Each says
 what must be true, why, and how it is checked. **C1 to C12 are checked
 mechanically** by the `policy-conformance` action in `truvity/ci-actions`,
 which reads a checkout and reports each rule by its ID; **C13 is review**,
-because telling an estate's fact from a neutral default takes a reader.
+because telling an estate's fact from a neutral default takes a reader, and
+**C14 is checked by the chart's own tests** in the repository that ships the
+chart.
 
 ## Scope
 
@@ -369,6 +371,31 @@ domains.
 
 ---
 
+## C14. Each component runs as its own ServiceAccount
+
+**What.** A chart that deploys more than one workload runs every component
+(and any migration or other Job) as its own Kubernetes ServiceAccount. No two
+components share one. A component that needs rights outside the cluster
+keeps its own account for them; the account is never shared to reach them.
+Where a chart wires one component to another over mutually authenticated
+transport, it grants each caller by ITS account, never a shared one.
+
+**Why.** A workload identity is a namespace plus a ServiceAccount (a SPIFFE
+ID is `spiffe://<trust domain>/ns/<namespace>/sa/<account>`). A shared
+account gives every component holding it the same identity, so an allow-list
+cannot admit one and refuse another: mTLS authorisation degrades to "anyone
+in this release". Distinct accounts are also what keep a migration's rights
+off the request path.
+
+**Conformance.** The chart's own render test: no two Deployments or Jobs
+render the same `serviceAccountName`, in the default render and in a fully
+set one, and the render itself refuses a values file that makes two
+components collide (`examples/url-shortener`:
+`TestNoTwoWorkloadsShareAServiceAccount`). The migration hook is not
+exempt. Review for a chart in another repository.
+
+---
+
 ## Exemptions
 
 A rule can be wrong for a repository's *kind* without being wrong in
@@ -515,3 +542,4 @@ later is in scope by the rule, not by being added here.
 | C11 image names | `policy-conformance`: no image repository ends in `<repo>/<repo>` with nothing published beside it |
 | C12 pinned installs | `policy-conformance`: no `@latest`, no unversioned `oci://` install |
 | C13 estate facts | review; the leak canary catches the mechanical half |
+| C14 ServiceAccount per component | the chart's own render test; review elsewhere |

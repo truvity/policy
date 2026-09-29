@@ -17,7 +17,7 @@ tested without credentials for it.
 | Concern | Where |
 |---|---|
 | the accounts | [`charts/url-shortener/templates/serviceaccount.yaml`](../../examples/url-shortener/charts/url-shortener/templates/serviceaccount.yaml) |
-| naming them per workload | the `serviceAccountName` line in each workload template |
+| naming them per workload | the `serviceAccountName` line in each workload template, resolved by `url-shortener.componentServiceAccountName` |
 | a secret reaching a process | `url-shortener.passwordEnv` in `_helpers.tpl`, and `config.Secret` in [`config/`](../../config/) |
 
 In code, nothing names a mechanism: the cloud SDK's ambient credential chain
@@ -30,6 +30,46 @@ the same reason it gives them different database credentials: the migration
 creates tables and grants rights, the services read and write rows. One
 account for both jobs puts the migration's rights on the request path, and a
 test asserts they differ.
+
+## Per-component identity
+
+Every component runs as its own account, always: `redirect`, `urls`, `web`,
+`stat` and `log` (default `<release>-<component>`, renamable under
+`serviceAccount.components.<component>.name`), plus the migration's own. With
+the transport on, each has its own SPIFFE identity,
+`spiffe://<trustDomain>/ns/<namespace>/sa/<account>`, which is namespace plus
+account: a shared account would make two components indistinguishable to an
+allow-list. There is no shared mode, and the render refuses two components
+(or one and the migration) resolving to the same name. This is rule
+[C14](../contracts/component.md#c14-each-component-runs-as-its-own-serviceaccount).
+
+**The cloud binding does not move.** `log` is the one component that needs
+rights outside the cluster (the archive bucket). Its account defaults to
+`serviceAccount.app.name` when that is set, so the account a platform already
+bound a cloud role to is still log's, and `serviceAccount.app.annotations`
+go on that account alone. Nothing else runs as it: the other four components
+no longer run as the app account. If a platform bound anything else by that
+name (for example broker permissions for `redirect` and `stat`, which
+connect with a projected token of their own account), bind their new names.
+Set `serviceAccount.create: false` where the platform creates the accounts.
+
+**The chart's own allow-lists follow its call graph.**
+
+| Component | Admits (in the release) | Accepts an answer from |
+|---|---|---|
+| `urls` | `web`, `stat` | (serves only) |
+| `redirect` | nobody | (serves only) |
+| `web` | (calls only) | `urls` |
+| `stat` | (calls only) | `urls` |
+| `log` | (no tls block) | (none) |
+
+Callers from outside the release stay in `tls.peers.<component>`.
+
+**Grant the e2e chart the right names.** The prober's and the suite Job's
+`tls.peers` (who may ANSWER them) must name `<release>-urls` and
+`<release>-redirect` (or the names given under `serviceAccount.components`).
+Their own accounts still go in the application chart's `tls.peers.urls` and
+`tls.peers.redirect`.
 
 ## How a secret arrives
 
