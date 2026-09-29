@@ -9,6 +9,20 @@ commit subjects alone changed nothing a consumer needed a sentence about.
 
 ### Features
 
+- **The URL shortener's chart can verify the database server.**
+  `database.tls.mode` (`require`, the default, or `verify-full`),
+  `database.tls.rootCA.{configMapName,key}` and `database.clusterDomain`.
+  Under `verify-full` the connection URL of `urls`, `redirect` and the
+  migration carries `sslmode=verify-full&sslrootcert=<mounted root>`, the host
+  is dialled by its fully-qualified service name (the form a server
+  certificate carries) and the root ConfigMap is mounted as a directory into
+  those three workloads, so a rotation is picked up. `require` renders
+  byte-identically to before. The end-to-end suite still reaches the database
+  through a port-forward, which cannot present the service name, so it keeps
+  `sslmode=disable` against its own box database.
+- **The URL shortener's `stat` no longer receives `DATABASE_PASSWORD`.** It
+  has no database; the unused credential is gone from its Deployment.
+
 - **A publisher can authenticate to the broker with its workload identity.**
   The `nats` configuration fragment gains an optional `tls` object
   (`caFile`, `serverName`): the client dials TLS, presents the certificate
