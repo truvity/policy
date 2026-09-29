@@ -119,7 +119,7 @@
         }
       }
     },
-    "gopls@latest": {
+    "gopls@0.23.0": {
       "last_modified": "2026-08-27T07:16:00Z",
       "resolved": "github:NixOS/nixpkgs/c27cdad491a991b11ed731760aa2ef8db0cb0410#gopls",
       "source": "devbox-search",
@@ -282,7 +282,7 @@
         }
       }
     },
-    "just-lsp@latest": {
+    "just-lsp@0.6.2": {
       "last_modified": "2026-08-27T07:16:00Z",
       "resolved": "github:NixOS/nixpkgs/c27cdad491a991b11ed731760aa2ef8db0cb0410#just-lsp",
       "source": "devbox-search",
@@ -320,7 +320,7 @@
         }
       }
     },
-    "just@latest": {
+    "just@1.58.0": {
       "last_modified": "2026-08-27T07:16:00Z",
       "resolved": "github:NixOS/nixpkgs/c27cdad491a991b11ed731760aa2ef8db0cb0410#just",
       "source": "devbox-search",
@@ -385,7 +385,7 @@
         }
       }
     },
-    "kind@latest": {
+    "kind@0.32.0": {
       "last_modified": "2026-08-27T07:16:00Z",
       "resolved": "github:NixOS/nixpkgs/c27cdad491a991b11ed731760aa2ef8db0cb0410#kind",
       "source": "devbox-search",
@@ -423,7 +423,7 @@
         }
       }
     },
-    "ko@latest": {
+    "ko@0.19.1": {
       "last_modified": "2026-08-27T07:16:00Z",
       "resolved": "github:NixOS/nixpkgs/c27cdad491a991b11ed731760aa2ef8db0cb0410#ko",
       "source": "devbox-search",
@@ -509,7 +509,7 @@
         }
       }
     },
-    "kubectl@latest": {
+    "kubectl@1.36.3": {
       "last_modified": "2026-08-27T07:16:00Z",
       "resolved": "github:NixOS/nixpkgs/c27cdad491a991b11ed731760aa2ef8db0cb0410#kubectl",
       "source": "devbox-search",
@@ -574,7 +574,7 @@
         }
       }
     },
-    "kubernetes-helm@latest": {
+    "kubernetes-helm@4.2.4": {
       "last_modified": "2026-08-27T07:16:00Z",
       "resolved": "github:NixOS/nixpkgs/c27cdad491a991b11ed731760aa2ef8db0cb0410#kubernetes-helm",
       "source": "devbox-search",
@@ -612,7 +612,7 @@
         }
       }
     },
-    "lefthook@latest": {
+    "lefthook@2.1.10": {
       "last_modified": "2026-08-27T07:16:00Z",
       "resolved": "github:NixOS/nixpkgs/c27cdad491a991b11ed731760aa2ef8db0cb0410#lefthook",
       "source": "devbox-search",

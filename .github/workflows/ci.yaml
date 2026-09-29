@@ -25,14 +25,17 @@ concurrency:
 
 jobs:
   recipes:
-    uses: truvity/ci-workflows/.github/workflows/check.yaml@36be6b238bfb119de3ffeed9604bae5e7a3d7c8d # v3.4.0
+    uses: truvity/ci-workflows/.github/workflows/check.yaml@83a33664e82b4df3764ed4b4544707320b51db92 # v3.13.1
     with:
-      recipes: '["build", "test", "lint", "vuln", "drift", "leak-canary"]'
+      # `vuln` is not here: it runs in security.yaml, on a schedule, where a
+      # new advisory is reported without turning every pull request red
+      # (the component contract's C10).
+      recipes: '["build", "test", "lint", "drift", "leak-canary"]'
 
   # The TypeScript package installs from a registry, which is why it is not in
   # `check`: the gate must need nothing but the checkout.
   ts:
-    uses: truvity/ci-workflows/.github/workflows/check.yaml@36be6b238bfb119de3ffeed9604bae5e7a3d7c8d # v3.4.0
+    uses: truvity/ci-workflows/.github/workflows/check.yaml@83a33664e82b4df3764ed4b4544707320b51db92 # v3.13.1
     with:
       recipes: '["ts"]'
 
@@ -42,7 +45,7 @@ jobs:
   # a misspelled field — because the API server ignores one rather than
   # refusing it.
   charts:
-    uses: truvity/ci-workflows/.github/workflows/check.yaml@36be6b238bfb119de3ffeed9604bae5e7a3d7c8d # v3.4.0
+    uses: truvity/ci-workflows/.github/workflows/check.yaml@83a33664e82b4df3764ed4b4544707320b51db92 # v3.13.1
     with:
       recipes: '["charts"]'
 
@@ -76,20 +79,16 @@ jobs:
   # is no longer this repository's own job to script.
   #
   # `check` below still names this job — a reusable workflow cannot supply
-  # a required status context of its own (bar#706; the same comment lives
-  # in ci-workflows' integration.yaml), so the fan-in has to be the
-  # calling job, exactly as it already was.
-  #
-  # Pinned to ci-workflows PR #155's head commit for now
-  # (feat/integration-tier-by-visibility) — bump to the merge commit once
-  # that pull request lands.
+  # a required status context of its own (the same comment lives in
+  # ci-workflows' integration.yaml), so the fan-in has to be the calling
+  # job, exactly as it already was.
   cluster:
-    uses: truvity/ci-workflows/.github/workflows/integration.yaml@1deba8589700d0d5ba433f4790cdacc208f166c5 # v3.13.0
+    uses: truvity/ci-workflows/.github/workflows/integration.yaml@83a33664e82b4df3764ed4b4544707320b51db92 # v3.13.1
     permissions:
       contents: read
       id-token: write
     with:
-      policy-version: v0.8.1
+      policy-version: v1.28.7
       gemaal-namespace: shortener
       timeout-minutes: 30
       lanes: |

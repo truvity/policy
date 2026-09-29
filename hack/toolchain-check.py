@@ -1,5 +1,7 @@
 """Assert that the toolchain is declared once and resolves to what it declares.
 
+Every package in `devbox.json` names a version: `latest` is refused.
+
 Node is the case that needs this, and it needs it because the failure is
 silent. `devbox.json` names a yarn; `ts/package.json` names one in
 `packageManager`; and a third yarn — whichever corepack decides to fetch —
@@ -27,10 +29,20 @@ def fail(message: str) -> None:
 
 
 def main() -> int:
-    """Check every claim this repository makes about its Node toolchain."""
+    """Check every claim this repository makes about its toolchain."""
     problems = 0
     devbox = json.loads((ROOT / "devbox.json").read_text(encoding="utf-8"))
     packages = devbox["packages"]
+
+    # Every tool names a version (the component contract's C6). "latest"
+    # means two checkouts of the same commit build with different tools,
+    # and the lock only hides that until the next `devbox update` moves
+    # every one of them at once, in a diff nobody asked for.
+    for name, entry in packages.items():
+        version = entry.get("version") if isinstance(entry, dict) else entry
+        if not isinstance(version, str) or not version or version == "latest":
+            fail(f"devbox.json: {name} must name a version, not {version!r}")
+            problems += 1
 
     # The node plugin's corepack shims take precedence over everything
     # devbox installed, so with it enabled the yarn pin below is decoration.

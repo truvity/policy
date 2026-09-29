@@ -1,14 +1,19 @@
 # Development commands. Tools come from devbox (`devbox shell`, or direnv);
 # CI runs each recipe as its own job.
 #
-# `check` is the gate, and it needs nothing but this checkout: no network, no
-# containers, no toolchain beyond devbox. A contributor runs exactly what CI
-# runs. Recipes that need more (a cluster, a registry) are their own jobs and
-# say so.
+# `check` is the gate, and it needs no credentials, no containers and no
+# toolchain beyond devbox — only what the lock files name, which a first
+# build downloads. A contributor runs exactly what CI runs. Recipes that need
+# more (a cluster, a schema from the network) are their own jobs and say so.
+#
+# `vuln` is NOT in it (docs/contracts/component.md, C10): a new advisory is
+# news about the world, not about the change under review, and one with no
+# released fix would turn every pull request red on a finding nobody can act
+# on. It runs in .github/workflows/security.yaml, on a schedule.
 
-# Everything CI runs
-[doc("Everything CI runs")]
-check: build test lint vuln drift leak-canary
+# Everything CI requires
+[doc("Everything CI requires")]
+check: build test lint drift leak-canary
 
 # Compile everything
 [doc("Compile everything")]
@@ -53,7 +58,8 @@ test:
     cd kotlin && gradle test --console=plain --quiet
     cd examples/url-shortener/stat && gradle test --console=plain --quiet
 
-# Report known vulnerabilities in what this module depends on
+# Report known vulnerabilities in what this module depends on. Its own
+# workflow (security.yaml), never the gate — see `check`.
 [doc("Report known vulnerabilities")]
 vuln:
     govulncheck ./...

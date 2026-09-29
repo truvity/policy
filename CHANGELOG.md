@@ -6,6 +6,21 @@ and nothing else — and its GitHub Release lists the commits.
 
 ## Unreleased
 
+- **The example's Go services log to stderr, not stdout.** The service
+  contract (§4) has always said stderr; `internal/runtime/runtime.go` wrote
+  to stdout. A collector that reads both streams sees no difference; one
+  that reads only stdout stops seeing the Go components' logs, as it
+  already did not see the Kotlin, TypeScript and Python components'.
+- **Every image base is pinned by digest.** The four Dockerfiles, the
+  release's `kos:` block (which never read `.ko.yaml`, so the Go images
+  were built on whatever `latest` was) and `.ko.yaml` name
+  `cgr.dev/chainguard/<image>:latest@sha256:…`; renovate moves the pins.
+- **`just check` no longer runs `vuln`.** Vulnerability scanning is its own
+  workflow, `security.yaml`, on push, pull request and a daily schedule —
+  a new advisory no longer turns every pull request red. Every
+  `devbox.json` entry names a version, and the toolchain lint refuses
+  `latest`.
+
 - **The `url-shortener-infra` chart tags every AWS resource it creates
   with `project`, not just `cluster`.** Found on an install whose
   platform's permissions boundary denied `iam:CreateRole` outright
