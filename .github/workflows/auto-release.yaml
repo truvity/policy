@@ -1,0 +1,40 @@
+# Automatic PATCH releases (docs/contracts/release.md §4): when merged
+# dependency bumps have moved master past the latest tag, the shared
+# workflow cuts the next patch — weekly, or immediately for a push whose
+# merged pull request carries the `security` label. It never cuts a minor,
+# a major or a first release; those are a person's tag.
+#
+# DOUBLY GUARDED, off by default: the issuer must be configured for the
+# organisation AND vars.AUTO_RELEASE must be "true" — flipping it is the
+# deliberate act, and until then this file does nothing. The v* tag
+# ruleset must carry the tagging App's bypass or the push is rejected.
+#
+# NO APP KEY HERE. The job exchanges its own GitHub identity token at the
+# issuer for an installation token narrowed to this repository and to
+# `contents: write` + `pull_requests: read`. `id-token: write` below is
+# what the exchange needs; the shared workflow can only narrow it.
+name: Auto Release
+
+on:
+  schedule:
+    - cron: "41 5 * * 1"
+  workflow_dispatch:
+  # The security lane: a push whose merged pull request carries the
+  # `security` label releases immediately; every other push exits quietly
+  # in the shared workflow, and the weekly schedule is the lane for
+  # ordinary bumps.
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+  id-token: write # the token exchange, in the shared workflow's job
+
+jobs:
+  tag:
+    if: vars.AUTO_RELEASE == 'true' && vars.ACCESS_ROSTER_ISSUER != ''
+    uses: truvity/ci-workflows/.github/workflows/auto-release.yaml@83a33664e82b4df3764ed4b4544707320b51db92 # v3.13.1
+    with:
+      token-source: access-roster
+      access-roster-issuer: ${{ vars.ACCESS_ROSTER_ISSUER }}
+      github-app: truvity-ci-automation

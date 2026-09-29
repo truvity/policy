@@ -81,27 +81,37 @@ builds:
 # from the environment and it SILENTLY WINS over a repository named here.
 # A release published all three to the bare default that way and only
 # failed afterwards, writing an SBOM to a repository nobody meant to use.
+#
+# `base_image` is pinned by digest, and it is HERE that it matters: this
+# block does not read examples/url-shortener/.ko.yaml, so without it the
+# base is goreleaser's own default, `latest` alone — a different image on
+# every release. The digest is the multi-architecture index; renovate.json's
+# custom manager moves this and .ko.yaml together.
 kos:
   - id: migrate
     build: migrate
     platforms: [linux/amd64, linux/arm64]
     tags: ["{{ .Env.IMAGE_TAG }}"]
     base_import_paths: true
+    base_image: cgr.dev/chainguard/static:latest@sha256:41e17ed83c594a64a9396b6ab96dd26d5ddc290dacf4c177464712ff21ad534f
   - id: redirect
     build: redirect
     platforms: [linux/amd64, linux/arm64]
     tags: ["{{ .Env.IMAGE_TAG }}"]
     base_import_paths: true
+    base_image: cgr.dev/chainguard/static:latest@sha256:41e17ed83c594a64a9396b6ab96dd26d5ddc290dacf4c177464712ff21ad534f
   - id: urls
     build: urls
     platforms: [linux/amd64, linux/arm64]
     tags: ["{{ .Env.IMAGE_TAG }}"]
     base_import_paths: true
+    base_image: cgr.dev/chainguard/static:latest@sha256:41e17ed83c594a64a9396b6ab96dd26d5ddc290dacf4c177464712ff21ad534f
   - id: prober
     build: prober
     platforms: [linux/amd64, linux/arm64]
     tags: ["{{ .Env.IMAGE_TAG }}"]
     base_import_paths: true
+    base_image: cgr.dev/chainguard/static:latest@sha256:41e17ed83c594a64a9396b6ab96dd26d5ddc290dacf4c177464712ff21ad534f
 
 # The other three carry a runtime somebody else builds, so they have a
 # Dockerfile — one FROM and one COPY each.

@@ -89,7 +89,7 @@ component carries an enable flag.
 low cardinality, and never a request id, a tenant or a version. Two
 components must not share one.
 
-**OTLP logs stay off.** Where a node agent already collects stdout — which
+**OTLP logs stay off.** Where a node agent already collects stderr — which
 is the usual arrangement — an exporter buys a second copy of what is
 already stored, and logs that exist only over OTLP vanish exactly when the
 exporter is the thing that broke. Turn them on only for records that must

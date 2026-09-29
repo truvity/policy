@@ -1,0 +1,36 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "github>truvity/ci-workflows"
+  ],
+  "ignorePaths": [
+    "devbox.json",
+    "devbox.lock"
+  ],
+  "packageRules": [
+    {
+      "description": "The go directive is owned by the devbox parity job (truvity/ci-workflows docs/devbox-update.md): it aligns go.mod with the Go devbox ships and the Go golangci-lint was built with, in the same pull request as devbox.lock. Renovate leaves `go` alone so the three can never disagree; devbox.json and devbox.lock are ignored above for the same reason.",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchDepNames": [
+        "go"
+      ],
+      "enabled": false
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "The Go images' base, pinned by tag AND digest in the two places ko reads it: goreleaser's `kos:` block (the release) and examples/url-shortener/.ko.yaml (a local `ko build`). The Dockerfiles' FROM lines need no rule: the dockerfile manager already moves a `:latest@sha256:` digest.",
+      "managerFilePatterns": [
+        "/(^|/)\\.goreleaser\\.yaml$/",
+        "/(^|/)\\.ko\\.yaml$/"
+      ],
+      "matchStrings": [
+        "(?:base_image|defaultBaseImage): (?<depName>[^\\s:@]+):(?<currentValue>[^\\s@]+)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker"
+    }
+  ]
+}
