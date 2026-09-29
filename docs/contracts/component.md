@@ -92,6 +92,14 @@ attaching any annotation a fork of the chart.
 **Conformance.** `charts/*/values.schema.json` exists for every chart and is
 valid JSON Schema. Strictness and openness are proved by C3's fixtures.
 
+**Exception: library charts.** A chart with `type: library` in
+`Chart.yaml` renders no manifests of its own — it exports templates an
+application chart includes with `{{- include }}` — and takes no values a
+consumer sets directly; whatever it reads comes from the including chart's
+own, already-schema'd `values.yaml`. It carries no `values.schema.json` and
+is skipped by C2. Declare it via `.github/policy-conformance.yaml` (see
+[Exemptions](#exemptions)) so the exception is named, not merely absent.
+
 ## C3. Every chart has golden renders and a refused fixture
 
 **What.** Every chart has golden renders under `tests/golden/<chart>/` —
@@ -268,6 +276,13 @@ use, whatever it says about itself.
 
 **Conformance.** `LICENSE` exists and its text is the MIT licence.
 
+**Exception: a fork of a non-MIT upstream.** A repository that is a fork
+of, or vendors the source of, an upstream project under a licence other
+than MIT keeps that licence — a derivative work cannot unilaterally
+relicense itself, whatever this contract would otherwise prefer. Declare
+it via `.github/policy-conformance.yaml` (see [Exemptions](#exemptions));
+the reason names the upstream project and its licence.
+
 ## C10. Vulnerability scanning is its own workflow, never the gate
 
 **What.** A repository with a `go.mod` has
@@ -301,9 +316,17 @@ what it does, and a reader cannot tell which is which. With `ko`, the name
 comes from the command's directory — its `repositories:` key is inert when
 `base_import_paths` is set — so the directory is named for the role.
 
+A repository that ships several images under one registry prefix may have
+one component legitimately named after the repository itself — a
+repository shipping a writer, a query service and a server under one
+prefix is not wrong for one of them matching the repository's own name.
+The rule is about the degenerate case: a *sole* image whose full path is
+`<repo>/<repo>`, with nothing published beside it.
+
 **Conformance.** The image repositories named by `.goreleaser.yaml`, `.ko.yaml`
 and the release workflow's `image-repo` input do not end in
-`<repo>/<repo>`.
+`<repo>/<repo>`, unless that image has a sibling published under the same
+prefix.
 
 ## C12. Install instructions pin a version
 
@@ -343,6 +366,51 @@ diagnose.
 flag default for a value only one estate would choose. The leak canary
 (C4) catches the mechanical half: account IDs, registry hosts, internal
 domains.
+
+---
+
+## Exemptions
+
+A rule can be wrong for a repository's *kind* without being wrong in
+general — a library chart has no values of its own to schema (C2); a fork
+of a non-MIT upstream cannot relicense itself (C9). When that happens, the
+rule is amended here, in its own pull request, with the reason (see "When
+the contract is wrong" in this repository's `CLAUDE.md`), and the
+repository declares the exception mechanically so it stays visible rather
+than merely absent.
+
+A repository declares an exception in `.github/policy-conformance.yaml`:
+
+```yaml
+exempt:
+  C2:
+    reason: library chart takes no values
+    charts: [example-routes]
+  C9:
+    reason: fork of an Apache-2.0 upstream; cannot relicense
+```
+
+`reason` is required and reviewed like any other change. `charts:`, where
+the rule is chart-scoped (C1, C2, C3), names which charts the exception
+covers; a rule with no `charts:` line is exempted for the whole
+repository. This is not the `policy-conformance` action's `skip:` input —
+that silences a whole rule for one CI run and demands a reason on every
+invocation, for a rule that genuinely cannot be checked here yet (C13,
+always) or a temporary gap being tracked elsewhere. An exemption is
+committed, permanent until the exception is removed, and answers to a
+named rule and reason rather than a blanket skip.
+
+An exempted rule is not silently `PASS`: `policy-conformance` reports it
+as `EXEMPT` (C9) or narrows exactly which sub-check the exemption
+suppresses (C1, C2 by chart; C5, the missing-heading-for-the-latest-tag
+check only — format, order and duplicate headings still run), so the job
+summary shows a reviewed exception rather than indistinguishable
+conformance.
+
+**A repository is not free to invent its own exception.** An exemption
+file naming a rule this section does not list, or a reason that does not
+match the kind of case above, is itself a gap: fix the rule text first,
+here, then adopt it.
 
 ---
 
@@ -435,15 +503,15 @@ later is in scope by the rule, not by being added here.
 | Rule | Mechanism |
 |---|---|
 | C1 chart versions | `policy-conformance`: every `Chart.yaml` reads `0.0.0` |
-| C2 values schema | `policy-conformance`: `values.schema.json` beside every `Chart.yaml` |
+| C2 values schema | `policy-conformance`: `values.schema.json` beside every `Chart.yaml`, unless a library chart is [exempted](#exemptions) |
 | C3 goldens and refusals | `policy-conformance`: `tests/golden/<chart>/` and `tests/invalid/<chart>/` are non-empty, or the Go chart tests name both |
 | C4 leak canary | `policy-conformance`: the script exists and `check` depends on `leak-canary` |
 | C5 CHANGELOG | `policy-conformance`: heading grammar, order, one `Unreleased`, the latest tag present |
 | C6 devbox pins | `policy-conformance`: no `latest` in `devbox.json` |
 | C7 renovate | `policy-conformance`: extends the shared preset; every override has a `description` |
 | C8 README | `policy-conformance`: the eleven headings, in order |
-| C9 licence | `policy-conformance`: `LICENSE` is MIT |
+| C9 licence | `policy-conformance`: `LICENSE` is MIT, unless a fork is [exempted](#exemptions) |
 | C10 security workflow | `policy-conformance`: `security.yaml` exists with `go.mod`; `vuln` in neither `ci.yaml` nor `check` |
-| C11 image names | `policy-conformance`: no image repository ends in `<repo>/<repo>` |
+| C11 image names | `policy-conformance`: no image repository ends in `<repo>/<repo>` with nothing published beside it |
 | C12 pinned installs | `policy-conformance`: no `@latest`, no unversioned `oci://` install |
 | C13 estate facts | review; the leak canary catches the mechanical half |
