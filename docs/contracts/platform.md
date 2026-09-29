@@ -260,6 +260,7 @@ depend on) the same way rule 1 already refuses for a password.
 |---|---|---|
 | `database.host` | where the database the other chart made is | — |
 | `database.owner.passwordSecret`, `database.app.passwordSecret` | where the two credentials are | how secrets arrive |
+| `database.tls.mode`, `database.tls.rootCA.configMapName`, `.key`, `database.clusterDomain` | whether the client verifies the server (`verify-full`) or only encrypts (`require`, the default), the ConfigMap holding the root the server certificate chains to, and the cluster's DNS suffix | whether transport identity is on |
 | `events.url` | which broker | — |
 | `archive.bucket.*` | which store, as an endpoint | which object store |
 | `serviceAccount.app.name`, `.annotations` | who the workload is to the cloud | which mechanism binds an account |
@@ -271,6 +272,15 @@ depend on) the same way rule 1 already refuses for a password.
 | `replicas`, `resources`, `disruption`, `drain` | how much, and how it is replaced | how many instances |
 | `log.level` | how loud | — |
 | `images.<component>` | which build | image tags and digests |
+
+`database.tls.rootCA.configMapName` names a ConfigMap the chart must not
+create: the platform holds the root a client verifies the server against, and
+hands the chart only its name. Under `verify-full` the chart dials the
+database by its fully-qualified service name
+(`<host>.<namespace>.svc.<clusterDomain>`), because that is the only form the
+server certificate carries, and mounts the ConfigMap as a directory (never a
+`subPath`) so a rotation of the root reaches a running pod. The default,
+`require`, renders exactly what it always did.
 
 `access.audience` is not the cluster name, or anything else a chart could
 derive on its own. The platform names it from its own client registration
