@@ -23,7 +23,9 @@ which is what lets a stranger reproduce the whole thing.
 Beyond these two there is a third tier that belongs to a **private consumer**:
 a real cluster with an identity plane, provisioning and cloud services. It is
 deliberately not here, because the public repository must be runnable by
-someone with none of that.
+someone with none of that. [private-consumer.md](private-consumer.md) is
+what a private repository does instead: what stays identical, what it
+replaces, and the order to migrate an existing service onto the shape.
 
 **Which cluster a repository uses is not a preference, and the two kinds of
 repository should answer it differently.**

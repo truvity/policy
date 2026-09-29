@@ -44,6 +44,12 @@ It deliberately does not ship a framework, a dependency-injection container,
 a code generator or a base image. The example is the reference
 implementation; there is nothing to import in order to conform.
 
+This repository is itself public, for the reasons in
+[0004](docs/decisions/0004-policy-is-public.md); a private repository
+consumes the same contracts and the same libraries, with a different gate
+and a different release destination — see
+[docs/guides/private-consumer.md](docs/guides/private-consumer.md).
+
 ## The model
 
 Three things, in order of how much they bind:
