@@ -407,3 +407,11 @@ lint:
 [doc("Refuse a particular that must never be published")]
 leak-canary:
     hack/leak-canary.sh
+
+# Regenerates docs/landscape.md's repository table from the GitHub API —
+# latest tag, what each repository ships, its one-line purpose. NOT part of
+# `check`: it needs `gh`, authenticated, and the network, and the gate needs
+# neither. Read the diff before committing it.
+[doc("Regenerate the landscape page's table from the GitHub API")]
+landscape:
+    hack/landscape.sh
