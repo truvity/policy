@@ -5,7 +5,7 @@ heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list. A tag that carries
 commit subjects alone changed nothing a consumer needed a sentence about.
 
-## Unreleased
+## v1.30.0 — 2026-09-29
 
 ### Contracts
 
