@@ -426,26 +426,66 @@ top-level `tls` block (values.yaml) is the same shape
 the ANSWERING peer's identity in return — precisely what a component
 serving `tls.mode: strict` demands of every caller.
 
-This exists so `urls` and `redirect` can move to `strict` without leaving
-the prober behind: **the two charts are different Helm releases**, and
-neither one can read the other's values. A platform enabling transport
-identity on the application release has to turn this chart's `tls.mode` on
-too — set to match, not merely "on" — because it also decides which of the
-application's two ports the prober dials: the ordinary one, over TLS,
-under `strict`; the alternate one named by `tls.port`, under `permissive`,
-where the ordinary port is still cleartext.
+This exists so `urls` can move to `strict` without leaving the prober
+behind: **the two charts are different Helm releases**, and neither one can
+read the other's values. A platform enabling transport identity on the
+application release has to turn this chart's `tls` on too, set to match, not
+merely "on" — because it also decides which of a target's two ports is
+dialled: the ordinary one, over TLS, under `strict`; the alternate one named
+by `tls.port`, under `permissive`, where the ordinary port is still
+cleartext.
+
+**The two targets do not have to match, and are not allowed to.** The
+application chart runs `urls` and `redirect` in modes of their own
+(`tls.components.<name>.mode`, defaulting to `tls.mode`), because only `urls`
+may be `strict`: `redirect` is fronted by a gateway that terminates TLS and
+forwards cleartext. This chart states the same thing the same way — its own
+`tls.components.urls.mode` / `tls.components.redirect.mode`, defaulting to
+its `tls.mode` — so the usual pair reads:
+
+```yaml
+tls:
+  mode: permissive          # redirect: the second port, over TLS
+  components:
+    urls:
+      mode: strict          # urls: the ordinary port, over TLS
+```
+
+`redirect` set to `strict`, written down or inherited from a release-wide
+`tls.mode: strict`, is refused at render with a message that says what to set
+instead.
 
 The prober is not granted by the application chart the way `urls` grants
 its own counter (`charts/url-shortener/templates/config.yaml`'s own
 comment on that rule): that wiring is for callers a chart RENDERS itself,
 and the prober is a workload the application chart never sees. Once the
-e2e chart's `tls.mode` is not `off`, add the prober's own ServiceAccount
+e2e chart's transport is on, add the prober's own ServiceAccount
 name (`templates/_helpers.tpl`'s `"url-shortener-e2e.proberServiceAccountName"`,
 or whatever `prober.serviceAccount.name` names explicitly) to the
 application chart's OWN `tls.peers.urls` and `tls.peers.redirect` — the
 same way any other external caller is granted. Skipped, `strict` refuses
 the prober at the handshake with a certificate error, not anything that
 names the missing grant.
+
+**The suite Job presents an identity the same way, behind its own switch.**
+`job.tls.enabled` (off by default, and byte-identical when off) makes the
+Job mount the same CSI identity and hand the suite what it needs (the
+`E2E_URLS_TLS`, `E2E_REDIRECT_TLS`, `E2E_TLS_*` variables, read by
+`examples/url-shortener/e2e/tlsenv`), so every call it makes to `urls` and
+`redirect` presents the certificate and dials the target's port for its mode.
+It reads the same top-level `tls` block as the prober — one description of the
+application release — and adds only the switch, so turning the transport on
+for a platform already running the prober does not silently change what the
+Job asks of the application's allow-lists. It needs the transport on
+(`job.tls.enabled` with everything `off` is refused at render).
+
+Its identity is requested AS the Job's own ServiceAccount (`<release>-e2e`
+unless `serviceAccount.name` says otherwise), which is not the prober's. The
+grant model is the prober's: add that account to the application chart's
+`tls.peers.urls` and `tls.peers.redirect` (the latter wherever `redirect` is
+not `off`) BEFORE making `urls` strict. `tls.peers` on THIS chart is the other
+direction, whose answers the Job and the prober accept — it is normally the
+application's own account. An empty list admits nobody.
 
 ## Traps
 
