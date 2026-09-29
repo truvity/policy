@@ -22,33 +22,29 @@ There are two jobs, and they have different rules.
 
 ### The gate
 
-`just check` is everything CI runs, and it needs nothing but this checkout:
-no network, no containers, no credentials. Run it before you push. It is
-build, test, lint, vulnerability scan, generated-code drift, and the leak
-canary.
+`just check` is the gate, and it needs no credentials, no containers and no
+cluster. Run it before you push. It is build, test, lint, generated-code
+drift, and the leak canary.
 
-Two recipes are **not** in the gate because they need more than a checkout:
-`just ts` fetches from a registry, and `just cluster-*` needs a container
-runtime. CI runs them as their own jobs. The cluster lane is a required check
-for merges: run `just cluster-all` locally to test before pushing. It does not
-cover cloud identity, IAM provisioning, or network-policy enforcement — those
+Three kinds of recipe are **not** in the gate: `just ts` and `just charts`
+fetch what the gate does not depend on (a package registry, a custom
+resource's schema), `just cluster-*` needs a container runtime, and
+`just vuln` reports advisories that are news about the world rather than
+about the change. CI runs each as its own job; `vuln` runs in the security
+workflow, on a schedule. The cluster lane is a required check for merges:
+run `just cluster-all` locally to test before pushing. It does not cover
+cloud identity, IAM provisioning, or network-policy enforcement — those
 belong to a private repository's test against a shared cluster.
 
-Four things the gate checks that surprise people:
+Five things the gate checks that surprise people:
 
 - **Every relative link in a Markdown file must resolve.** A link to a file
   that is still in an unmerged pull request fails the build. Add the file in
   the same change as the link.
 - **Generated code is committed**, and regenerating must produce no diff. If
-  you change a schema, run `just ts-schemas` and commit the result.
+  you change a schema, run `just schemas` and commit the result.
 - **Nothing over a megabyte** may be committed. This repository is public and
   its history cannot be unpublished.
-- **Green is not installed.** The artifact a consumer gets is not the one
-  in the tree, and every test here supplies values a consumer would not.
-  A chart was published from this repository that could not render a single
-  Deployment; the whole suite passed. Before calling a release done, render
-  or install the PUBLISHED thing with nothing supplied. `docs/contracts/
-  release.md` §7 is the rule; the kind lane is the mechanism.
 - **Green is not installed.** The artifact a consumer gets is not the one
   in the tree, and every test here supplies values a consumer would not.
   A chart was published from this repository that could not render a single

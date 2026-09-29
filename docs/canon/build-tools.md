@@ -20,9 +20,10 @@ recipes by name and nothing else, so a check that passes locally and fails in
 CI is a bug in a recipe rather than a difference in how they were invoked.
 
 It also means the gate is nameable. `just check` is the whole contract of a
-repository's CI, and it must need nothing but the checkout: no network, no
-containers, no cluster. Anything heavier is its own recipe, run as its own
-job, and named so that nobody is surprised by what it needs.
+repository's CI, and it must need nothing a stranger with the checkout
+lacks: no credentials, no containers, no cluster. Anything heavier is its
+own recipe, run as its own job, and named so that nobody is surprised by
+what it needs.
 
 ## Container images: the build never happens in the image
 

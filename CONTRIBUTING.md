@@ -50,9 +50,9 @@ the example in the same pull request.
 Tools come from `devbox.json` through direnv. Never hand-roll a PATH; add a
 missing tool with `devbox add <pkg>@<version>`.
 
-`just check` is the gate and needs nothing but this checkout. Recipes that
-need a network, a container or a cluster are separate, and CI runs them as
-their own jobs.
+`just check` is the gate and needs no credentials, no container and no
+cluster. Recipes that need more are separate, and CI runs them as their own
+jobs.
 
 ## Commits and pull requests
 

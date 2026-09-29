@@ -40,11 +40,7 @@ nobody has run.
 
 | Language | Canon | In the example |
 |---|---|---|
-| Go | [canon/go.md](../canon/go.md) | the migration, the redirect service, the counter |
+| Go | [canon/go.md](../canon/go.md) | the [loader](../../config/), the migration, the URL service and the redirect service |
 | TypeScript | [canon/node.md](../canon/node.md) | the [loader](../../ts/) and the [front end](../../examples/url-shortener/web/) |
-| Kotlin | [canon/kotlin.md](../canon/kotlin.md) | the [loader](../../kotlin/); the counter follows |
+| Kotlin | [canon/kotlin.md](../canon/kotlin.md) | the [loader](../../kotlin/) and the [counter](../../examples/url-shortener/stat/) |
 | Python | [canon/python.md](../canon/python.md) | the [loader](../../python/) and the [archiver](../../examples/url-shortener/log/) |
-
-A cell reading "follows" means the rule holds for that language and the
-example does not yet demonstrate it. That is stated rather than left blank,
-because a blank cell reads as "not applicable" and none of these are.

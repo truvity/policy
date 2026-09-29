@@ -1,5 +1,7 @@
 # The release contract
 
+Version: 1.0 · Effective: 2026-09-29 · Changes: see [CHANGELOG](../../CHANGELOG.md)
+
 **Normative.** How a version is cut, what it means, and what a consumer
 must see before adopting it.
 
@@ -55,8 +57,16 @@ consumer reading a pin bump needs a different sentence — what changes in the
 output, what must be done first, whether a default moved. The file also
 travels with the source where a hosted release page does not.
 
-A version with no heading changed nothing a consumer can see. That is
-information, so it is worth keeping true.
+Every tag has a heading ([component.md C5](component.md)): one
+`## vX.Y.Z` per tag, newest first, and at most one `## Unreleased` on top.
+A tag that changed nothing a consumer can see still gets its heading, and
+says so — a missing heading is otherwise indistinguishable from a
+forgotten one.
+
+**A change to a contract is a CHANGELOG entry too**, under a `### Contracts`
+sub-heading of the version it ships in. Each contract carries a header
+naming its version and the date it took effect; the entry says what a
+repository held to it must now do differently.
 
 ## 4. Who cuts a tag
 
@@ -150,9 +160,11 @@ So, for every artifact this repository publishes:
   nothing, passes, and reports that it verified something. A guard that
   silently does not guard is worse than no guard, because it is believed.
 
-The gate for this is rule 6 of the repository contract: the example is
-installed on a real cluster, from the published artifacts, and that install
-is what a release is measured by.
+The gate for this is [decision 0005](../decisions/0005-kind-is-the-gate.md),
+run as its own CI job the way rule 2 of the
+[repository contract](repository.md) requires of anything heavier than the
+gate: the example is installed on a real cluster, from the published
+artifacts, and that install is what a release is measured by.
 
 ## Conformance
 
@@ -160,8 +172,8 @@ is what a release is measured by.
 |---|---|
 | 1. one tag | the release workflow stamps every artifact from one tag |
 | 2. versioning | review |
-| 3. changelog | review; a version with no heading is a deliberate statement |
+| 3. changelog | the component contract's C5 check: one heading per tag, one `Unreleased`, the latest tag present |
 | 4. who cuts | automation is armed for patches only |
 | 5. built in CI | the release runs only from a tag, in CI; one job builds then packages; the chart publish refuses an unpinned image; a test asserts every image declares every architecture, that no Dockerfile executes while building, and that no registry is hard-coded |
-| 7. tested as published | a chart test renders with NO values supplied; the kind lane installs the published artifacts |
 | 6. adoption | the consumer's pin bump carries the diff |
+| 7. tested as published | a chart test renders with NO values supplied; the kind lane installs the published artifacts |

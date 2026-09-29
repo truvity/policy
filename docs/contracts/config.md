@@ -1,5 +1,7 @@
 # The configuration contract
 
+Version: 1.0 · Effective: 2026-09-29 · Changes: see [CHANGELOG](../../CHANGELOG.md)
+
 **Normative.** One typed configuration per binary, described by a schema
 that both the binary and whatever deploys it are held to.
 
