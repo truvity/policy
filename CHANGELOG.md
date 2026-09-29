@@ -7,6 +7,25 @@ commit subjects alone changed nothing a consumer needed a sentence about.
 
 ## Unreleased
 
+### Contracts
+
+- **The platform contract names four more values the explicit chart
+  interface can hand an application chart.** §10 adds
+  `identityProviders.<name>.issuer_url`/`.client_id_list` (the workforce
+  issuer and audience for a chart that verifies bearer tokens itself),
+  `access.issuer`/`.audience`/`.signOutUrl` (for a chart behind a gateway
+  that signs the browser in and forwards a bearer — the platform names
+  the audience from its own client registration, never from a naming
+  convention the chart could derive), and `route.surfaces[].name`/
+  `.hostname`/`.parentRef` (additional named routes, on a separate
+  hostname or the primary's). The existing `postgres.serverTLS` row now
+  says the platform creates the server certificate and the CA secret
+  itself — the chart only ever receives the two Secret names and must
+  not create either object. A new non-normative note documents `product`
+  as an escape hatch for values no platform is better placed to name than
+  the product's own configuration, and says a chart must not rely on it
+  for anything this contract should name instead.
+
 ### Documentation
 
 - **New: `docs/landscape.md`, one page for the 20 public repositories the

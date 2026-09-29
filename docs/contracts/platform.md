@@ -217,6 +217,16 @@ The example in this repository is two charts, and the split is load-bearing
 created its own database could never migrate it. So the interface is two
 interfaces.
 
+The tables below are the full menu, not a checklist every chart fills in. A
+chart declares in its own schema only the keys it actually reads — a chart
+with no code that verifies a bearer token itself has no reason to accept
+`identityProviders`, and one that sits behind no gateway-auth proxy has no
+reason to accept `access`. Accepting a key a chart does nothing with is
+worse than refusing it: refusing it fails the render loudly, and accepting
+it quietly promises a behaviour the chart does not have. `examples/`'s own
+charts accept neither key, for exactly this reason — neither one validates
+a token or sits behind that kind of proxy.
+
 ### To the infrastructure chart
 
 | Value | The decision it answers | §9 row |
@@ -235,6 +245,15 @@ carries both the broker and the identity; a server list beside one is the
 chart arguing with the broker about an answer the broker already has, and
 the argument is resolved silently.
 
+`postgres.serverTLS.secretName` and `.caSecretName` name two Secrets the
+chart must not create. The platform mints the server certificate itself,
+plus a separate Secret holding the certificate authority that signs it —
+the real, self-signed root, because a client verifying the server refuses
+to accept an intermediate as a trust anchor — and hands the chart only the
+two Secret names to mount. A chart that created either object would be
+deriving a certificate spec (and the naming convention its `dnsNames`
+depend on) the same way rule 1 already refuses for a password.
+
 ### To the application chart
 
 | Value | The decision it answers | §9 row |
@@ -245,10 +264,26 @@ the argument is resolved silently.
 | `archive.bucket.*` | which store, as an endpoint | which object store |
 | `serviceAccount.app.name`, `.annotations` | who the workload is to the cloud | which mechanism binds an account |
 | `route.enabled`, `.hostname`, `.parentRef` | what serves this, and under what | what a route's parent is |
+| `route.surfaces[].name`, `.hostname`, `.parentRef` | additional named routes, each on its own hostname or the primary's | what a route's parent is |
+| `identityProviders.<name>.issuer_url`, `.client_id_list` | which issuer a chart that verifies bearer tokens itself trusts, and the audience it accepts | — |
+| `access.issuer`, `.audience`, `.signOutUrl` | which issuer and audience a gateway that signs the browser in and forwards a bearer already used, and where a signed-out browser is sent | — |
 | `tls.*` | whether transport identity is on | whether transport identity is on |
 | `replicas`, `resources`, `disruption`, `drain` | how much, and how it is replaced | how many instances |
 | `log.level` | how loud | — |
 | `images.<component>` | which build | image tags and digests |
+
+`access.audience` is not the cluster name, or anything else a chart could
+derive on its own. The platform names it from its own client registration
+— the same registration that grants the gateway the right to forward a
+bearer for this install in the first place — and a chart that reconstructed
+that string from `clusterName` or any convention it can see would be
+naming an audience the platform never actually issued tokens for.
+
+`identityProviders` and `access` answer different questions and a chart
+takes at most one of them for a given path: the first is for a chart that
+verifies a bearer token itself, the second is for a chart sitting behind a
+gateway that already verified the browser and forwards a bearer the chart
+only has to trust.
 
 `images.<component>` is the one row a platform does not fill. The RELEASE
 stamps it — a build writes down the digest of every image it pushed, and
@@ -276,6 +311,24 @@ that shares no naming convention with the first. If it can fill every row,
 the interface is an interface. If any row can only be filled by knowing how
 the first platform names things, that row is a convention wearing a
 value's clothes.
+
+### `product`: not a contract row (non-normative)
+
+A chart may also take a `product` block, and this section says nothing
+about its shape on purpose. It exists for values that are genuinely one
+product's own — a table of credential types, a delivery mode for one
+product's own secret — that no platform is in a better position to name
+than the product's own configuration is. A platform that has one passes it
+through unread and unvalidated, verbatim, from wherever its own
+configuration already keeps it.
+
+`product` is an escape hatch, not a row this contract failed to write. A
+value that names something the platform owns — a secret, an account, a
+route's parent — belongs in the tables above, spelled out and reviewable,
+never folded into `product` to avoid writing the row. A chart must not
+rely on `product` for anything this contract should have named instead;
+what it carries is exactly as portable as the two ends that agreed on it,
+and no more.
 
 ## 11. Two charts, and who installs each
 
