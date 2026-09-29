@@ -34,6 +34,23 @@ commit subjects alone changed nothing a consumer needed a sentence about.
   [decision 0005](docs/decisions/0005-kind-is-the-gate.md) and rule 2 of
   the repository contract, not rule 6 (which is dependency bumps).
 
+### Changes
+
+- **The example's Go services log to stderr, not stdout.** The service
+  contract (§4) has always said stderr; `internal/runtime/runtime.go` wrote
+  to stdout. A collector that reads both streams sees no difference; one
+  that reads only stdout stops seeing the Go components' logs, as it
+  already did not see the Kotlin, TypeScript and Python components'.
+- **Every image base is pinned by digest.** The four Dockerfiles, the
+  release's `kos:` block (which never read `.ko.yaml`, so the Go images
+  were built on whatever `latest` was) and `.ko.yaml` name
+  `cgr.dev/chainguard/<image>:latest@sha256:…`; renovate moves the pins.
+- **`just check` no longer runs `vuln`.** Vulnerability scanning is its own
+  workflow, `security.yaml`, on push, pull request and a daily schedule —
+  a new advisory no longer turns every pull request red. Every
+  `devbox.json` entry names a version, and the toolchain lint refuses
+  `latest`.
+
 ### Documentation
 
 - **The README answers a newcomer's questions in the component contract's
