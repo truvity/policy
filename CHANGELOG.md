@@ -5,6 +5,21 @@ heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list. A tag that carries
 commit subjects alone changed nothing a consumer needed a sentence about.
 
+## Unreleased
+
+### Documentation
+
+- **New: `docs/landscape.md`, one page for the 20 public repositories the
+  component contract applies to.** A table grouped by layer (identity and
+  secrets, edge, data, observability, CI, cluster add-ons, developer
+  tooling, doctrine) names each repository's purpose, what it ships and its
+  latest tag; a "How they fit" section draws the boundary between
+  neighbouring layers from each repository's own `Neighbours` section. The
+  table is generated, never hand-maintained — `just landscape`
+  (`hack/landscape.sh`) re-fetches it from the GitHub API — so it is linked
+  from both `README.md` and `docs/README.md` rather than restated in
+  either.
+
 ## v1.29.1 — 2026-09-29
 
 ### Contracts

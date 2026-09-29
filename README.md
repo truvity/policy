@@ -153,7 +153,10 @@ versions: each consumer's own pin is the record of that.
 ## Documentation
 
 [`docs/`](docs/README.md) is the index, by audience: authoring a service,
-authoring a component, reviewing one, operating one. The contracts:
+authoring a component, reviewing one, operating one.
+[`docs/landscape.md`](docs/landscape.md) is the other direction: one page
+naming every public repository the contracts below apply to today, and how
+they fit together. The contracts:
 
 - [repository](docs/contracts/repository.md) — layout, toolchain, the gate
 - [service](docs/contracts/service.md) — the process boundary
