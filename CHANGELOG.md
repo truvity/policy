@@ -5,6 +5,26 @@ heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list. A tag that carries
 commit subjects alone changed nothing a consumer needed a sentence about.
 
+## v1.30.2 — 2026-09-29
+
+### Fixes
+
+- **fix(url-shortener): stat's peer check always failed after a successful
+  call, so every click was counted up to maxDeliver times.** The Kotlin
+  component checked the answering workload's identity in an OkHttp
+  application interceptor, which has no access to the connection, so the
+  check refused every answer, including from the right peer. The request
+  had already been served by then: the click was counted, the message was
+  not acknowledged, and the stream redelivered it until `maxDeliver` (five
+  times), over-counting each click. The peer is now verified in the
+  handshake, by a trust manager that checks the chain and then the
+  workload identity against the configured peers, so a peer that is not
+  admitted is refused before any request bytes are sent. Tests run a real
+  server that requires a client certificate: an admitted peer is called
+  exactly once, and a peer with another identity sees no request. Anyone who
+  copied the interceptor-based check needs the same change. The Go and
+  Python packages already verify in the handshake and are unaffected.
+
 ## v1.30.1 — 2026-09-29
 
 ### Fixes
