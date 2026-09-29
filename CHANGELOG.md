@@ -5,6 +5,20 @@ heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list. A tag that carries
 commit subjects alone changed nothing a consumer needed a sentence about.
 
+## v1.30.1 — 2026-09-29
+
+### Fixes
+
+- **fix(url-shortener): stat crashes with NoSuchMethodError (kotlinx-coroutines
+  ABI).** v1.30.0 moved the Connect Kotlin client to 0.9.0, which is built
+  against kotlinx-coroutines 1.11.0 and OkHttp 5.4.0, while the Spring Boot
+  BOM in the stat build silently kept coroutines at 1.8.1. The first call to
+  the urls service died with `Job.cancel$default` missing and never
+  completed. Both are now pinned to what the client declares, and a test
+  makes a real call through the client so a bump of one without the other
+  fails the build. Anyone who copied the stat build's Gradle setup with
+  connect-kotlin 0.9.0 needs the same two pins.
+
 ## v1.30.0 — 2026-09-29
 
 ### Contracts
