@@ -417,6 +417,36 @@ release that installed: it enables the prober with `helm upgrade
 a successful pass shows up in its log within 60 seconds. It is part of
 `just cluster-all` and the CI kind test step, alongside `example-e2e-chart`.
 
+**The prober can present a workload identity too, and it is a SEPARATE
+switch from the application chart's.** `charts/url-shortener-e2e`'s own
+top-level `tls` block (values.yaml) is the same shape
+`charts/url-shortener` uses for a client-only component (`stat`, `web`):
+`off` by default, and once turned on the prober mounts a CSI identity at
+`tls.mountPath` and calls `urls` and `redirect` presenting it, verifying
+the ANSWERING peer's identity in return — precisely what a component
+serving `tls.mode: strict` demands of every caller.
+
+This exists so `urls` and `redirect` can move to `strict` without leaving
+the prober behind: **the two charts are different Helm releases**, and
+neither one can read the other's values. A platform enabling transport
+identity on the application release has to turn this chart's `tls.mode` on
+too — set to match, not merely "on" — because it also decides which of the
+application's two ports the prober dials: the ordinary one, over TLS,
+under `strict`; the alternate one named by `tls.port`, under `permissive`,
+where the ordinary port is still cleartext.
+
+The prober is not granted by the application chart the way `urls` grants
+its own counter (`charts/url-shortener/templates/config.yaml`'s own
+comment on that rule): that wiring is for callers a chart RENDERS itself,
+and the prober is a workload the application chart never sees. Once the
+e2e chart's `tls.mode` is not `off`, add the prober's own ServiceAccount
+name (`templates/_helpers.tpl`'s `"url-shortener-e2e.proberServiceAccountName"`,
+or whatever `prober.serviceAccount.name` names explicitly) to the
+application chart's OWN `tls.peers.urls` and `tls.peers.redirect` — the
+same way any other external caller is granted. Skipped, `strict` refuses
+the prober at the handshake with a certificate error, not anything that
+names the missing grant.
+
 ## Traps
 
 **A test that shells out is cached on a stale pass.** When only the rendered

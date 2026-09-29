@@ -22,6 +22,16 @@ commit subjects alone changed nothing a consumer needed a sentence about.
   `editorconfig-checker` (the universal checks only; indentation WIDTH
   stays each language's own formatter's job). See
   [lint/README.md](lint/README.md).
+- **`charts/url-shortener-e2e` can give its prober a workload identity.**
+  A new top-level `tls` block (off by default, byte-identical render
+  unless turned on) mounts a CSI identity and presents it when the prober
+  calls `urls` and `redirect`, on the same terms
+  `charts/url-shortener`'s own client-only components (`stat`, `web`)
+  already use. This is what lets the application chart's `urls` component
+  move to `tls.mode: strict` without leaving the prober calling cleartext
+  against a listener that no longer serves it — see
+  [`docs/guides/testing.md`](docs/guides/testing.md#the-prober) for how to
+  turn it on and what the application chart's own `tls.peers` needs.
 
 ### Documentation
 
