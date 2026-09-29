@@ -36,6 +36,37 @@ handler rather than passing a string. A short-lived token read at start-up
 authenticates fine until the first reconnect, and then fails somewhere far
 from the line that read it.
 
+### Authenticating with the workload's own certificate instead
+
+A publisher can present its **workload identity** to the broker instead of a
+token: `events.nats.tls` in its configuration (`events.tls` in the chart). The
+client dials TLS, presents the certificate the platform mounted for the
+service's own `tls` block, and verifies the broker's certificate against a
+trust bundle of its own. The broker maps the identity in the certificate to a
+user with its own permissions, so what the service may publish is the
+broker's decision and nothing in the service's file.
+
+- **The certificate is the only credential.** The chart sends no token
+  beside it. A certificate the broker cannot map must fail at connect; if
+  the token followed as a fallback, an unmappable certificate would succeed
+  as the token's account with that account's full rights, and the setup
+  would read as working.
+- **It needs an identity.** `tls.mode` for the component must not be `off`;
+  the helper refuses to build without one, in words that name the setting,
+  rather than dialling TLS with no client certificate.
+- **Rotation drops nothing.** The certificate is re-read on every connect
+  (`transport.Identity.ClientTo`, which loads it the way the listener side
+  does), and the broker checks it at the handshake only, so a connection
+  already made survives the platform's rotation and the next connect
+  presents the new one. `transport/client_to_test.go` holds both halves.
+- **The broker's name is not the workload identities'.** A broker has a name
+  and no workload identity, and usually a certificate from a different chain,
+  so the trust bundle (`caFile`) and the name to verify (`serverName`, when
+  it is not the host in `url`) are its own settings.
+- **Only a service that declares it acts on it.** The fragment admits the key
+  in every schema that references it; today only the URL shortener's
+  redirect reads it.
+
 ## What travels
 
 The body is the fact. Its **type and origin travel as message headers**, not

@@ -5,6 +5,26 @@ heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list. A tag that carries
 commit subjects alone changed nothing a consumer needed a sentence about.
 
+## Unreleased
+
+### Features
+
+- **A publisher can authenticate to the broker with its workload identity.**
+  The `nats` configuration fragment gains an optional `tls` object
+  (`caFile`, `serverName`): the client dials TLS, presents the certificate
+  the service's own `tls` block loads, and verifies the broker's certificate
+  against a bundle of its own; the broker maps the identity in it to a user
+  with its own permissions. New `transport.Identity.ClientTo(roots,
+  serverName)` builds the client configuration (the certificate is re-read on
+  every connect, a rotation drops no connection already made, the server is
+  verified by chain and name). The URL shortener's chart takes
+  `events.tls.{enabled,serverName,caConfigMap,caKey}`, for `redirect` only,
+  off by default; when on, redirect sends no token, so a certificate the
+  broker cannot map is refused instead of succeeding as the token's account.
+  Turning it on needs `tls.mode` for redirect not `off` and a trust bundle
+  ConfigMap for the broker. A service that does not declare the key ignores
+  it: `stat` and `log` keep their tokens.
+
 ## v1.31.0 — 2026-09-29
 
 ### Behaviour change

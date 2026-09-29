@@ -237,6 +237,40 @@ func (i *Identity) Client() *tls.Config {
 	}
 }
 
+// ClientTo is the configuration for a connection to a server that is NOT a
+// workload of the same platform identity scheme: a broker or a database
+// whose certificate carries a NAME and comes from a different chain than the
+// workload identities do. It presents this service's identity as the client
+// certificate — re-read on every handshake, so a rotation is picked up at the
+// next connect and never drops a connection already made — and verifies the
+// server the ordinary way: its chain against `roots`, its name against
+// `serverName`.
+//
+// The two are separate on purpose. Client() above checks a server's IDENTITY
+// because a peer workload has one and no name; a broker has a name and no
+// identity, and reading an identity out of its certificate would ask a
+// question it cannot answer. `serverName` is what the certificate was issued
+// for, which need not be the address dialled: an empty one leaves it to the
+// dialler, which then verifies the host it dialled.
+//
+// A nil Identity has nothing to present and returns nil, so a caller cannot
+// build "TLS to the broker, no client certificate" by accident: it must check
+// for nil, and a broker that verifies clients would refuse it anyway.
+func (i *Identity) ClientTo(roots *x509.CertPool, serverName string) *tls.Config {
+	if i == nil {
+		return nil
+	}
+
+	return &tls.Config{
+		MinVersion: tls.VersionTLS13,
+		GetClientCertificate: func(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
+			return i.certificate()
+		},
+		RootCAs:    roots,
+		ServerName: serverName,
+	}
+}
+
 // verifyChainAndPeer does what the library would have done, plus the part it
 // cannot: verify the chain against the trust bundle, then check the peer's
 // identity. It is used where the name check had to be turned off.
