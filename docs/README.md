@@ -22,7 +22,7 @@ The index, by what you are here to do.
 
 - [contracts/component.md](contracts/component.md) — every public
   repository that ships charts, images, Go libraries, Pulumi components,
-  CLIs or actions: the rules C1–C13, how each is checked, and the forms
+  CLIs or actions: the rules C1–C14, how each is checked, and the forms
   they retired.
 - [landscape.md](landscape.md) — the other direction: every public
   repository this contract applies to today, grouped by layer, and how they

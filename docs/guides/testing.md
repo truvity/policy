@@ -463,7 +463,11 @@ e2e chart's transport is on, add the prober's own ServiceAccount
 name (`templates/_helpers.tpl`'s `"url-shortener-e2e.proberServiceAccountName"`,
 or whatever `prober.serviceAccount.name` names explicitly) to the
 application chart's OWN `tls.peers.urls` and `tls.peers.redirect` — the
-same way any other external caller is granted. Skipped, `strict` refuses
+same way any other external caller is granted. Its `tls.peers` (whose
+answer it accepts) must name `urls`' and `redirect`'s accounts; with the
+application chart every component has its own account, so those are
+`<release>-urls` and `<release>-redirect` unless renamed (see
+[identity-and-secrets.md](identity-and-secrets.md)). Skipped, `strict` refuses
 the prober at the handshake with a certificate error, not anything that
 names the missing grant.
 

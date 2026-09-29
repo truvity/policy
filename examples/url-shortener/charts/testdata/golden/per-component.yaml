@@ -80,26 +80,30 @@ metadata:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: example-stat
+  name: counter
   labels:
     app.kubernetes.io/name: url-shortener
     app.kubernetes.io/instance: example
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/version: "0.0.0"
     app.kubernetes.io/component: stat
+  annotations:
+    example.invalid/role: counter
 
 ---
 # Source: url-shortener/templates/serviceaccount.yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: example-log
+  name: archiver
   labels:
     app.kubernetes.io/name: url-shortener
     app.kubernetes.io/instance: example
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/version: "0.0.0"
     app.kubernetes.io/component: log
+  annotations:
+    example.invalid/role: archive
 
 ---
 # Source: url-shortener/templates/config.yaml
@@ -122,6 +126,15 @@ data:
       level: info
     drain:
       seconds: 20
+    tls:
+      mode: permissive
+      address: ":8443"
+      certFile: /var/run/identity/tls.crt
+      keyFile: /var/run/identity/tls.key
+      caFile: /var/run/identity/ca.crt
+      trustDomain: example.invalid
+      peers:
+        []
     database:
       url: postgres://url_shortener_app@pg:5432/url_shortener?sslmode=require
       passwordEnv: DATABASE_PASSWORD
@@ -141,6 +154,19 @@ data:
       level: info
     drain:
       seconds: 20
+    tls:
+      mode: strict
+      certFile: /var/run/identity/tls.crt
+      keyFile: /var/run/identity/tls.key
+      caFile: /var/run/identity/ca.crt
+      trustDomain: example.invalid
+      peers:
+        - namespace: default
+          serviceAccount: example-web
+        - namespace: default
+          serviceAccount: counter
+        - namespace: other
+          serviceAccount: reader
     database:
       url: postgres://url_shortener_app@pg:5432/url_shortener?sslmode=require
       passwordEnv: DATABASE_PASSWORD
@@ -153,8 +179,17 @@ data:
       level: info
     drain:
       seconds: 20
+    tls:
+      mode: strict
+      certFile: /var/run/identity/tls.crt
+      keyFile: /var/run/identity/tls.key
+      caFile: /var/run/identity/ca.crt
+      trustDomain: example.invalid
+      peers:
+        - namespace: default
+          serviceAccount: example-urls
     urls:
-      address: http://example-urls:8080
+      address: https://example-urls:8080
     events:
       nats:
         url: nats://nats:4222
@@ -172,8 +207,17 @@ data:
       level: info
     drain:
       seconds: 20
+    tls:
+      mode: strict
+      certFile: /var/run/identity/tls.crt
+      keyFile: /var/run/identity/tls.key
+      caFile: /var/run/identity/ca.crt
+      trustDomain: example.invalid
+      peers:
+        - namespace: default
+          serviceAccount: example-urls
     urls:
-      address: http://example-urls:8080
+      address: https://example-urls:8080
     assets:
       directory: /app/assets
 
@@ -200,6 +244,54 @@ data:
         maxSeconds: 60
 
 ---
+# Source: url-shortener/templates/identity-rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: example-request-identity
+  labels:
+    app.kubernetes.io/name: url-shortener
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/version: "0.0.0"
+rules:
+  - apiGroups: ["cert-manager.io"]
+    resources: ["certificaterequests"]
+    verbs: ["create"]
+
+---
+# Source: url-shortener/templates/identity-rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: example-request-identity
+  labels:
+    app.kubernetes.io/name: url-shortener
+    app.kubernetes.io/instance: example
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/version: "0.0.0"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: example-request-identity
+subjects:
+  - kind: ServiceAccount
+    name: example-redirect
+    namespace: default
+  - kind: ServiceAccount
+    name: example-urls
+    namespace: default
+  - kind: ServiceAccount
+    name: example-web
+    namespace: default
+  - kind: ServiceAccount
+    name: counter
+    namespace: default
+  - kind: ServiceAccount
+    name: archiver
+    namespace: default
+
+---
 # Source: url-shortener/templates/redirect.yaml
 apiVersion: v1
 kind: Service
@@ -219,6 +311,9 @@ spec:
     - name: http
       port: 8080
       targetPort: http
+    - name: https
+      port: 8443
+      targetPort: https
 
 ---
 # Source: url-shortener/templates/urls.yaml
@@ -295,9 +390,9 @@ spec:
         app.kubernetes.io/version: "0.0.0"
         app.kubernetes.io/component: log
       annotations:
-        checksum/config: a650b20276ed38567032047b757d5d0ec96d7f9268fb70053014a8e5f292feda
+        checksum/config: 93c64ee1acea2f3c65fd8daee37b42ed216c37c5d1bc812a2e4d7742f066d862
     spec:
-      serviceAccountName: example-log
+      serviceAccountName: archiver
       securityContext:
         runAsNonRoot: true
         runAsUser: 65532
@@ -346,6 +441,9 @@ spec:
               mountPath: /etc/url-shortener
               readOnly: true
             
+            - name: identity
+              mountPath: /var/run/identity
+              readOnly: true
           resources:
             requests:
               cpu: 50m
@@ -356,6 +454,10 @@ spec:
           configMap:
             name: example-config
         
+        - name: identity
+          csi:
+            driver: spiffe.csi.cert-manager.io
+            readOnly: true
 
 ---
 # Source: url-shortener/templates/redirect.yaml
@@ -395,7 +497,7 @@ spec:
         # Restart on a configuration change. Without this a `helm upgrade`
         # that only edits the ConfigMap changes nothing at all: the pods keep
         # the file they started with, and the deploy reads as successful.
-        checksum/config: a650b20276ed38567032047b757d5d0ec96d7f9268fb70053014a8e5f292feda
+        checksum/config: 93c64ee1acea2f3c65fd8daee37b42ed216c37c5d1bc812a2e4d7742f066d862
     spec:
       serviceAccountName: example-redirect
       securityContext:
@@ -437,6 +539,9 @@ spec:
               containerPort: 8080
             - name: probes
               containerPort: 7070
+            
+            - name: https
+              containerPort: 8443
           livenessProbe:
             # Nothing but the process. A liveness probe that checks a
             # dependency restarts a healthy process and makes an outage worse.
@@ -455,6 +560,9 @@ spec:
               mountPath: /etc/url-shortener
               readOnly: true
             
+            - name: identity
+              mountPath: /var/run/identity
+              readOnly: true
           resources:
             requests:
               cpu: 50m
@@ -465,6 +573,10 @@ spec:
           configMap:
             name: example-config
         
+        - name: identity
+          csi:
+            driver: spiffe.csi.cert-manager.io
+            readOnly: true
 
 ---
 # Source: url-shortener/templates/stat.yaml
@@ -501,9 +613,9 @@ spec:
         app.kubernetes.io/version: "0.0.0"
         app.kubernetes.io/component: stat
       annotations:
-        checksum/config: a650b20276ed38567032047b757d5d0ec96d7f9268fb70053014a8e5f292feda
+        checksum/config: 93c64ee1acea2f3c65fd8daee37b42ed216c37c5d1bc812a2e4d7742f066d862
     spec:
-      serviceAccountName: example-stat
+      serviceAccountName: counter
       securityContext:
         runAsNonRoot: true
         runAsUser: 65532
@@ -557,6 +669,9 @@ spec:
               mountPath: /etc/url-shortener
               readOnly: true
             
+            - name: identity
+              mountPath: /var/run/identity
+              readOnly: true
           resources:
             requests:
               cpu: 50m
@@ -567,6 +682,10 @@ spec:
           configMap:
             name: example-config
         
+        - name: identity
+          csi:
+            driver: spiffe.csi.cert-manager.io
+            readOnly: true
 
 ---
 # Source: url-shortener/templates/urls.yaml
@@ -601,7 +720,7 @@ spec:
         app.kubernetes.io/version: "0.0.0"
         app.kubernetes.io/component: urls
       annotations:
-        checksum/config: a650b20276ed38567032047b757d5d0ec96d7f9268fb70053014a8e5f292feda
+        checksum/config: 93c64ee1acea2f3c65fd8daee37b42ed216c37c5d1bc812a2e4d7742f066d862
     spec:
       serviceAccountName: example-urls
       securityContext:
@@ -658,6 +777,9 @@ spec:
               mountPath: /etc/url-shortener
               readOnly: true
             
+            - name: identity
+              mountPath: /var/run/identity
+              readOnly: true
           resources:
             requests:
               cpu: 50m
@@ -667,6 +789,10 @@ spec:
           configMap:
             name: example-config
         
+        - name: identity
+          csi:
+            driver: spiffe.csi.cert-manager.io
+            readOnly: true
 
 ---
 # Source: url-shortener/templates/web.yaml
@@ -700,7 +826,7 @@ spec:
         app.kubernetes.io/version: "0.0.0"
         app.kubernetes.io/component: web
       annotations:
-        checksum/config: a650b20276ed38567032047b757d5d0ec96d7f9268fb70053014a8e5f292feda
+        checksum/config: 93c64ee1acea2f3c65fd8daee37b42ed216c37c5d1bc812a2e4d7742f066d862
     spec:
       serviceAccountName: example-web
       securityContext:
@@ -752,6 +878,9 @@ spec:
               mountPath: /etc/url-shortener
               readOnly: true
             
+            - name: identity
+              mountPath: /var/run/identity
+              readOnly: true
           resources:
             requests:
               cpu: 50m
@@ -760,6 +889,11 @@ spec:
         - name: config
           configMap:
             name: example-config
+        
+        - name: identity
+          csi:
+            driver: spiffe.csi.cert-manager.io
+            readOnly: true
 ---
 # Source: url-shortener/templates/serviceaccount.yaml
 apiVersion: v1

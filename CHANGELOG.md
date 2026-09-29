@@ -5,6 +5,37 @@ heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list. A tag that carries
 commit subjects alone changed nothing a consumer needed a sentence about.
 
+## v1.31.0 — 2026-09-29
+
+### Behaviour change
+
+- **feat(url-shortener): every component runs as its own ServiceAccount,
+  always.** The shared application account is gone and there is no toggle
+  back. `redirect`, `urls`, `web`, `stat` and `log` each run as
+  `<release>-<component>` (renamable under
+  `serviceAccount.components.<component>.name`; annotations under
+  `.annotations`), and this chart now creates those five accounts plus the
+  migration's, so rendering changes for everyone, goldens included. The
+  chart's own grants follow its call graph: `urls` admits exactly `web`'s
+  and `stat`'s accounts, `redirect` admits nobody internally, and `web` and
+  `stat` accept an answer only from `urls`' own account; external
+  `tls.peers` grants are unchanged.
+  **`log` keeps the cloud binding:** its account is
+  `serviceAccount.app.name` when that is set (with `app.annotations`, on
+  that account only), else `<release>-log`, so a platform that bound a cloud
+  role to the app account for the archive bucket changes nothing. Nothing
+  else runs as that account any more. A platform that bound anything ELSE to
+  the old shared name (for example broker permissions for `redirect` or
+  `stat`) must bind the new names, or set
+  `serviceAccount.components.<component>.name` to the old one for at most one
+  component. Two components on one name, or one on the migration's, is
+  refused at render. The e2e prober's and Job's `tls.peers` must name
+  `<release>-urls` and `<release>-redirect`.
+- **docs(contract): C14, each component runs as its own ServiceAccount.**
+  A workload identity is namespace plus account, so a shared account makes
+  components indistinguishable to an allow-list. Checked by the chart's own
+  render test.
+
 ## v1.30.2 — 2026-09-29
 
 ### Fixes
