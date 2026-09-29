@@ -342,20 +342,39 @@ func (i *Identity) verifyPeer(_ [][]byte, chains [][]*x509.Certificate) error {
 // The shape is the SPIFFE one: spiffe://<trust domain>/ns/<namespace>/sa/<account>.
 // Anything else is refused rather than guessed at, because a partial match
 // here is an identity nobody meant to grant.
+//
+// Two rules of the X509-SVID specification come first. A leaf is not a
+// certificate authority, and may not sign certificates or revocation lists:
+// one that could would let any admitted peer mint further identities. And a
+// leaf carries exactly one URI name, of any scheme: with two, "which one is
+// the identity" would be a guess, and a guess is a grant.
 func (i *Identity) identityOf(leaf *x509.Certificate) (Peer, error) {
-	for _, u := range leaf.URIs {
-		if u.Scheme != "spiffe" {
-			continue
-		}
-
-		if u.Host != i.cfg.TrustDomain {
-			return Peer{}, fmt.Errorf("the peer's identity belongs to trust domain %q, not %q", u.Host, i.cfg.TrustDomain)
-		}
-
-		return parsePath(u)
+	if leaf.IsCA {
+		return Peer{}, fmt.Errorf("the peer's certificate is a certificate authority, not a workload identity")
 	}
 
-	return Peer{}, fmt.Errorf("the peer's certificate carries no identity")
+	if leaf.KeyUsage&(x509.KeyUsageCertSign|x509.KeyUsageCRLSign) != 0 {
+		return Peer{}, fmt.Errorf("the peer's certificate may sign certificates, which a workload identity may not")
+	}
+
+	switch len(leaf.URIs) {
+	case 0:
+		return Peer{}, fmt.Errorf("the peer's certificate carries no identity")
+	case 1:
+	default:
+		return Peer{}, fmt.Errorf("the peer's certificate carries %d URI names, and an identity is exactly one", len(leaf.URIs))
+	}
+
+	u := leaf.URIs[0]
+	if u.Scheme != "spiffe" {
+		return Peer{}, fmt.Errorf("the peer's certificate carries no identity: %q is not a spiffe URI", u.String())
+	}
+
+	if u.Host != i.cfg.TrustDomain {
+		return Peer{}, fmt.Errorf("the peer's identity belongs to trust domain %q, not %q", u.Host, i.cfg.TrustDomain)
+	}
+
+	return parsePath(u)
 }
 
 func parsePath(u *url.URL) (Peer, error) {

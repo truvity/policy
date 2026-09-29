@@ -91,6 +91,14 @@ func (a *authority) issue(t *testing.T, name, namespace, account string, peers .
 func (a *authority) write(t *testing.T, dir, namespace, account string) {
 	t.Helper()
 
+	a.writeShaped(t, dir, namespace, account, nil)
+}
+
+// writeShaped is write with a hook that may bend the certificate before it is
+// signed: the tests below use it to mint what a correct platform never would.
+func (a *authority) writeShaped(t *testing.T, dir, namespace, account string, bend func(*x509.Certificate)) {
+	t.Helper()
+
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	must(t, err)
 
@@ -110,6 +118,10 @@ func (a *authority) write(t *testing.T, dir, namespace, account string) {
 		DNSNames:     []string{"localhost"},
 		IPAddresses:  []net.IP{net.ParseIP("127.0.0.1")},
 		URIs:         []*url.URL{id},
+	}
+
+	if bend != nil {
+		bend(tmpl)
 	}
 
 	der, err := x509.CreateCertificate(rand.Reader, tmpl, a.cert, &key.PublicKey, a.key)
@@ -534,4 +546,144 @@ func TestAClientRefusesAServerItWasNotToldToTrust(t *testing.T) {
 	_, err = httpClient.Get(url)
 	mustFail(t, err)
 	mustFailWith(t, err, "shop/somebody-else is not a peer this service admits")
+}
+
+// issueShaped is issue for a certificate the platform would never mint.
+func (a *authority) issueShaped(t *testing.T, name string, bend func(*x509.Certificate), peers ...transport.Peer) transport.Config {
+	t.Helper()
+
+	cfg := a.issue(t, name, "shop", "api", peers...)
+	a.writeShaped(t, filepath.Dir(cfg.CertFile), "shop", "api", bend)
+
+	return cfg
+}
+
+// An X509-SVID leaf is not a certificate authority, and may not sign
+// certificates or revocation lists. The peer here is the very account the
+// server admits, with a chain that verifies; only its shape is wrong.
+func TestAPeerLeafThatIsAnAuthorityOrMaySignIsRefused(t *testing.T) {
+	cases := map[string]struct {
+		bend func(*x509.Certificate)
+		want string
+	}{
+		"a leaf that is a CA": {
+			bend: func(c *x509.Certificate) { c.IsCA, c.BasicConstraintsValid = true, true },
+			want: "is a certificate authority",
+		},
+		"a leaf that may sign certificates": {
+			bend: func(c *x509.Certificate) { c.KeyUsage |= x509.KeyUsageCertSign },
+			want: "may sign certificates",
+		},
+		"a leaf that may sign revocation lists": {
+			bend: func(c *x509.Certificate) { c.KeyUsage |= x509.KeyUsageCRLSign },
+			want: "may sign certificates",
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			ca := newAuthority(t)
+
+			server, err := transport.Load(ca.issue(t, "server", "shop", "web",
+				transport.Peer{Namespace: "shop", ServiceAccount: "api"}), nil)
+			must(t, err)
+
+			// Client side of the check: the server presents the bent leaf.
+			client, err := transport.Load(ca.issue(t, "client", "shop", "api",
+				transport.Peer{Namespace: "shop", ServiceAccount: "api"}), nil)
+			must(t, err)
+
+			// Server side of the check: the client presents the bent leaf.
+			bentClient, err := transport.Load(ca.issueShaped(t, "bent-client", tc.bend,
+				transport.Peer{Namespace: "shop", ServiceAccount: "web"}), nil)
+			must(t, err)
+
+			bentServer, err := transport.Load(ca.issueShaped(t, "bent-server", tc.bend,
+				transport.Peer{Namespace: "shop", ServiceAccount: "api"}), nil)
+			must(t, err)
+
+			// The client refuses the bent server.
+			url, httpClient, _, _ := serve(t, bentServer, client)
+			_, err = httpClient.Get(url)
+			mustFail(t, err)
+			mustFailWith(t, err, tc.want)
+
+			// The server refuses the bent client.
+			url, httpClient, errs, closed := serve(t, server, bentClient)
+			_, err = httpClient.Get(url)
+			mustFail(t, err)
+			waitClosed(t, closed)
+
+			if !strings.Contains(errs.String(), tc.want) {
+				t.Fatalf("the server did not say why: %q", errs.String())
+			}
+		})
+	}
+}
+
+// An X509-SVID carries exactly one URI name, of any scheme: with two there is
+// no telling which is the identity, so the certificate is refused whole.
+func TestAPeerLeafWithMoreOrFewerThanOneURIIsRefused(t *testing.T) {
+	other := func(raw string) *url.URL {
+		u, err := url.Parse(raw)
+		must(t, err)
+
+		return u
+	}
+
+	cases := map[string]struct {
+		bend func(*x509.Certificate)
+		want string
+	}{
+		"two spiffe IDs": {
+			bend: func(c *x509.Certificate) {
+				c.URIs = append(c.URIs, other("spiffe://"+trustDomain+"/ns/shop/sa/second"))
+			},
+			want: "2 URI names",
+		},
+		"a spiffe ID and another scheme": {
+			bend: func(c *x509.Certificate) { c.URIs = append(c.URIs, other("https://example.org/other")) },
+			want: "2 URI names",
+		},
+		"no URI at all": {
+			bend: func(c *x509.Certificate) { c.URIs = nil },
+			want: "carries no identity",
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			ca := newAuthority(t)
+
+			server, err := transport.Load(ca.issue(t, "server", "shop", "web",
+				transport.Peer{Namespace: "shop", ServiceAccount: "api"}), nil)
+			must(t, err)
+
+			client, err := transport.Load(ca.issue(t, "client", "shop", "api",
+				transport.Peer{Namespace: "shop", ServiceAccount: "api"}), nil)
+			must(t, err)
+
+			bentClient, err := transport.Load(ca.issueShaped(t, "bent-client", tc.bend,
+				transport.Peer{Namespace: "shop", ServiceAccount: "web"}), nil)
+			must(t, err)
+
+			bentServer, err := transport.Load(ca.issueShaped(t, "bent-server", tc.bend,
+				transport.Peer{Namespace: "shop", ServiceAccount: "api"}), nil)
+			must(t, err)
+
+			url, httpClient, _, _ := serve(t, bentServer, client)
+			_, err = httpClient.Get(url)
+			mustFail(t, err)
+			mustFailWith(t, err, tc.want)
+
+			url, httpClient, errs, closed := serve(t, server, bentClient)
+			_, err = httpClient.Get(url)
+			mustFail(t, err)
+			waitClosed(t, closed)
+
+			if !strings.Contains(errs.String(), tc.want) {
+				t.Fatalf("the server did not say why: %q", errs.String())
+			}
+		})
+	}
 }

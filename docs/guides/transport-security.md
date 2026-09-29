@@ -53,6 +53,15 @@ build the chain against the trust bundle, then read the identity out of the
 leaf. Skipping either half would be the mistake the flag's name warns about;
 skipping the name is the point.
 
+The leaf is also held to the shape the SPIFFE X509-SVID specification gives
+it, in every implementation and on both sides of a connection. It is **not a
+certificate authority** (`CA` is false, and it may not sign certificates or
+revocation lists): a workload certificate that could would let any admitted
+peer mint further identities. And it carries **exactly one URI name**, of any
+scheme: with two, which one is the identity would be a guess, and a guess is
+a grant. A certificate that fails either is refused whole, before its account
+is considered.
+
 See `Client` in [`transport/`](../../transport/), where the comment says
 exactly this next to the flag, because the next reader's first instinct will
 be to delete it.
