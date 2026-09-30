@@ -75,7 +75,7 @@ rule 6, in a pull request, where the move is visible and revertable.
 | Path | Holds |
 |---|---|
 | `README.md` | what this is, what ships, who it is for, how to run it, how to develop it |
-| `CHANGELOG.md` | one heading per released version, newest first, written for a consumer |
+| `CHANGELOG.md` | one heading per hand-cut release, newest first, written for a consumer; automatic patches need none |
 | `CONTRIBUTING.md` | the rules that are not obvious from the code |
 | `SECURITY.md` | where to report a vulnerability, and what is in scope |
 | `AGENTS.md` | how to work in this repository, and how to bring another one to its shape, written for a reader with no other context. Mirrored under whatever filename a particular tool looks for |
