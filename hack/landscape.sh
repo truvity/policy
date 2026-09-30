@@ -30,7 +30,7 @@ repos=(
   "ci-actions|CI"
   "ci-plane|CI"
   "ci-cache|CI"
-  "nats-auth-callout|Cluster add-ons"
+  "nats|Cluster add-ons"
   "argocd-ecr-updater|Cluster add-ons"
   "amazon-eks-pod-identity-webhook|Cluster add-ons"
   "ocictl|Developer tooling"
