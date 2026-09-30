@@ -16,6 +16,18 @@ subjects under them are the GitHub Release's own list.
   everything since the previous hand-cut heading, patches included. A checker
   allows a missing heading only for `vX.Y.Z` with Z > 0 whose `X.Y` equals
   the latest heading's.
+- **C5 says exactly what an automatic patch is, and what is checked.** `vX.Y.Z`
+  with Z > 0 whose `X.Y` is the newest heading's; every `vX.Y.0`, `vX.0.0`,
+  pre-release and patch of an unheaded line needs its own heading. The
+  checker judges the latest tag, not the whole history.
+- **C10 says what "not the gate" reaches.** `check` must not depend on
+  `vuln`, directly or through another recipe it depends on, and must not run
+  `just vuln`; a repository whose `check` lists `vuln` now fails the check.
+- **C13 is partly mechanical.** Five checks are named and run by
+  `policy-conformance`: an organisation domain, the tenancy API group, a real
+  cluster or environment name and a real cloud region as a default, and an
+  internal ticket key in any tracked file, the CHANGELOG included. The rest
+  stays review. An exemption may name `checks:` and `paths:`.
 
 ### Dependencies
 
