@@ -578,7 +578,7 @@ later is in scope by the rule, not by being added here.
 | `gateway` | charts |
 | `gemaal` | chart, image, Go module |
 | `github-structure` | Go module |
-| `nats-auth-callout` | chart, image |
+| `nats` | chart, image, Go module |
 | `observability` | charts, image |
 | `ocictl` | CLIs, charts |
 | `openbao` | charts, Go module |

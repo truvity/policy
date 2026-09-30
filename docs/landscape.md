@@ -11,7 +11,7 @@ Every repository here is a **component**, held to
 Go library, a CLI, or GitHub Actions and workflows, for an estate to
 install, import or call at a pinned version. None of them is a service in
 its own right except through the mechanism it ships (`gemaal` and the
-`audit`/`observability`/`nats-auth-callout`/`argocd-ecr-updater`/
+`audit`/`observability`/`nats`/`argocd-ecr-updater`/
 `amazon-eks-pod-identity-webhook` images run as services once a chart
 installs them — the repository still ships mechanism, not a deployment).
 
@@ -33,7 +33,7 @@ installs them — the repository still ships mechanism, not a deployment).
 | CI | [`ci-actions`](https://github.com/truvity/ci-actions) | The composite actions truvity/ci-workflows is built from: bootstrapping a runner, running a recipe, guarding pins and runners, discovering and comparing the fleet, standing up an end-to-end cluster, and checking a repository against the component contract. | action | v1.3.0 |
 | CI | [`ci-plane`](https://github.com/truvity/ci-plane) | The CI plane for GitHub Actions on Kubernetes, released as one versioned unit: the ARC runner image, the nix-worker image, and the two Helm charts around them — `ci-builders` (the in-cluster builders and caches) and `arc-runners` (the runner scale sets). | charts:2 | v4.0.0 |
 | CI | [`ci-cache`](https://github.com/truvity/ci-cache) | Build caches for CI, as one released bundle: the setup action that looks at a repository and wires its caches for a job, and a cache server — a disk tier over an S3-compatible bucket, serving the Go build cache and the Go module proxy — with its Helm chart. | charts:1; Go module (importable); images; CLI: ci-cache, ci-cache-bench; action | v0.3.1 |
-| Cluster add-ons | [`nats-auth-callout`](https://github.com/truvity/nats-auth-callout) | Workload identity for NATS on Kubernetes: an auth-callout responder that validates a connecting client's ServiceAccount token via TokenReview and answers the broker with a signed user JWT that places the client into the NATS account named after its namespace. | charts:1; Go module (importable); images; CLI: responder | v1.1.0 |
+| Cluster add-ons | [`nats`](https://github.com/truvity/nats) | Workload identity for NATS on Kubernetes: an auth-callout responder that validates a connecting client's ServiceAccount token via TokenReview and answers the broker with a signed user JWT that places the client into the NATS account named after its namespace. | charts:1; Go module (importable); images; CLI: responder | v1.1.0 |
 | Cluster add-ons | [`argocd-ecr-updater`](https://github.com/truvity/argocd-ecr-updater) | Keeps the ECR credential in Argo CD's repo-creds Secrets fresh: a CronJob that rewrites each Secret's password with a new authorization token, and a PostSync hook that seeds the Secrets a fresh cluster does not have yet. | charts:1; Go module (importable); images; CLI: updater | v2.0.0 |
 | Cluster add-ons | [`amazon-eks-pod-identity-webhook`](https://github.com/truvity/amazon-eks-pod-identity-webhook) | Fork of aws/amazon-eks-pod-identity-webhook with Kubernetes 1.35+ compatibility. | charts:1; Go module (importable); images; CLI: webhook | v2.0.1 |
 | Developer tooling | [`ocictl`](https://github.com/truvity/ocictl) | Deterministic OCI chart packaging and CRD repack tooling. | charts:3; Go module (importable); CLI: crdctl, helmctl | v0.6.2 |
