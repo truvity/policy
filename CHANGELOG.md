@@ -1,11 +1,24 @@
 # Changelog
 
 What changed for someone consuming this repository, newest first, one
-heading per tag. The prose bullets are written for a consumer; the commit
-subjects under them are the GitHub Release's own list. A tag that carries
-commit subjects alone changed nothing a consumer needed a sentence about.
+heading per hand-cut release (minor or major). The prose bullets are written
+for a consumer; the commit subjects under them are the GitHub Release's own
+list. Automatic patch releases get no heading: their notes are the GitHub
+Release's, and the next hand-cut heading covers them. `## Unreleased` stays
+open until a person cuts that release and closes it into its own heading.
 
 ## Unreleased
+
+### Contracts
+
+- **Automatic patch releases need no CHANGELOG heading.** C5 and
+  [release.md §3](docs/contracts/release.md) now require a heading for every
+  hand-cut (minor or major) tag only. A patch cut by the auto-release bot
+  may leave `## Unreleased` open; its notes are the GitHub release's. The
+  next hand-cut release closes `## Unreleased` into its own heading, covering
+  everything since the previous hand-cut heading, patches included. A checker
+  allows a missing heading only for `vX.Y.Z` with Z > 0 whose `X.Y` equals
+  the latest heading's.
 
 ### Features
 

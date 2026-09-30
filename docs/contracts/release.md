@@ -57,11 +57,23 @@ consumer reading a pin bump needs a different sentence — what changes in the
 output, what must be done first, whether a default moved. The file also
 travels with the source where a hosted release page does not.
 
-Every tag has a heading ([component.md C5](component.md)): one
-`## vX.Y.Z` per tag, newest first, and at most one `## Unreleased` on top.
-A tag that changed nothing a consumer can see still gets its heading, and
-says so — a missing heading is otherwise indistinguishable from a
-forgotten one.
+Every hand-cut tag has a heading ([component.md C5](component.md)): one
+`## vX.Y.Z` per minor or major tag, newest first, and at most one
+`## Unreleased` on top. A hand-cut tag that changed nothing a consumer can
+see still gets its heading, and says so.
+
+An **automatic patch release** (a patch tag cut by the auto-release bot) has
+no changelog commit and needs no heading. It may leave `## Unreleased` open;
+its notes live in the GitHub release that goreleaser generates. The next
+hand-cut minor or major closes `## Unreleased` into its own `## vX.Y.Z`
+heading, and that heading covers everything since the previous hand-cut
+heading, patches included. The person who cuts that release closes it.
+
+**How to check.** Every tag has a heading, except a tag `vX.Y.Z` with
+Z > 0 whose `X.Y` equals the `X.Y` of the latest heading (the newest
+`## vX.Y.Z` in the file, which the tag may exceed). Such a tag is an
+automatic patch and its missing heading is correct. Any other tag without a
+heading fails.
 
 **A change to a contract is a CHANGELOG entry too**, under a `### Contracts`
 sub-heading of the version it ships in. Each contract carries a header
@@ -172,7 +184,7 @@ artifacts, and that install is what a release is measured by.
 |---|---|
 | 1. one tag | the release workflow stamps every artifact from one tag |
 | 2. versioning | review |
-| 3. changelog | the component contract's C5 check: one heading per tag, one `Unreleased`, the latest tag present |
+| 3. changelog | the component contract's C5 check: one heading per tag except an automatic patch (Z > 0, X.Y of the latest heading), one `Unreleased` |
 | 4. who cuts | automation is armed for patches only |
 | 5. built in CI | the release runs only from a tag, in CI; one job builds then packages; the chart publish refuses an unpinned image; a test asserts every image declares every architecture, that no Dockerfile executes while building, and that no registry is hard-coded |
 | 6. adoption | the consumer's pin bump carries the diff |

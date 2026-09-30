@@ -154,27 +154,33 @@ that rule. The traps every copy has met, so the next one does not:
 **Conformance.** The file exists and is executable; the `check` recipe in
 `Justfile` depends on `leak-canary`, which runs it.
 
-## C5. The CHANGELOG has one heading per tag
+## C5. The CHANGELOG has one heading per hand-cut tag
 
 **What.** `CHANGELOG.md` exists at the root. Its version headings are
-`## vX.Y.Z`, optionally followed by ` — YYYY-MM-DD`: **one per tag**,
-newest first. An optional `## Unreleased` sits on top, and there is only
-one. A heading exists for the latest tag. Bullets are prose written for a
-consumer ([release.md §3](release.md)); a breaking one starts with
-**Breaking:** and names the step to take. A tag whose only change was a
-dependency bump still has its heading, and says so.
+`## vX.Y.Z`, optionally followed by ` — YYYY-MM-DD`: **one per
+hand-cut tag**, newest first. An optional `## Unreleased` sits on top, and
+there is only one. Bullets are prose written for a consumer
+([release.md §3](release.md)); a breaking one starts with **Breaking:** and
+names the step to take. An automatic patch (a patch tag cut by the
+auto-release bot) needs no heading and may leave `## Unreleased` open; its
+notes live in the GitHub release. The next hand-cut minor or major closes
+`## Unreleased` into its own heading, which covers everything since the
+previous hand-cut heading, patches included.
 
 **Why.** A consumer reading a pin bump needs to find the version they are
 moving to, and every other version between the two. A heading that covers
 several versions, or several `Unreleased` sections that each shipped in a
-different tag, make that search a guess — and a missing heading reads as
-"nothing changed" whether or not that is true. One heading per tag is the
-only rule a machine can check.
+different tag, make that search a guess — and a missing heading on a hand-cut tag reads as
+"nothing changed" whether or not that is true. Automatic patches carry no
+changelog commit, so their notes live in the release instead. One heading
+per hand-cut tag is a rule a machine can check.
 
 **Conformance.** The file exists; every `## ` heading that is not
 `## Unreleased` matches `^## v\d+\.\d+\.\d+( — \d{4}-\d{2}-\d{2})?$`;
 there is at most one `## Unreleased` and it is first; the headings are in
-descending version order; the latest `v*` tag has a heading.
+descending version order; every `v*` tag has a heading unless it is `vX.Y.Z`
+with Z > 0 and `X.Y` equal to the `X.Y` of the latest heading (an automatic
+patch).
 
 ## C6. The toolchain names a version for every tool
 
@@ -484,7 +490,7 @@ folds in. A repository still carrying one fails the rule named.
 |---|---|---|
 | `version: 0.0.0-dev` in a committed `Chart.yaml` (the ci-plane doctrine's form; five charts used it, seventeen used `0.0.0`) | `0.0.0` | C1 |
 | grouped CHANGELOG headings — several `## Unreleased` sections, a suffixed `## Unreleased — <topic>`, or one heading covering several versions | one `## vX.Y.Z` per tag, one `## Unreleased` | C5 |
-| "a patch cut for dependency bumps alone has no CHANGELOG heading" (the ci-workflows doctrine) | every tag has a heading | C5 |
+| "a patch cut for dependency bumps alone has no CHANGELOG heading" (the ci-workflows doctrine) | every hand-cut tag has a heading; an automatic patch needs none (amended 2026-09-30) | C5 |
 | "a public repository never names its consumers" (the ci-workflows doctrine) | a `Consumers` section naming repository and surface, never version | C8 |
 | a per-repository `docs/doctrine.md` restating design rules | a link to this contract | C8 |
 
@@ -533,7 +539,7 @@ later is in scope by the rule, not by being added here.
 | C2 values schema | `policy-conformance`: `values.schema.json` beside every `Chart.yaml`, unless a library chart is [exempted](#exemptions) |
 | C3 goldens and refusals | `policy-conformance`: `tests/golden/<chart>/` and `tests/invalid/<chart>/` are non-empty, or the Go chart tests name both |
 | C4 leak canary | `policy-conformance`: the script exists and `check` depends on `leak-canary` |
-| C5 CHANGELOG | `policy-conformance`: heading grammar, order, one `Unreleased`, the latest tag present |
+| C5 CHANGELOG | `policy-conformance`: heading grammar, order, one `Unreleased`, a heading for every tag but an automatic patch |
 | C6 devbox pins | `policy-conformance`: no `latest` in `devbox.json` |
 | C7 renovate | `policy-conformance`: extends the shared preset; every override has a `description` |
 | C8 README | `policy-conformance`: the eleven headings, in order |

@@ -219,7 +219,8 @@ repository to this shape.
 Manual tags: every first release, minor and major is a tag pushed by a
 person after the CHANGELOG heading for that version has merged
 ([release.md §4](docs/contracts/release.md)). Automatic patch releases are
-not armed.
+cut by a bot and need no CHANGELOG heading: their notes are the GitHub
+release's, and the next hand-cut heading covers them.
 
 ## Licence
 
