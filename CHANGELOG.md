@@ -4,10 +4,7 @@ What changed for someone consuming this repository, newest first, one
 heading per hand-cut release (minor or major). The prose bullets are written
 for a consumer; the commit subjects under them are the GitHub Release's own
 list. Automatic patch releases get no heading: their notes are the GitHub
-Release's, and the next hand-cut heading covers them. `## Unreleased` stays
-open until a person cuts that release and closes it into its own heading.
-
-## Unreleased
+Release's, and the next hand-cut heading covers them. `## Unreleased
 
 ### Contracts
 
@@ -19,6 +16,8 @@ open until a person cuts that release and closes it into its own heading.
   everything since the previous hand-cut heading, patches included. A checker
   allows a missing heading only for `vX.Y.Z` with Z > 0 whose `X.Y` equals
   the latest heading's.
+
+## v1.33.0 — 2026-09-29
 
 ### Features
 
@@ -35,6 +34,10 @@ open until a person cuts that release and closes it into its own heading.
   `sslmode=disable` against its own box database.
 - **The URL shortener's `stat` no longer receives `DATABASE_PASSWORD`.** It
   has no database; the unused credential is gone from its Deployment.
+
+## v1.32.0 — 2026-09-29
+
+### Features
 
 - **A publisher can authenticate to the broker with its workload identity.**
   The `nats` configuration fragment gains an optional `tls` object
