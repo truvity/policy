@@ -24,7 +24,7 @@ repos=(
   "gateway|Edge"
   "cloudflare|Edge"
   "tailscale|Edge"
-  "cnpg-cluster|Data"
+  "cnpg|Data"
   "observability|Observability"
   "ci-workflows|CI"
   "ci-actions|CI"

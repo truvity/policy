@@ -574,7 +574,7 @@ later is in scope by the rule, not by being added here.
 | `ci-plane` | charts, images |
 | `ci-workflows` | reusable workflows, renovate preset |
 | `cloudflare` | charts, image, Go module |
-| `cnpg-cluster` | charts |
+| `cnpg` | charts |
 | `gateway` | charts |
 | `gemaal` | chart, image, Go module |
 | `github-structure` | Go module |
