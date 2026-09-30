@@ -17,6 +17,19 @@
         "go"
       ],
       "enabled": false
+    },
+    {
+      "description": "The yarn release is owned by the devbox (its yarn writes the lockfile format the hardened install accepts): a packageManager bump to a newer yarn rewrites yarn.lock to a format the devbox's yarn refuses. It moves with devbox, never on its own.",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchDepTypes": [
+        "packageManager"
+      ],
+      "matchDepNames": [
+        "yarn"
+      ],
+      "enabled": false
     }
   ],
   "customManagers": [
