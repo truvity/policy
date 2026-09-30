@@ -1,10 +1,10 @@
 # Changelog
 
 What changed for someone consuming this repository, newest first, one
-heading per hand-cut release (minor or major). The prose bullets are written
-for a consumer; the commit subjects under them are the GitHub Release's own
-list. Automatic patch releases get no heading: their notes are the GitHub
-Release's, and the next hand-cut heading covers them. `## Unreleased
+heading per tag. The prose bullets are written for a consumer; the commit
+subjects under them are the GitHub Release's own list.
+
+## v1.33.1 — 2026-09-30
 
 ### Contracts
 
@@ -16,6 +16,13 @@ Release's, and the next hand-cut heading covers them. `## Unreleased
   everything since the previous hand-cut heading, patches included. A checker
   allows a missing heading only for `vX.Y.Z` with Z > 0 whose `X.Y` equals
   the latest heading's.
+
+### Dependencies
+
+- The Go module `github.com/truvity/policy` moves to v0.9.3, and the
+  non-major dependencies of the TypeScript package and the url-shortener
+  example are updated. Auto-release pins
+  ci-workflows v3.15.0. No chart or API change.
 
 ## v1.33.0 — 2026-09-29
 

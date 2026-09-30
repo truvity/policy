@@ -3,6 +3,7 @@
   "extends": [
     "github>truvity/ci-workflows"
   ],
+  "description": "devbox.json and devbox.lock are ignored because the devbox parity job (truvity/ci-workflows docs/devbox-update.md) owns them: it moves the devbox packages, the lockfile and the go directive together in one pull request, and a Renovate bump of either file alone would leave the three disagreeing.",
   "ignorePaths": [
     "devbox.json",
     "devbox.lock"
