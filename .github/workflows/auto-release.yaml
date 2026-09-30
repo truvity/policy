@@ -19,10 +19,10 @@ on:
   schedule:
     - cron: "41 5 * * 1"
   workflow_dispatch:
-  # The security lane: a push whose merged pull request carries the
-  # `security` label releases immediately; every other push exits quietly
-  # in the shared workflow, and the weekly schedule is the lane for
-  # ordinary bumps.
+  # The push lanes: a push whose merged pull request carries the
+  # `security` label, or whose hand-written pull request is a `fix:`,
+  # releases immediately; every other push exits quietly in the shared
+  # workflow, and the weekly schedule is the lane for ordinary bumps.
   push:
     branches: [master]
 
@@ -33,7 +33,7 @@ permissions:
 jobs:
   tag:
     if: vars.AUTO_RELEASE == 'true' && vars.ACCESS_ROSTER_ISSUER != ''
-    uses: truvity/ci-workflows/.github/workflows/auto-release.yaml@83a33664e82b4df3764ed4b4544707320b51db92 # v3.13.1
+    uses: truvity/ci-workflows/.github/workflows/auto-release.yaml@91c763810588ea21a5f7d34d623633230d8baff9 # v3.15.0
     with:
       token-source: access-roster
       access-roster-issuer: ${{ vars.ACCESS_ROSTER_ISSUER }}
