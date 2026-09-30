@@ -28,12 +28,13 @@ version of it.
 
 Every rule has an ID, **C1** to **C14**, so that a review comment, a
 ticket and a failing check can say "C5" instead of paraphrasing. Each says
-what must be true, why, and how it is checked. **C1 to C12 are checked
+what must be true, why, and how it is checked. **C1 to C13 are checked
 mechanically** by the `policy-conformance` action in `truvity/ci-actions`,
-which reads a checkout and reports each rule by its ID; **C13 is review**,
-because telling an estate's fact from a neutral default takes a reader, and
-**C14 is checked by the chart's own tests** in the repository that ships the
-chart.
+which reads a checkout and reports each rule by its ID; **C13 is checked
+only for the five shapes a script can tell from a neutral default with
+confidence, and the rest is review**, because telling an estate's fact from a
+neutral default in general takes a reader; and **C14 is checked by the
+chart's own tests** in the repository that ships the chart.
 
 ## Scope
 
@@ -167,6 +168,15 @@ notes live in the GitHub release. The next hand-cut minor or major closes
 `## Unreleased` into its own heading, which covers everything since the
 previous hand-cut heading, patches included.
 
+**What counts as an automatic patch, exactly.** A tag `vX.Y.Z` with
+**Z > 0** whose `X.Y` equals the `X.Y` of the **newest** `## vX.Y.Z` heading
+in the file. Nothing else is one: every `vX.Y.0`, every `vX.0.0`, every
+pre-release, and a patch of a line no heading carries (`v1.2.1` when the
+newest heading is `v1.1.0`) is a hand-cut tag and needs its own heading. The
+checker cannot tell who cut a tag, so it applies this test and no other; a
+person who hand-cuts a patch with something a consumer must read still adds
+its heading, and the checker accepts it.
+
 **Why.** A consumer reading a pin bump needs to find the version they are
 moving to, and every other version between the two. A heading that covers
 several versions, or several `Unreleased` sections that each shipped in a
@@ -178,9 +188,10 @@ per hand-cut tag is a rule a machine can check.
 **Conformance.** The file exists; every `## ` heading that is not
 `## Unreleased` matches `^## v\d+\.\d+\.\d+( — \d{4}-\d{2}-\d{2})?$`;
 there is at most one `## Unreleased` and it is first; the headings are in
-descending version order; every `v*` tag has a heading unless it is `vX.Y.Z`
-with Z > 0 and `X.Y` equal to the `X.Y` of the latest heading (an automatic
-patch).
+descending version order; the **latest** `v*` tag on the default branch (the
+highest, where several sit on one commit) has a heading unless it is an
+automatic patch as defined above. Earlier tags are not re-read: a tag already
+superseded was judged when it was the latest.
 
 ## C6. The toolchain names a version for every tool
 
@@ -297,7 +308,9 @@ the reason names the upstream project and its licence.
 `.github/workflows/security.yaml`, which runs the `vuln` recipe through the
 shared `check.yaml` workflow in `truvity/ci-workflows`, on push, on pull
 requests and on a daily schedule. `vuln` is **not** one of the recipes
-`ci.yaml` requires, and `just check` does not depend on it.
+`ci.yaml` requires, and `just check` does not reach it: `vuln` is not a
+dependency of the `check` recipe, not a dependency of any recipe `check`
+depends on, and no line of their bodies runs `just vuln`.
 
 **Why.** A new advisory is news about the world, not about the change
 under review. In the gate, a standard-library advisory with no released fix
@@ -306,8 +319,13 @@ a repository learns to ignore its gate. On its own schedule the same finding
 is reported daily, visibly, and blocks nothing it should not.
 
 **Conformance.** When `go.mod` exists: the workflow file exists and runs the
-`vuln` recipe; the recipe list in `.github/workflows/ci.yaml` does not name
-`vuln`; the `check` recipe's dependencies do not include `vuln`.
+`vuln` recipe; no workflow other than `security.yaml` lists `vuln` in its
+recipes (`ci.yaml`'s in particular); and the `Justfile`'s `check` recipe does
+not reach `vuln`. Reaching is followed through the `Justfile`: `check`
+depending on `vuln`, `check` depending on a recipe that depends on `vuln`
+(and so on), or a body line of either running `just vuln`. A recipe named
+`vuln` that nothing in `check`'s closure names is fine, and is what
+`security.yaml` runs.
 
 ## C11. Image names never repeat the repository
 
@@ -362,6 +380,13 @@ toleration, no internal hostname, no registry host. The keys exist; their
 defaults are empty or absent; the schema or the documentation says where
 one is required.
 
+The rule has a second half that is not about defaults: **no internal ticket
+key** (`INF-` and a number) appears in any tracked file. A key is an internal
+name, the public history keeps it for ever ([repository.md §7](repository.md)),
+and the change it points at is described where a stranger can read it, in
+prose, without the key. The CHANGELOG is not an exception: its history is the
+part that stays longest.
+
 **Why.** A default that names one estate's fact installs correctly for that
 estate and silently wrongly for every other: a chart defaulting a region
 creates the bucket in the wrong one, and nobody notices until the data is
@@ -370,10 +395,33 @@ somewhere it should not be. It is also a leak — the value is the estate's
 loudly where the value was needed, which is the failure a stranger can
 diagnose.
 
-**Conformance.** Review. A reviewer reads every `values.yaml` and every
-flag default for a value only one estate would choose. The leak canary
-(C4) catches the mechanical half: account IDs, registry hosts, internal
-domains.
+**Conformance.** Five checks are mechanical, chosen because each can be told
+from a neutral value with almost no false positives; `policy-conformance`
+reports each finding as `file:line`:
+
+| check | flags | in |
+|---|---|---|
+| `domain` | an organisation domain: the organisation's name followed by `.com`, `.xyz`, `.co` or `.private` | a chart's `values.yaml` and the `default` of its `values.schema.json`; the non-comment lines of Go and TypeScript |
+| `tenancy` | the organisation's tenancy API group | the same |
+| `env` | `kernel`, `devel`, `stage` or `prod` as the default of a key or identifier named `env`, `environment`, `cluster`, `stage` or `tier` | the same |
+| `region` | a real cloud region (`eu-west-1`, `us-east-2` ...) as a chart default, or as the default of a Go or TypeScript identifier named `region` | the same |
+| `ticket` | an internal ticket key | every tracked text file |
+
+Neutral placeholders (`example.com`, `eu-example-1`) match none of them. A
+comparison (`env == "prod"`), a `case` label and a list of names are tests of
+a name, not defaults, and are not flagged; comments are not read (except by
+`ticket`); nor are tests, fixtures, goldens, generated code and vendored
+code (again except by `ticket`). The rest of C13 (a namespace, a
+`nodeSelector`, a toleration, a registry host, any estate fact these five do
+not name) is review: a reviewer reads every `values.yaml` and every flag
+default for a value only one estate would choose. The leak canary (C4)
+catches the mechanical half of the hostnames, accounts and registries.
+
+A repository whose subject is the estate's own fact (a tool that must name
+the organisation's API group, a worked example that documents one region)
+does not skip the rule; it declares the exception, narrowed to the check and
+the path, in `.github/policy-conformance.yaml` (see
+[Exemptions](#exemptions)).
 
 ---
 
@@ -421,22 +469,29 @@ exempt:
     charts: [example-routes]
   C9:
     reason: fork of an Apache-2.0 upstream; cannot relicense
+  C13:
+    reason: the worked example documents one region on purpose
+    checks: [region]
+    paths: [examples/regional/*]
 ```
 
 `reason` is required and reviewed like any other change. `charts:`, where
 the rule is chart-scoped (C1, C2, C3), names which charts the exception
 covers; a rule with no `charts:` line is exempted for the whole
-repository. This is not the `policy-conformance` action's `skip:` input —
+repository. C13 takes two narrowing lines of its own: `checks:` names which
+of its five checks the exception suppresses (`domain`, `tenancy`, `env`,
+`region`, `ticket`) and `paths:` the shell globs of the files it covers;
+omitted, each means all. This is not the `policy-conformance` action's `skip:` input —
 that silences a whole rule for one CI run and demands a reason on every
-invocation, for a rule that genuinely cannot be checked here yet (C13,
-always) or a temporary gap being tracked elsewhere. An exemption is
+invocation, for a rule that genuinely cannot be checked here yet or a temporary gap being tracked elsewhere. An exemption is
 committed, permanent until the exception is removed, and answers to a
 named rule and reason rather than a blanket skip.
 
 An exempted rule is not silently `PASS`: `policy-conformance` reports it
 as `EXEMPT` (C9) or narrows exactly which sub-check the exemption
 suppresses (C1, C2 by chart; C5, the missing-heading-for-the-latest-tag
-check only — format, order and duplicate headings still run), so the job
+check only — format, order and duplicate headings still run; C13, the
+findings the exemption covers, counted on the line), so the job
 summary shows a reviewed exception rather than indistinguishable
 conformance.
 
@@ -539,13 +594,13 @@ later is in scope by the rule, not by being added here.
 | C2 values schema | `policy-conformance`: `values.schema.json` beside every `Chart.yaml`, unless a library chart is [exempted](#exemptions) |
 | C3 goldens and refusals | `policy-conformance`: `tests/golden/<chart>/` and `tests/invalid/<chart>/` are non-empty, or the Go chart tests name both |
 | C4 leak canary | `policy-conformance`: the script exists and `check` depends on `leak-canary` |
-| C5 CHANGELOG | `policy-conformance`: heading grammar, order, one `Unreleased`, a heading for every tag but an automatic patch |
+| C5 CHANGELOG | `policy-conformance`: heading grammar, order, one `Unreleased`, a heading for the latest tag unless it is an automatic patch (Z > 0, `X.Y` of the newest heading) |
 | C6 devbox pins | `policy-conformance`: no `latest` in `devbox.json` |
 | C7 renovate | `policy-conformance`: extends the shared preset; every override has a `description` |
 | C8 README | `policy-conformance`: the eleven headings, in order |
 | C9 licence | `policy-conformance`: `LICENSE` is MIT, unless a fork is [exempted](#exemptions) |
-| C10 security workflow | `policy-conformance`: `security.yaml` exists with `go.mod`; `vuln` in neither `ci.yaml` nor `check` |
+| C10 security workflow | `policy-conformance`: `security.yaml` exists with `go.mod`; `vuln` in no other workflow's recipes, and not reachable from the `Justfile`'s `check` |
 | C11 image names | `policy-conformance`: no image repository ends in `<repo>/<repo>` with nothing published beside it |
 | C12 pinned installs | `policy-conformance`: no `@latest`, no unversioned `oci://` install |
-| C13 estate facts | review; the leak canary catches the mechanical half |
+| C13 estate facts | `policy-conformance`: the five checks above (`domain`, `tenancy`, `env`, `region`, `ticket`); review for the rest; the leak canary catches the hostname, account and registry half |
 | C14 ServiceAccount per component | the chart's own render test; review elsewhere |
