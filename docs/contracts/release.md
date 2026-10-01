@@ -59,15 +59,37 @@ travels with the source where a hosted release page does not.
 
 Every hand-cut tag has a heading ([component.md C5](component.md)): one
 `## vX.Y.Z` per minor or major tag, newest first, and at most one
-`## Unreleased` on top. A hand-cut tag that changed nothing a consumer can
+`## Unreleased` on top (an automatic patch that carries entries gets its
+heading too, below). A hand-cut tag that changed nothing a consumer can
 see still gets its heading, and says so.
 
-An **automatic patch release** (a patch tag cut by the auto-release bot) has
-no changelog commit and needs no heading. It may leave `## Unreleased` open;
-its notes live in the GitHub release that goreleaser generates. The next
-hand-cut minor or major closes `## Unreleased` into its own `## vX.Y.Z`
-heading, and that heading covers everything since the previous hand-cut
-heading, patches included. The person who cuts that release closes it.
+An **automatic patch release** (a patch tag cut by the auto-release
+workflow) must not ship changes under `## Unreleased`. Before it cuts the
+tag `vX.Y.Z`:
+
+- If the first `## Unreleased` section has entries, the workflow **must**
+  rename it to `## vX.Y.Z` (with ` — YYYY-MM-DD` only where the newest
+  version heading carries a date) through a pull request that it
+  auto-merges, and **must** then tag the merge commit, so the tag names the
+  commit that carries its own heading. The workflow does not push to the
+  default branch directly.
+- If `## Unreleased` is empty or absent (a dependency-only patch), the
+  workflow need not write a heading: C5's automatic-patch exemption applies.
+  It **must** write a `## vX.Y.Z` heading only under `changelog-heading:
+  always`, or when the repository's convention gives every patch a heading
+  (the newest patch tag has one).
+- A `## vX.Y.Z` heading that already exists **must not** be rewritten.
+- It **must** stand aside, cutting no tag and opening no pull request,
+  while a hand-prepared heading pull request for a minor or major release
+  is open. The person who cuts that release writes its heading; it covers
+  everything since the previous heading.
+- A repository whose rules require an approving review on every pull
+  request **must** set `changelog-heading: never`, which restores the
+  previous behaviour (tag, touch nothing, notes in the GitHub release): the
+  release App cannot approve its own pull request.
+
+If the heading's pull request does not merge in time, the run fails with no
+tag cut and the next run resumes that pull request.
 
 **How to check.** The latest tag has a heading, except a tag `vX.Y.Z` with
 Z > 0 whose `X.Y` equals the `X.Y` of the newest heading (the newest
@@ -186,7 +208,7 @@ artifacts, and that install is what a release is measured by.
 |---|---|
 | 1. one tag | the release workflow stamps every artifact from one tag |
 | 2. versioning | review |
-| 3. changelog | the component contract's C5 check: a heading for the latest tag except an automatic patch (Z > 0, X.Y of the newest heading), one `Unreleased` |
+| 3. changelog | the component contract's C5 check: a heading for the latest tag except an automatic patch (Z > 0, X.Y of the newest heading), one `Unreleased`; the auto-release workflow writes the heading of a patch that carries entries before it tags |
 | 4. who cuts | automation is armed for patches only |
 | 5. built in CI | the release runs only from a tag, in CI; one job builds then packages; the chart publish refuses an unpinned image; a test asserts every image declares every architecture, that no Dockerfile executes while building, and that no registry is hard-coded |
 | 6. adoption | the consumer's pin bump carries the diff |

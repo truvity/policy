@@ -163,10 +163,16 @@ hand-cut tag**, newest first. An optional `## Unreleased` sits on top, and
 there is only one. Bullets are prose written for a consumer
 ([release.md §3](release.md)); a breaking one starts with **Breaking:** and
 names the step to take. An automatic patch (a patch tag cut by the
-auto-release bot) needs no heading and may leave `## Unreleased` open; its
-notes live in the GitHub release. The next hand-cut minor or major closes
-`## Unreleased` into its own heading, which covers everything since the
-previous hand-cut heading, patches included.
+auto-release workflow) **must** carry a heading when it ships entries: the
+workflow renames the first `## Unreleased` that has entries to `## vX.Y.Z`
+through a pull request it auto-merges, then tags the merge commit
+([release.md §3](release.md)). A dependency-only automatic patch, with
+`## Unreleased` empty or absent, needs no heading and may leave it so; it
+gets one only under `changelog-heading: always` or where the repository
+gives every patch a heading. The next hand-cut minor or major closes any
+open `## Unreleased` into its own heading, which covers everything since the
+previous heading. The checker's rule is unchanged: it accepts a heading on
+an automatic patch and exempts one without.
 
 **What counts as an automatic patch, exactly.** A tag `vX.Y.Z` with
 **Z > 0** whose `X.Y` equals the `X.Y` of the **newest** `## vX.Y.Z` heading
@@ -181,9 +187,10 @@ its heading, and the checker accepts it.
 moving to, and every other version between the two. A heading that covers
 several versions, or several `Unreleased` sections that each shipped in a
 different tag, make that search a guess — and a missing heading on a hand-cut tag reads as
-"nothing changed" whether or not that is true. Automatic patches carry no
-changelog commit, so their notes live in the release instead. One heading
-per hand-cut tag is a rule a machine can check.
+"nothing changed" whether or not that is true. An automatic patch that
+ships entries gets its heading from the release workflow before it tags, so
+no shipped change sits under `## Unreleased`. One heading per hand-cut tag
+is a rule a machine can check.
 
 **Conformance.** The file exists; every `## ` heading that is not
 `## Unreleased` matches `^## v\d+\.\d+\.\d+( — \d{4}-\d{2}-\d{2})?$`;
@@ -545,7 +552,7 @@ folds in. A repository still carrying one fails the rule named.
 |---|---|---|
 | `version: 0.0.0-dev` in a committed `Chart.yaml` (the ci-plane doctrine's form; five charts used it, seventeen used `0.0.0`) | `0.0.0` | C1 |
 | grouped CHANGELOG headings — several `## Unreleased` sections, a suffixed `## Unreleased — <topic>`, or one heading covering several versions | one `## vX.Y.Z` per tag, one `## Unreleased` | C5 |
-| "a patch cut for dependency bumps alone has no CHANGELOG heading" (the ci-workflows doctrine) | every hand-cut tag has a heading; an automatic patch needs none (amended 2026-09-30) | C5 |
+| "a patch cut for dependency bumps alone has no CHANGELOG heading" (the ci-workflows doctrine) | every hand-cut tag has a heading; an automatic patch needs none unless it ships entries, when the workflow writes it (amended 2026-09-30, 2026-10-01) | C5 |
 | "a public repository never names its consumers" (the ci-workflows doctrine) | a `Consumers` section naming repository and surface, never version | C8 |
 | a per-repository `docs/doctrine.md` restating design rules | a link to this contract | C8 |
 
