@@ -22,6 +22,15 @@ subjects under them are the GitHub Release's own list.
   A connection that drops after start-up already reconnected through the
   connection pool; readiness reports the gap. No chart change.
 
+### Charts
+
+- **Every workload of `url-shortener` and `url-shortener-e2e` meets the Pod
+  Security `restricted` profile.** The pods gain a `RuntimeDefault` seccomp
+  profile and every container, the migration's included, sets
+  `allowPrivilegeEscalation: false` and drops all capabilities. The pods
+  already ran as a non-root user; nothing else about them changes, so a
+  namespace can enforce `restricted` without exempting them.
+
 ## v1.34.0 — 2026-10-01
 
 ### Contracts
