@@ -4,6 +4,24 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+### Fixes
+
+- **The URL shortener's `urls` and `redirect` no longer crash-loop while the
+  database is briefly away.** Both used to exit on the first refused
+  connection at start-up, so a one-minute database reload became a
+  CrashLoopBackOff that outlasted it. They now start the probe listener first
+  and retry the connection with exponential back-off and jitter, logging each
+  attempt at WARN. Until it connects, `/health/ready` answers 503 and
+  `/health/live` keeps answering 200, so the pod waits unready rather than
+  being restarted; SIGTERM during the wait exits cleanly. The defaults are 0.5 s
+  doubling to 10 s, for up to 3 minutes, after which the process exits with the
+  last error. Tune them with `DATABASE_CONNECT_INITIAL_BACKOFF`,
+  `DATABASE_CONNECT_MAX_BACKOFF` and `DATABASE_CONNECT_TIMEOUT` (Go durations).
+  A connection that drops after start-up already reconnected through the
+  connection pool; readiness reports the gap. No chart change.
+
 ## v1.34.0 — 2026-10-01
 
 ### Contracts
