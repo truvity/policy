@@ -4,6 +4,23 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+### Contracts
+
+- **An automatic patch that ships entries now gets its CHANGELOG heading
+  before it is tagged.** [release.md §3](docs/contracts/release.md) and C5
+  say what the auto-release workflow does: it renames a first
+  `## Unreleased` that has entries to `## vX.Y.Z` through a pull request it
+  auto-merges, then tags the merge commit. A dependency-only patch with an
+  empty or absent `## Unreleased` still needs no heading (C5's exemption),
+  and gets one only under `changelog-heading: always` or where every patch
+  already has one. `changelog-heading: never` restores the previous
+  behaviour; repositories that require an approving review on every pull
+  request must set it, because the release App cannot approve its own pull
+  request. The workflow stands aside while a hand-prepared minor-release
+  heading pull request is open. The checker is unchanged.
+
 ## v1.33.1 — 2026-09-30
 
 ### Contracts
