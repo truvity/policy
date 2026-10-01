@@ -28,6 +28,13 @@ subjects under them are the GitHub Release's own list.
   unchanged. A platform uses it to tell the controller that installs the
   chart not to prune or delete the database, which is what lets another
   installer take the same resource over without recreating it.
+- **`url-shortener-infra` takes `postgres.platformOwned`.** True renders no
+  `Cluster`: the database is the platform's. The chart renders the runtime
+  role as a `DatabaseRole` against the platform's database (and still the
+  password generator, if asked); the bootstrap database and owner are the
+  platform's to declare with the cluster. Off by default, so a default render
+  is unchanged. It is how a platform hands the database to its own cluster
+  chart without the two installers ever rendering it at once.
 
 ## v1.33.1 — 2026-09-30
 

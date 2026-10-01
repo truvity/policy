@@ -234,6 +234,7 @@ a token or sits behind that kind of proxy.
 | `postgres.instances`, `postgres.storage` | how much database | how many instances |
 | `postgres.labels` | what reads labels here | — |
 | `postgres.annotations` | what reads annotations here, such as whether a controller may prune the database | — |
+| `postgres.platformOwned` | whether the platform renders the database itself, leaving this chart only the runtime role | — |
 | `postgres.scheduling` | which pool a database is allowed on | how many instances |
 | `postgres.backup.objectStoreName`, `.serverName` | which archive, and who this is inside it | which object store |
 | `postgres.serverTLS.secretName`, `.caSecretName` | what the server presents | whether transport identity is on |
