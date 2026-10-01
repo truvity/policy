@@ -21,6 +21,14 @@ subjects under them are the GitHub Release's own list.
   request. The workflow stands aside while a hand-prepared minor-release
   heading pull request is open. The checker is unchanged.
 
+### Charts
+
+- **`url-shortener-infra` takes `postgres.annotations`**, stamped on the
+  database resource as given. It defaults to empty, so a default render is
+  unchanged. A platform uses it to tell the controller that installs the
+  chart not to prune or delete the database, which is what lets another
+  installer take the same resource over without recreating it.
+
 ## v1.33.1 — 2026-09-30
 
 ### Contracts
