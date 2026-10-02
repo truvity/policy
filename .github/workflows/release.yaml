@@ -44,7 +44,16 @@ jobs:
       # And a chart whose images.* entries are not all digest-pinned is
       # refused outright.
       require-image-digests: true
-      # THREE charts, released under ONE version. url-shortener and
+      # FOUR charts, released under ONE version. The last is the library
+      # chart, `service-lib`, which renders nothing of its own: it is what
+      # url-shortener renders its components with (docs/guides/charts.md), and
+      # it is published beside it so that another repository's service chart
+      # can depend on the same bytes this one is tested against. The copy
+      # packaged INSIDE url-shortener is vendored in the tree and held equal to
+      # it by a test, because `helmctl package` does not run `helm dependency
+      # update`.
+      #
+      # The other three are the product. url-shortener and
       # url-shortener-infra are a pair rather than a chart and an extra —
       # the split is an ordering requirement: Helm runs every hook before
       # anything else in the same release, so the chart that migrates a
@@ -60,7 +69,7 @@ jobs:
       #
       # They live with the components they deploy rather than at this
       # repository's root — `chart-root` exists so that they can.
-      charts: '["url-shortener", "url-shortener-infra", "url-shortener-e2e"]'
+      charts: '["url-shortener", "url-shortener-infra", "url-shortener-e2e", "service-lib"]'
       chart-root: examples/url-shortener/charts
 
   packages:

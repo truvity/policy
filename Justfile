@@ -219,21 +219,45 @@ charts:
 # Regenerate the chart goldens. Read the diff BEFORE running this: a golden
 # updated without being read is a golden that records whatever happened.
 #
-# The pattern matches all THREE chart render tests. `TestWhatTheChartRenders`
+# The pattern matches all FOUR chart render tests. `TestWhatTheChartRenders`
 # alone does not: the infrastructure chart's is
-# `TestWhatTheInfraChartRenders` and the test chart's is
-# `TestWhatTheE2EChartRenders`, neither of which that narrower pattern
-# contains, so this recipe would regenerate one chart's goldens and
+# `TestWhatTheInfraChartRenders`, the test chart's is
+# `TestWhatTheE2EChartRenders` and the library's example chart's is
+# `TestWhatTheServiceExampleChartRenders`, none of which that narrower
+# pattern contains, so this recipe would regenerate one chart's goldens and
 # silently leave the others' stale. The only symptom was a CI failure on a
 # change the author had already run `just golden` for.
 [doc("Regenerate the chart goldens")]
 golden:
-    cd examples/url-shortener && UPDATE_GOLDEN=1 go test ./charts/... -run 'TestWhatThe(Infra|E2E)?ChartRenders' -count=1
+    cd examples/url-shortener && UPDATE_GOLDEN=1 go test ./charts/... -run 'TestWhatThe(Infra|E2E|ServiceExample)?ChartRenders' -count=1
 
 # Regenerate the RPC code from the schema.
 [doc("Regenerate the RPC code from the schema")]
 protos:
     cd examples/url-shortener && buf lint && buf generate
+
+# Compose the values schema of every service chart: the platform schema, and
+# `config` as the service's own schema, bundled into one file Helm can validate
+# with offline (package chartschema; decision 0009). The source of each is the
+# `values.schema.src.json` beside it. Needs no network.
+[doc("Compose every service chart's values.schema.json from its source")]
+chart-schemas:
+    go run ./hack/compose-chart-schema examples/url-shortener/charts
+
+# Copy the library chart into the charts that package it. `helmctl package`
+# does not run `helm dependency update`, so a library that only arrived at
+# package time would be published without it: the copy is committed, and a test
+# (TestTheVendoredLibraryIsTheLibrary) holds it equal to the source.
+[doc("Copy the library chart into the charts that package it")]
+vendor-charts:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    charts=examples/url-shortener/charts
+    for chart in url-shortener; do
+        rm -rf "$charts/$chart/charts/service-lib"
+        mkdir -p "$charts/$chart/charts"
+        cp -r "$charts/service-lib" "$charts/$chart/charts/service-lib"
+    done
 
 # Regenerate what every loader carries from `schemas/`.
 [doc("Regenerate the schemas the loaders carry")]
@@ -245,13 +269,20 @@ schemas:
 # thing this repository exists to prevent. Needs no network: the generator
 # reads this checkout and writes into it.
 [doc("Fail if generated code was not regenerated")]
-drift: schemas protos
+drift: schemas protos chart-schemas vendor-charts
     git diff --exit-code -- ts/src/schemas.generated.ts python/src/truvity_policy/schemas.py
     # The RPC code too. It is committed rather than generated at build time,
     # because a build step between a checkout and a compiler is a step that
     # has to work on every machine forever — and the first thing it breaks
     # is the editor, which cannot resolve a symbol that does not exist yet.
     git diff --exit-code -- examples/url-shortener/internal/gen
+    # The service charts' values schemas, composed from their sources, and the
+    # library chart's vendored copy (docs/guides/charts.md). Both are committed
+    # because a chart is published from the tree, and both are also held by a
+    # test that does not need this recipe to have run.
+    git diff --exit-code -- 'examples/url-shortener/charts/*/values.schema.json' \
+        'examples/url-shortener/charts/testdata/*/values.schema.json' \
+        examples/url-shortener/charts/url-shortener/charts
 
 # The TypeScript package: install, typecheck, test, build, and check what a
 # publish would ship. NOT part of `check`, which needs nothing but the
