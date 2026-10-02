@@ -37,7 +37,13 @@ before:
     - yarn --cwd ts install --immutable
     - yarn --cwd ts build
     - yarn --cwd examples/url-shortener/web install --immutable
-    - yarn --cwd examples/url-shortener/web build
+    # The page is built ONCE, for this release's version (Faro's app.release,
+    # and the tag the source maps are pushed under). The build moves the hidden
+    # source maps out of the tree the web image copies into ./dist-sourcemaps,
+    # each at its served path, where the release workflow's `smctl push`
+    # reads them. See docs/guides/source-maps.md.
+    # (`env` because a before hook is one command, not a shell line.)
+    - env VITE_APP_VERSION={{ .Version }} yarn --cwd examples/url-shortener/web build
 
 builds:
   - id: migrate
