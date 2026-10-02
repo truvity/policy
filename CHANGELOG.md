@@ -6,6 +6,8 @@ subjects under them are the GitHub Release's own list.
 
 ## Unreleased
 
+## v1.38.0 — 2026-10-03
+
 ### Features
 
 - **A library chart, `service-lib`, and a convention for the charts that use
