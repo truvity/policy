@@ -15,6 +15,11 @@ stamps them.
 A consumer therefore pins **one version per repository**. Two artifacts from
 one repository at two versions is a lag to close, never a choice.
 
+The one exception is the **mirror chart**: a chart that republishes a
+third-party artifact unchanged is not the repository's own artifact, carries
+the upstream's version, and is published at that version only if it does not
+exist yet ([component.md C1](component.md)).
+
 ## 2. Versions mean what they mean to the consumer
 
 Read from the outside, not from the diff:

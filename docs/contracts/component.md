@@ -75,7 +75,30 @@ nobody has to look up.
 
 **Conformance.** Every `charts/*/Chart.yaml` parses; `version` is exactly
 `0.0.0`; when the repository builds an image, `appVersion` is exactly
-`0.0.0`.
+`0.0.0`. A declared mirror chart (below) is judged against its mirrored
+version instead.
+
+**Exception: mirror charts.** A chart that republishes a third-party
+artifact unchanged, such as the CustomResourceDefinitions of an upstream
+project vendored into a chart, is not stamped from this repository's tag:
+the thing it carries has its own version, and consumers pin that one. It
+declares so in `Chart.yaml`:
+
+```yaml
+annotations:
+  truvity.io/mirror: "<owner>/<repo>@<version>"
+```
+
+and its `version`, and its `appVersion` when it has one, are exactly that
+`<version>`. The annotation is the whole declaration: it names the upstream
+and the version in one place, travels inside the packaged chart, and needs
+no entry in `.github/policy-conformance.yaml`. An annotation not shaped
+`<owner>/<repo>@<version>`, or a `version` or `appVersion` that differs
+from it, fails; a chart without the annotation is still held to `0.0.0`.
+The release publishes a mirror chart at exactly that version and only if
+that version is not in the registry yet: an existing version is skipped and
+never overwritten, so a release that does not move the upstream publishes
+nothing for it.
 
 ## C2. Every chart has a values schema
 
@@ -466,6 +489,9 @@ rule is amended here, in its own pull request, with the reason (see "When
 the contract is wrong" in this repository's `CLAUDE.md`), and the
 repository declares the exception mechanically so it stays visible rather
 than merely absent.
+
+A mirror chart is not an exception: C1 itself accepts it when it declares
+`truvity.io/mirror` (see C1), so it needs no entry here.
 
 A repository declares an exception in `.github/policy-conformance.yaml`:
 
