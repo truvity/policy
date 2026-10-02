@@ -13,6 +13,7 @@ tool which reads a configuration is not a special case.
 | [fragments/postgres.json](fragments/postgres.json) | a PostgreSQL connection |
 | [fragments/nats.json](fragments/nats.json) | a NATS connection |
 | [fragments/nats-consumer.json](fragments/nats-consumer.json) | what a consumer binds to |
+| [fragments/platform.json](fragments/platform.json) | what the platform provides one component of a service chart (the `platform` block of its values; not part of a configuration file) |
 
 **Telemetry is deliberately absent.** It is configured by OpenTelemetry's own
 environment variables, in every language, which is the one exception to
