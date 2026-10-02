@@ -83,8 +83,8 @@ below it.
 
 | Step | url-shortener | dms |
 |---|---|---|
-| 1 | 0.4.0 | v0.40.0 |
-| 2 | 0.8.0 | v0.40.0 |
+| 1 | 0.4.0 | 0.40.0 |
+| 2 | 0.8.0 | 0.40.0 |
 | 3 | 1.28.1 (the chart is first published at 1.26.1; 1.28.1 is the first release a platform can render it from: `traces.*` arrived in 1.28.0, `job.annotations` in 1.28.1) | not yet |
 | 4 | 1.29.1 | not yet |
 | 5 | 1.30.0 | not yet |
