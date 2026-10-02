@@ -4,6 +4,31 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+### Contracts
+
+- **New: `docs/contracts/delivery-interface.md`, the delivery interface
+  registry.** A chart's schema refuses a key it does not know, so a platform
+  cannot hand every pin every key it has, and platforms have been keeping one
+  version string per key to avoid it. A product's charts now declare the
+  highest interface they read as one whole number, and the registry says what
+  each step adds (ten, from the explicit interface to the browser telemetry
+  keys) and the first url-shortener release of each, so a platform written
+  against it renders the keys of every step up to the number and compares no
+  version. A platform that implements the platform contract (section 10) and
+  delivers these charts must know the steps; nothing changes for a platform
+  that does not. `platform.md` section 10 points at it.
+
+### Charts
+
+- **The three url-shortener charts carry
+  `annotations: {delivery.truvity.io/interface: "10"}`.** The number is the
+  highest step the product's charts read (the browser telemetry keys, from
+  1.35.0), the same on `url-shortener`, `url-shortener-infra` and
+  `url-shortener-e2e`. A platform that does not read the annotation sees no
+  change: it is metadata, and no value, template or schema moved.
+
 ## v1.36.0 — 2026-10-02
 
 ### Features
