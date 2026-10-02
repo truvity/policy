@@ -2,6 +2,3 @@ exempt:
   C2:
     reason: a library chart renders nothing of its own and takes no values a consumer sets; whatever it reads comes from the including chart's own, already-schema'd values (component.md C2)
     charts: [service-lib]
-  C3:
-    reason: a library chart renders only through the charts that include it, whose goldens and refusals are where it is held (component.md C15)
-    charts: [service-lib]

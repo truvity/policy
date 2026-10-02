@@ -523,9 +523,12 @@ variable is neither telemetry, a declared secret nor one the chart allows), and
 a test that the chart declares the library by path and commits its lock
 (`examples/url-shortener`: `TestTheApplicationChartResolvesTheLibraryFromItsLock`),
 with `just chart-deps` (and so `drift`) failing on a stale lock. The library
-is a `type: library` chart, exempt from C2 as that rule says, and from C3 for
-the same reason: it renders only through the charts that include it, whose
-goldens are where it is held. Review for a chart in another repository.
+is a `type: library` chart, exempt from C2 as that rule says. C3's check wants
+goldens and a refused fixture per chart under `charts/`, and a library renders
+only through the charts that include it: the repository's Go tests under
+`charts/` satisfy it (`TestEveryDefinedTemplateCarriesTheLibrarysPrefix` there
+holds the library's one structural rule), and the including charts' goldens are
+where its output is held. Review for a chart in another repository.
 
 ## C16. A service chart passes its configuration through verbatim
 
