@@ -52,6 +52,13 @@ subjects under them are the GitHub Release's own list.
 
 ### Charts
 
+- **The release publishes `service-lib` from `charts/service-lib`, with the
+  shared release workflow moved to v3.20.0** (every workflow here, not only
+  the release). The new release workflow takes a chart as a path from the
+  repository root and packages with helmctl 0.8.0, which resolves a chart's
+  `file://` dependency from its committed `Chart.lock` with `helm dependency
+  build`, so `url-shortener` is published with the library inside it and no
+  copy of it is kept in the tree.
 - **The `url-shortener` chart renders its components with `service-lib`, and
   renders the same objects.** Its values, its schema and its defaults are
   unchanged, so no values file moves. Compared as parsed objects, before and
