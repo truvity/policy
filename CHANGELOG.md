@@ -24,6 +24,14 @@ subjects under them are the GitHub Release's own list.
 
 ### Charts
 
+- **The URL shortener's front end sends a Content-Security-Policy, report-only.**
+  `Content-Security-Policy-Report-Only` goes out on every response with
+  `default-src 'self'`, `script-src 'self'`, `connect-src 'self'` and the
+  origins in the new `web.csp.connectSrc`; a browser reports what it would
+  have blocked and blocks nothing. `web.csp.mode` is `report-only` (the
+  default), `enforce` or `off`, and `web.csp.reportUri` adds a `report-uri`.
+  The same keys are a new optional `csp` block in `schemas/web.json`; a
+  consumer that sets none sees the report-only header and no other change.
 - **Every workload of `url-shortener` and `url-shortener-e2e` meets the Pod
   Security `restricted` profile.** The pods gain a `RuntimeDefault` seccomp
   profile and every container, the migration's included, sets
