@@ -95,13 +95,16 @@ if err := config.Load(path, schemaBytes, &cfg); err != nil {
 
 The worked example runs every contract end to end, and its application
 chart renders from the release with only the names it refuses to guess —
-the database's host and the two Secrets holding its credentials, the
-broker, the bucket:
+the database's host, the root its certificate chains to and the two Secrets
+holding its credentials, the broker, the bucket:
 
 ```yaml
 # values.yaml
 database:
   host: pg
+  tls:
+    rootCA:
+      configMapName: pg-root-ca
   owner:
     passwordSecret: owner
   app:
