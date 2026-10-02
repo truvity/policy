@@ -81,18 +81,27 @@ The numbers a platform writes for a pin that predates the annotation. A
 product's number at a release is the highest step whose release is at or
 below it.
 
-| Step | url-shortener |
-|---|---|
-| 1 | 0.4.0 |
-| 2 | 0.8.0 |
-| 3 | 1.28.1 (the chart is first published at 1.26.1; 1.28.1 is the first release a platform can render it from: `traces.*` arrived in 1.28.0, `job.annotations` in 1.28.1) |
-| 4 | 1.29.1 |
-| 5 | 1.30.0 |
-| 6 | 1.31.0 |
-| 7 | 1.32.0 |
-| 8 | 1.33.0 |
-| 9 | 1.34.0 |
-| 10 | 1.35.0 |
+| Step | url-shortener | dms |
+|---|---|---|
+| 1 | 0.4.0 | next |
+| 2 | 0.8.0 | next |
+| 3 | 1.28.1 (the chart is first published at 1.26.1; 1.28.1 is the first release a platform can render it from: `traces.*` arrived in 1.28.0, `job.annotations` in 1.28.1) | not yet |
+| 4 | 1.29.1 | not yet |
+| 5 | 1.30.0 | not yet |
+| 6 | 1.31.0 | not yet |
+| 7 | 1.32.0 | not yet |
+| 8 | 1.33.0 | not yet |
+| 9 | 1.34.0 | not yet |
+| 10 | 1.35.0 | not yet |
+
+"Not yet" is a step the product's charts do not read: its number stops below
+it, and a platform renders none of that step's keys for it. The numbers are
+cumulative, so a product that does one of a later step's things under its own
+keys (a database client that verifies the server certificate, a ServiceAccount
+per component) still cannot declare that step until it has read every step
+before it. A product's first release of a step is written as `next` in the pull
+request that adds the reading, and replaced by the release's version when it is
+cut.
 
 A product's current number is in its charts' `Chart.yaml`; the examples
 under `examples/` declare it and a test holds them to this document.

@@ -50,6 +50,12 @@ subjects under them are the GitHub Release's own list.
   (`docs/decisions/0009-charts-pass-config-through-and-share-a-library.md`)
   records why. A chart that is not a service chart is unaffected.
 
+- **`docs/contracts/delivery-interface.md` section 4 gains a column per
+  product, and the second product, dms, starts at step 2.** Its charts read
+  the explicit interface and `installName` beside their older keys, and
+  declare interface 2; steps 3 to 10 are not yet read. A platform that
+  implements the interface needs nothing new for this: the steps are the same.
+
 ### Charts
 
 - **The release publishes `service-lib` from `charts/service-lib`, with the
