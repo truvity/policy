@@ -20,6 +20,18 @@ subjects under them are the GitHub Release's own list.
   delivers these charts must know the steps; nothing changes for a platform
   that does not. `platform.md` section 10 points at it.
 
+- **C1 gains the mirror chart.** A chart that republishes a third-party
+  artifact unchanged (vendored CRDs) carries the upstream component's
+  version instead of `0.0.0`, declared in `Chart.yaml` as
+  `annotations: {truvity.io/mirror: "<owner>/<repo>@<version>"}`; `version`
+  and `appVersion` must equal that version, and the release publishes it
+  once at that version, never overwriting. Every other chart is still
+  `0.0.0`. It is a declaration, not an exemption: nothing goes in
+  `.github/policy-conformance.yaml`. The check is in `truvity/ci-actions`
+  `policy-conformance`; a repository that was exempting such a chart from C1
+  can drop the exemption once it pins a `policy-conformance` that knows the
+  annotation.
+
 ### Charts
 
 - **The three url-shortener charts carry
