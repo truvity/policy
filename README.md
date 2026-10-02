@@ -165,6 +165,8 @@ they fit together. The contracts:
 - [service](docs/contracts/service.md) — the process boundary
 - [config](docs/contracts/config.md) — one typed configuration per binary
 - [platform](docs/contracts/platform.md) — what a service asks of what runs it
+- [delivery interface](docs/contracts/delivery-interface.md) — the one number a
+  chart declares so a platform hands it only what it can take
 - [release](docs/contracts/release.md) — one tag, what a version means
 - [component](docs/contracts/component.md) — the rules C1–C14 for every
   public repository that ships charts, images, libraries, CLIs or actions

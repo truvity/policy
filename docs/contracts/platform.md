@@ -217,6 +217,10 @@ The example in this repository is two charts, and the split is load-bearing
 created its own database could never migrate it. So the interface is two
 interfaces.
 
+The order in which the menu grew, and the number a chart declares so that a
+platform hands it only the keys it can take, is
+[delivery-interface.md](delivery-interface.md).
+
 The tables below are the full menu, not a checklist every chart fills in. A
 chart declares in its own schema only the keys it actually reads — a chart
 with no code that verifies a bearer token itself has no reason to accept

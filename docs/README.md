@@ -15,6 +15,9 @@ The index, by what you are here to do.
 - [contracts/platform.md](contracts/platform.md) — the other side of the
   seam: what a service asks of whatever runs it, and what that platform owes
   back. Read it before writing a chart.
+- [contracts/delivery-interface.md](contracts/delivery-interface.md) — the
+  order in which the platform contract's menu grew, and the one number a
+  chart declares so that a platform hands it only what it can take.
 - [guides/](guides/README.md) — how to satisfy the above, one guide per
   aspect, each pointing at the file in the worked example where it is done.
 
