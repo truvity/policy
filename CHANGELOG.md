@@ -4,23 +4,7 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
-## Unreleased
-
-### Fixes
-
-- **The URL shortener's `urls` and `redirect` no longer crash-loop while the
-  database is briefly away.** Both used to exit on the first refused
-  connection at start-up, so a one-minute database reload became a
-  CrashLoopBackOff that outlasted it. They now start the probe listener first
-  and retry the connection with exponential back-off and jitter, logging each
-  attempt at WARN. Until it connects, `/health/ready` answers 503 and
-  `/health/live` keeps answering 200, so the pod waits unready rather than
-  being restarted; SIGTERM during the wait exits cleanly. The defaults are 0.5 s
-  doubling to 10 s, for up to 3 minutes, after which the process exits with the
-  last error. Tune them with `DATABASE_CONNECT_INITIAL_BACKOFF`,
-  `DATABASE_CONNECT_MAX_BACKOFF` and `DATABASE_CONNECT_TIMEOUT` (Go durations).
-  A connection that drops after start-up already reconnected through the
-  connection pool; readiness reports the gap. No chart change.
+## v1.35.0 — 2026-10-02
 
 ### Charts
 
@@ -43,12 +27,45 @@ subjects under them are the GitHub Release's own list.
   that routes that path to a collector Service. `apiKey` is a public identifier, not a
   secret. A consumer that sets nothing sees no change. The Faro libraries load
   only when enabled.
+
+## v1.34.3 — 2026-10-02
+
+### Charts
+
 - **Every workload of `url-shortener` and `url-shortener-e2e` meets the Pod
   Security `restricted` profile.** The pods gain a `RuntimeDefault` seccomp
   profile and every container, the migration's included, sets
   `allowPrivilegeEscalation: false` and drops all capabilities. The pods
   already ran as a non-root user; nothing else about them changes, so a
   namespace can enforce `restricted` without exempting them.
+
+## v1.34.2 — 2026-10-01
+
+### Charts
+
+- **The URL shortener's migration hook resources are deleted once the hook
+  succeeds.** The migration Job and its ServiceAccount and ConfigMap kept only
+  `before-hook-creation`, so after a successful sync they lingered and ArgoCD
+  showed them as resources requiring pruning. They now also carry
+  `hook-succeeded`; a failed hook is still kept for debugging. No values change.
+
+## v1.34.1 — 2026-10-01
+
+### Fixes
+
+- **The URL shortener's `urls` and `redirect` no longer crash-loop while the
+  database is briefly away.** Both used to exit on the first refused
+  connection at start-up, so a one-minute database reload became a
+  CrashLoopBackOff that outlasted it. They now start the probe listener first
+  and retry the connection with exponential back-off and jitter, logging each
+  attempt at WARN. Until it connects, `/health/ready` answers 503 and
+  `/health/live` keeps answering 200, so the pod waits unready rather than
+  being restarted; SIGTERM during the wait exits cleanly. The defaults are 0.5 s
+  doubling to 10 s, for up to 3 minutes, after which the process exits with the
+  last error. Tune them with `DATABASE_CONNECT_INITIAL_BACKOFF`,
+  `DATABASE_CONNECT_MAX_BACKOFF` and `DATABASE_CONNECT_TIMEOUT` (Go durations).
+  A connection that drops after start-up already reconnected through the
+  connection pool; readiness reports the gap. No chart change.
 
 ## v1.34.0 — 2026-10-01
 
