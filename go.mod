@@ -33,7 +33,7 @@ require (
 	github.com/prometheus/common v0.70.1 // indirect
 	github.com/prometheus/otlptranslator v1.0.0 // indirect
 	github.com/prometheus/procfs v0.21.1 // indirect
-	github.com/truvity/ocictl v0.6.1 // indirect
+	github.com/truvity/ocictl v0.8.0 // indirect
 	github.com/urfave/cli/v3 v3.10.1 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/bridges/prometheus v0.71.0 // indirect

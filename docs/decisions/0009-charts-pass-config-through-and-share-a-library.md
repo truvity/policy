@@ -96,12 +96,14 @@ case.
 
 ### Bad
 
-- **The library is a dependency, and Helm's way of getting one is not ours.**
-  `helmctl package` does not run `helm dependency update`, so a chart that is
-  published carries a **vendored copy** of the library under `charts/`, held
-  equal to the source by a test. A copy is a second version of the truth;
-  `just vendor-charts` and the test are what keep it honest, and a chart author
-  who forgets sees a failing test rather than a chart published without it.
+- **The library is a dependency, and Helm resolves it, not us.** A chart
+  depends on `charts/service-lib` by a `file://` path and commits its
+  `Chart.lock`; the archive that resolves to is ignored by git. `helmctl package`
+  runs `helm dependency build` in the source chart when a declared dependency
+  is missing (from the lock, refusing a stale one), so a published chart carries
+  the library. The cost is a lock file to refresh (`just chart-locks`) whenever
+  the dependency changes, and a `file://` path that is relative to the chart,
+  which fixes where in the tree a chart that uses the library may live.
 - **The library has opinions.** It renders a gapless rollout, a spread across
   machines, a restricted pod security context and a pre-stop delay, and a chart
   that needs a different Deployment has to say what the library lacks, in the

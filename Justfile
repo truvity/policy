@@ -244,20 +244,22 @@ protos:
 chart-schemas:
     go run ./hack/compose-chart-schema examples/url-shortener/charts
 
-# Copy the library chart into the charts that package it. `helmctl package`
-# does not run `helm dependency update`, so a library that only arrived at
-# package time would be published without it: the copy is committed, and a test
-# (TestTheVendoredLibraryIsTheLibrary) holds it equal to the source.
-[doc("Copy the library chart into the charts that package it")]
-vendor-charts:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    charts=examples/url-shortener/charts
-    for chart in url-shortener; do
-        rm -rf "$charts/$chart/charts/service-lib"
-        mkdir -p "$charts/$chart/charts"
-        cp -r "$charts/service-lib" "$charts/$chart/charts/service-lib"
-    done
+# Refresh the Chart.lock of every chart that depends on the library chart
+# (charts/service-lib). The lock is committed and the archive it resolves is
+# not: `helmctl package` runs `helm dependency build` itself when the
+# dependency is missing, from this lock, and refuses a lock that disagrees with
+# Chart.yaml. Needs no network: the dependency is a path in this checkout.
+[doc("Refresh the Chart.lock of the charts that depend on the library chart")]
+chart-locks:
+    helm dependency update examples/url-shortener/charts/url-shortener
+
+# Resolve what every chart that depends on the library declares, from its
+# committed lock, and fail if the lock no longer says what Chart.yaml does.
+# Run before anything here that renders url-shortener outside the Go tests
+# (which resolve it themselves).
+[doc("Resolve the library chart dependency from the committed lock")]
+chart-deps:
+    helm dependency build --skip-refresh examples/url-shortener/charts/url-shortener
 
 # Regenerate what every loader carries from `schemas/`.
 [doc("Regenerate the schemas the loaders carry")]
@@ -269,20 +271,20 @@ schemas:
 # thing this repository exists to prevent. Needs no network: the generator
 # reads this checkout and writes into it.
 [doc("Fail if generated code was not regenerated")]
-drift: schemas protos chart-schemas vendor-charts
+drift: schemas protos chart-schemas chart-deps
     git diff --exit-code -- ts/src/schemas.generated.ts python/src/truvity_policy/schemas.py
     # The RPC code too. It is committed rather than generated at build time,
     # because a build step between a checkout and a compiler is a step that
     # has to work on every machine forever — and the first thing it breaks
     # is the editor, which cannot resolve a symbol that does not exist yet.
     git diff --exit-code -- examples/url-shortener/internal/gen
-    # The service charts' values schemas, composed from their sources, and the
-    # library chart's vendored copy (docs/guides/charts.md). Both are committed
-    # because a chart is published from the tree, and both are also held by a
-    # test that does not need this recipe to have run.
+    # The service charts' values schemas, composed from their sources
+    # (docs/guides/charts.md): committed because a chart is published from the
+    # tree, and also held by a test that does not need this recipe to have run.
+    # `chart-deps` above is the lock's half: it fails when Chart.lock is stale,
+    # and rewrites nothing.
     git diff --exit-code -- 'examples/url-shortener/charts/*/values.schema.json' \
-        'examples/url-shortener/charts/testdata/*/values.schema.json' \
-        examples/url-shortener/charts/url-shortener/charts
+        'examples/url-shortener/charts/testdata/*/values.schema.json'
 
 # The TypeScript package: install, typecheck, test, build, and check what a
 # publish would ship. NOT part of `check`, which needs nothing but the

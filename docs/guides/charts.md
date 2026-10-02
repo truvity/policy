@@ -87,26 +87,35 @@ loads. Commit both files. Two things to know:
   chart that depends on the library allows an empty `service-lib`, as above.
 - The source is not part of the chart: list it in `.helmignore`.
 
-## The library is vendored
+## The library is a dependency
 
-A chart declares the dependency and carries it:
+The library lives at the repository root, [`charts/service-lib`](../../charts/service-lib).
+A chart declares it by path and commits the lock:
 
 ```yaml
 dependencies:
   - name: service-lib
     version: 0.0.0
-    repository: ""
+    repository: file://../../../../charts/service-lib   # relative to the chart
 ```
 
-with a copy of the library at `charts/service-lib`, made by `just vendor-charts`
-(add your chart to that recipe). The copy is committed because the release tool,
-`helmctl package`, does not run `helm dependency update`: a library that only
-arrived at package time would be published without it. A test holds the copy
-equal to the source (`TestTheVendoredLibraryIsTheLibrary` is the one to copy).
+`just chart-locks` runs `helm dependency update` for the charts that have one
+and writes `Chart.lock`; commit it. What the lock resolves to, `charts/*.tgz`
+inside the chart, is ignored by git. Nothing else is needed to publish:
+`helmctl package` runs `helm dependency build` in the source chart when the
+dependency is missing, from the committed lock, and refuses a stale one, so the
+published chart carries the library. `just chart-deps` does the same locally
+and fails on a stale lock (it is part of `drift`).
 
-Release the library beside the charts that use it by listing it in the
-release workflow's `charts`; it is a `type: library` chart with a `values.yaml`
-of `{}`, which the release tool needs in order to bake in a manifest.
+Tests render the chart where the repository does: they lay the chart and the
+library out at their real relative paths and run `helm dependency build`
+(see `chartDir` in the example's `chart_test.go`).
+
+Release the library beside the charts that use it by listing it in the release
+workflow's `charts` as a path from the repository root, `charts/service-lib`
+(a plain entry is a name under `chart-root`); it is a `type: library` chart with
+a `values.yaml` of `{}`, which the release tool needs in order to bake in a
+manifest.
 
 ## The tests a chart owes
 

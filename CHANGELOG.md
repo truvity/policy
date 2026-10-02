@@ -22,9 +22,9 @@ subjects under them are the GitHub Release's own list.
   `checksum/config` annotation so a changed file restarts the pods. Environment
   variables are OpenTelemetry's and the declared secrets, nothing else. The
   library is released beside the other charts under the same tag, as a
-  `type: library` chart; a chart that uses it vendors a copy (`just
-  vendor-charts`), because the release tool does not run `helm dependency
-  update`. The chart guide is `docs/guides/charts.md`.
+  `type: library` chart; it lives at `charts/service-lib`, a chart depends on it by a `file://` path and
+  commits its `Chart.lock`, and `helmctl package` resolves it with `helm
+  dependency build`. The chart guide is `docs/guides/charts.md`.
 - **`schemas/fragments/platform.json`, the shape of the `platform` block, and
   `chartschema`, which composes a chart's `values.schema.json` from it.** The
   composed schema is the platform schema plus `config` as the service's own
@@ -70,9 +70,10 @@ subjects under them are the GitHub Release's own list.
   migration's ServiceAccount and ConfigMap carry an
   `app.kubernetes.io/component: migrate` label. A platform that read the shared
   ConfigMap by name, which nothing here does, must read the per-component one.
-  The chart now packages a vendored copy of the library under
-  `charts/service-lib` and allows an empty `service-lib` key in its values
-  (Helm adds one for every sub-chart); nobody sets it.
+  The chart now depends on the library at `charts/service-lib`
+  (`Chart.lock` committed), so a published chart carries it, and allows an empty
+  `service-lib` key in its values (Helm adds one for every sub-chart); nobody
+  sets it.
 
 ## v1.37.0 — 2026-10-02
 

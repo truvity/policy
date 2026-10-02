@@ -61,3 +61,10 @@ kotlin/.gradle/
 /gradle.properties
 examples/url-shortener/stat/build/
 examples/url-shortener/stat/.gradle/
+
+# What `helm dependency build` resolves into a chart: archives of the
+# dependencies a Chart.lock names. The lock is committed; what it resolves to is
+# not, because the library lives at charts/service-lib and a copy is a second
+# version of it.
+examples/url-shortener/charts/*/charts/
+examples/url-shortener/charts/testdata/*/charts/
