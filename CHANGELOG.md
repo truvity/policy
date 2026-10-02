@@ -6,6 +6,8 @@ subjects under them are the GitHub Release's own list.
 
 ## Unreleased
 
+## v1.37.0 — 2026-10-02
+
 ### Contracts
 
 - **New: `docs/contracts/delivery-interface.md`, the delivery interface
