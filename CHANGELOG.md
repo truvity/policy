@@ -82,6 +82,21 @@ subjects under them are the GitHub Release's own list.
   `service-lib` key in its values (Helm adds one for every sub-chart); nobody
   sets it.
 
+### Components
+
+- **The URL shortener's page builds hidden source maps, keeps them out of the
+  image, and the release can push them.** `vite build` writes maps without
+  referencing them; the build moves them to `dist-sourcemaps/` at the
+  repository root, each at its served path, and fails if any `*.map` remains
+  under `dist/`. The release passes `sourcemaps-image` to the shared release
+  workflow (ci-workflows v3.20.0), **off** until the repository variable
+  `SOURCEMAPS_ENABLED` is `true`: `smctl push` then runs right after
+  GoReleaser, in the same job, and publishes the maps as an OCI artifact to
+  `ghcr.io/<owner>/sourcemaps/url-shortener`, tagged with the release version.
+  The page now reports that same version as Faro's `app.version` and
+  `app.release` (it was the commit id), so a browser error finds its maps.
+  See `docs/guides/source-maps.md`. No image or chart change.
+
 ## v1.37.0 — 2026-10-02
 
 ### Contracts

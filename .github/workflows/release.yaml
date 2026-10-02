@@ -73,6 +73,13 @@ jobs:
       # repository's root — `chart-root` exists so that they can.
       charts: '["url-shortener", "url-shortener-infra", "url-shortener-e2e", "charts/service-lib"]'
       chart-root: examples/url-shortener/charts
+      # The page's source maps, pushed right after GoReleaser in the same job
+      # to ghcr.io/<owner>/sourcemaps/url-shortener:<release version>. OFF
+      # until the repository variable SOURCEMAPS_ENABLED is `true`. The image
+      # is called `web`; the application (and the Faro app name) is
+      # `url-shortener`, hence the app override. See docs/guides/source-maps.md.
+      sourcemaps-image: ${{ vars.SOURCEMAPS_ENABLED == 'true' && 'web' || '' }}
+      sourcemaps-app: url-shortener
 
   packages:
     needs: [release]

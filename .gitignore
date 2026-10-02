@@ -68,3 +68,7 @@ examples/url-shortener/stat/.gradle/
 # version of it.
 examples/url-shortener/charts/*/charts/
 examples/url-shortener/charts/testdata/*/charts/
+
+# Source maps, moved out of the web image by the page build; pushed by the
+# release with smctl, never committed or imaged.
+/dist-sourcemaps/

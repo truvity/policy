@@ -21,6 +21,7 @@ that look like something else.
 | [logging-and-telemetry.md](logging-and-telemetry.md) | one stream, one level, where traces go, and how they stay whole |
 | [exposure.md](exposure.md) | the route, its parent, and why its rules are named |
 | [releases-and-images.md](releases-and-images.md) | one tag, every platform, no build step in the image |
+| [source-maps.md](source-maps.md) | keeping a page's source maps out of the image, and pushing them with the release |
 | [testing.md](testing.md) | what the gate proves, and what only a cluster can |
 | [transport-security.md](transport-security.md) | mutual TLS, whose identity, and the three modes |
 | [twelve-factor.md](twelve-factor.md) | the factors mapped, and the two deviations argued |
