@@ -4,6 +4,60 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+### Features
+
+- **The URL shortener's `urls`, `redirect` and migration connect through the
+  platform's PostgreSQL client library.** The three binaries used to carry a
+  copy each of a helper that put a password into a connection URL, and a
+  connection URL is a string a parameter can be dropped from on its way to the
+  driver: a dropped `sslrootcert` turns `verify-full` into a connection that
+  does not verify. They now build one client from parts
+  (`pgclient.New`), hand gorm the same pool, and the client enforces
+  `verify-full` with the given root as the only trust, re-reads the root and
+  the password file for every new connection (a rotated Secret reaches a
+  running pod without a restart), and retries a connection broken by a
+  failover. The three copies, the connection URL and the `database` block of
+  the three configuration files are gone. Query tracing is unchanged: the
+  service's own gorm plugin still records each statement, with placeholders and
+  never arguments, and the client's own pgx tracer is deliberately not
+  enabled, so no statement is traced twice.
+
+### Behaviour change
+
+- **The URL shortener's database connection is `verify-full` only, and takes a
+  root.** The chart's `database.tls.mode: require` (the old default, which
+  encrypted and verified nobody) is refused, and
+  `database.tls.rootCA.configMapName` is now required; `mode: verify-full`
+  stays accepted so a platform that already sets it keeps rendering, and
+  nothing else about `database.host`, `.name`, `.clusterDomain`, `.tls.rootCA.key`
+  and the two roles' `passwordSecret` and `passwordKey` changes. A release that
+  has no such root cannot move to this version until the platform provides
+  one. The `database` key is removed from `schemas/urls.json`,
+  `schemas/redirect.json` and `schemas/migrate.json` (a file that still has it
+  is refused by name); the shared `fragments/postgres.json` is untouched.
+  The services now apply the client's defaults: a 30 s statement timeout and a
+  60 s idle-in-transaction timeout (the migration gets 10 minutes), a 30 minute
+  connection lifetime. Start-up still waits for the database up to 3 minutes;
+  `CNPG_CLIENT_RETRY_ATTEMPTS`, `_RETRY_MAX_DELAY` and `_RETRY_BUDGET` replace
+  `DATABASE_CONNECT_INITIAL_BACKOFF`, `DATABASE_CONNECT_MAX_BACKOFF` and
+  `DATABASE_CONNECT_TIMEOUT`, which nothing reads any more.
+
+### Charts
+
+- **The URL shortener's workloads that dial the database get the libpq
+  environment instead of a URL and a password variable.** `urls`, `redirect`
+  and the migration render `PGHOST` (the fully-qualified service name),
+  `PGPORT`, `PGDATABASE`, `PGUSER` (the runtime role, or the owner for the
+  migration), `PGSSLMODE=verify-full`, `PGSSLROOTCERT`, `PGAPPNAME` and
+  `CNPG_CLIENT_POOL_MAX` (20 for `urls`, 10 for `redirect`, what
+  `database.maxConnections` was), plus `CNPG_CLIENT_PASSWORD_FILE`. The
+  password is the same Secret and key as before, now projected as a file in a
+  directory mount (`/etc/url-shortener-pg-password`) instead of a variable
+  (`DATABASE_PASSWORD`, removed). `stat`, `log` and `web` still hold no
+  database credential.
+
 ## v1.35.0 — 2026-10-02
 
 ### Charts
