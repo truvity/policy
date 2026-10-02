@@ -32,6 +32,17 @@ subjects under them are the GitHub Release's own list.
   default), `enforce` or `off`, and `web.csp.reportUri` adds a `report-uri`.
   The same keys are a new optional `csp` block in `schemas/web.json`; a
   consumer that sets none sees the report-only header and no other change.
+- **The URL shortener's front end can report browser telemetry to a Grafana
+  Faro collector, off by default.** New optional `web.faro` values
+  (`enabled`, `collectorUrl`, `apiKey`, `appName`, `environment`,
+  `sampleRate`) render the same optional `faro` block in `schemas/web.json`;
+  the server writes its public part into the page. The collector defaults to
+  the same-origin path `/faro/collect` (so `connect-src 'self'` suffices); an
+  absolute HTTPS URL is accepted and its origin is added to `connect-src`.
+  `route.faro` (off by default) renders a public, POST-only, exact-path rule
+  that routes that path to a collector Service. `apiKey` is a public identifier, not a
+  secret. A consumer that sets nothing sees no change. The Faro libraries load
+  only when enabled.
 - **Every workload of `url-shortener` and `url-shortener-e2e` meets the Pod
   Security `restricted` profile.** The pods gain a `RuntimeDefault` seccomp
   profile and every container, the migration's included, sets
