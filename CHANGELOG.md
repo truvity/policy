@@ -6,6 +6,74 @@ subjects under them are the GitHub Release's own list.
 
 ## Unreleased
 
+### Features
+
+- **A library chart, `service-lib`, and a convention for the charts that use
+  it.** A service chart's values are now two blocks: `config`, which is exactly
+  the service's own configuration schema and is rendered into its ConfigMap
+  verbatim, and `platform`, which is everything the platform provides (image,
+  replicas, resources, the account, probes, where the identity mounts, declared
+  secrets, telemetry). From them `service-lib` renders the Deployment, a
+  ServiceAccount per component (never `default`), the Service and the ConfigMap,
+  and it **derives** from the file what the file already says: the container
+  and Service ports from `config.listen`, `config.probes` and
+  `config.tls.address`, the probes' port from the probes listener, the identity
+  mount from `config.tls`, the grace period from `config.drain.seconds`, and a
+  `checksum/config` annotation so a changed file restarts the pods. Environment
+  variables are OpenTelemetry's and the declared secrets, nothing else. The
+  library is released beside the other charts under the same tag, as a
+  `type: library` chart; a chart that uses it vendors a copy (`just
+  vendor-charts`), because the release tool does not run `helm dependency
+  update`. The chart guide is `docs/guides/charts.md`.
+- **`schemas/fragments/platform.json`, the shape of the `platform` block, and
+  `chartschema`, which composes a chart's `values.schema.json` from it.** The
+  composed schema is the platform schema plus `config` as the service's own
+  schema, bundled into one document Helm can validate offline (every `$ref`
+  embedded under `$defs` by its `$id`). A chart commits a
+  `values.schema.src.json` and `just chart-schemas` writes the schema beside it;
+  `just drift` fails when they disagree.
+- **`conformance` checks for the convention:** `ConfigMapEqualsConfig`,
+  `ChecksumFollowsConfig`, `PortsEqualConfig`, `EnvIsDeclared` and
+  `ChartSchemaIsComposed`, each computed from the chart's own `config` in Go
+  and never by asking the template. `testdata/service-example` is the smallest
+  chart that follows the convention, and renders under all of them.
+
+### Contracts
+
+- **The component contract is 1.1: C15, C16 and C17.** A service chart renders
+  its platform pieces with the library chart (C15), passes `config` through
+  verbatim (C16) and has a composed values schema (C17), each checked by the
+  chart's own tests with the helpers above. One exception is named so it does
+  not grow: a product chart that derives each component's configuration from
+  the release (stream and subject names, callers' accounts) builds it in one
+  template and hands the library the same two dicts. Decision 0009
+  (`docs/decisions/0009-charts-pass-config-through-and-share-a-library.md`)
+  records why. A chart that is not a service chart is unaffected.
+
+### Charts
+
+- **The `url-shortener` chart renders its components with `service-lib`, and
+  renders the same objects.** Its values, its schema and its defaults are
+  unchanged, so no values file moves. Compared as parsed objects, before and
+  after, for the chart's three example values files and for twelve further
+  variants (every transport mode, the broker's identity and token, the archive
+  credentials, telemetry, the front end's policy and browser telemetry, a
+  qualified database host, accounts renamed or not created, the route, zero
+  replicas and a zero drain), the only differences are the three below, and the
+  values the chart refused it still refuses with the same message. Each component's configuration still
+  reaches its process as the same document, validated by the same schema. The
+  differences: **each component has its own ConfigMap**
+  (`<release>-<component>-config`, holding its one file at the same path)
+  instead of one shared `<release>-config` holding all five, so a pod mounts
+  only its own file and a change to one file restarts that component alone;
+  the `checksum/config` pod annotation is therefore a different hash; and the
+  migration's ServiceAccount and ConfigMap carry an
+  `app.kubernetes.io/component: migrate` label. A platform that read the shared
+  ConfigMap by name, which nothing here does, must read the per-component one.
+  The chart now packages a vendored copy of the library under
+  `charts/service-lib` and allows an empty `service-lib` key in its values
+  (Helm adds one for every sub-chart); nobody sets it.
+
 ## v1.37.0 — 2026-10-02
 
 ### Contracts

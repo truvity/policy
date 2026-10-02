@@ -14,7 +14,7 @@ losing. And rules are named because a policy attaches to a rule *by name*.
 
 | Concern | Where |
 |---|---|
-| the route | the `HTTPRoute` at the end of [`templates/redirect.yaml`](../../examples/url-shortener/charts/url-shortener/templates/redirect.yaml) |
+| the route | the `HTTPRoute` in [`templates/route.yaml`](../../examples/url-shortener/charts/url-shortener/templates/route.yaml) |
 | its values | the `route` block in [`values.yaml`](../../examples/url-shortener/charts/url-shortener/values.yaml) |
 | the refusal when a parent is missing | the negative fixture in `charts/testdata/invalid/` |
 | the test that every rule is named | the chart tests in [`charts/`](../../examples/url-shortener/charts/) |
