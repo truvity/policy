@@ -48,10 +48,12 @@ jobs:
       # chart, `service-lib`, which renders nothing of its own: it is what
       # url-shortener renders its components with (docs/guides/charts.md), and
       # it is published beside it so that another repository's service chart
-      # can depend on the same bytes this one is tested against. The copy
-      # packaged INSIDE url-shortener is vendored in the tree and held equal to
-      # it by a test, because `helmctl package` does not run `helm dependency
-      # update`.
+      # can depend on the same bytes this one is tested against. It lives at the
+      # repository root, `charts/service-lib`, because it belongs to no
+      # example: an entry with a `/` is a path from the repository root, and
+      # `chart-root` does not apply to it. url-shortener depends on it through
+      # `file://` and its committed Chart.lock; `helmctl package` resolves it
+      # (`helm dependency build`) when it is missing from charts/.
       #
       # The other three are the product. url-shortener and
       # url-shortener-infra are a pair rather than a chart and an extra —
@@ -69,7 +71,7 @@ jobs:
       #
       # They live with the components they deploy rather than at this
       # repository's root — `chart-root` exists so that they can.
-      charts: '["url-shortener", "url-shortener-infra", "url-shortener-e2e", "service-lib"]'
+      charts: '["url-shortener", "url-shortener-infra", "url-shortener-e2e", "charts/service-lib"]'
       chart-root: examples/url-shortener/charts
 
   packages:

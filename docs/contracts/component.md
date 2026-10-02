@@ -486,7 +486,7 @@ exempt. Review for a chart in another repository.
 **What.** A chart that deploys a service (a process [service.md](service.md)
 describes) renders its Deployment, its ServiceAccount, its Service and its
 ConfigMap with the library chart `service-lib`
-([`examples/url-shortener/charts/service-lib`](../../examples/url-shortener/charts/service-lib)),
+([`charts/service-lib`](../../charts/service-lib)),
 from a `platform` block and a `config` block
 ([0009](../decisions/0009-charts-pass-config-through-and-share-a-library.md)).
 No template of the chart writes a container port, a probe, a ServiceAccount,
@@ -503,24 +503,26 @@ secret. In particular:
   (`platform.env`): the file is the only structural input;
 - **every component has its own ServiceAccount**, and `default` is refused
   (C14, which the library enforces for its own pods);
-- the chart **depends on** the library as `service-lib`, version `0.0.0`, with
-  an empty `repository`, and carries it **vendored** under `charts/service-lib`
-  (`just vendor-charts`), because the release tool does not run
-  `helm dependency update`.
+- the chart **depends on** the library as `service-lib`, version `0.0.0`, by a
+  `file://` path to `charts/service-lib`, and commits its `Chart.lock`; what the
+  lock resolves to is never committed (the release tool, `helmctl package`,
+  runs `helm dependency build` itself when the dependency is missing, from
+  that lock, and refuses a stale one).
 
 **Why.** The same hundred lines per component, in every chart, differing in a
 port number, is where the port number goes wrong: the container, the Service
 and the file are three spellings of one fact. A library makes the fact one
 spelling, and makes "what does a pod of ours look like" a single change in a
-single place. The vendored copy is a second version of the truth, which is
-why it is checked.
+single place. A copy of it in each chart would be a second version of the
+truth, which is why a chart resolves the one library from its lock instead.
 
 **Conformance.** The chart's own render test: `conformance.PortsEqualConfig`
 (the container ports and the Service's equal what `config` binds, and the
 probes are on the probes port), `conformance.EnvIsDeclared` (no environment
 variable is neither telemetry, a declared secret nor one the chart allows), and
-a test that the vendored copy equals the source
-(`examples/url-shortener`: `TestTheVendoredLibraryIsTheLibrary`). The library
+a test that the chart declares the library by path and commits its lock
+(`examples/url-shortener`: `TestTheApplicationChartResolvesTheLibraryFromItsLock`),
+with `just chart-deps` (and so `drift`) failing on a stale lock. The library
 is a `type: library` chart, exempt from C2 as that rule says, and from C3 for
 the same reason: it renders only through the charts that include it, whose
 goldens are where it is held. Review for a chart in another repository.
@@ -749,6 +751,6 @@ later is in scope by the rule, not by being added here.
 | C12 pinned installs | `policy-conformance`: no `@latest`, no unversioned `oci://` install |
 | C13 estate facts | `policy-conformance`: the five checks above (`domain`, `tenancy`, `env`, `region`, `ticket`); review for the rest; the leak canary catches the hostname, account and registry half |
 | C14 ServiceAccount per component | the chart's own render test; review elsewhere |
-| C15 library chart | the chart's own render tests (`PortsEqualConfig`, `EnvIsDeclared`) and the vendored-copy test; review elsewhere |
+| C15 library chart | the chart's own render tests (`PortsEqualConfig`, `EnvIsDeclared`) and the lock test; review elsewhere |
 | C16 configuration verbatim | the chart's own render test (`ConfigMapEqualsConfig`, `ChecksumFollowsConfig`, `ValidDocument`); review of a product chart's mapping |
 | C17 composed schema | the chart's own test (`ChartSchemaIsComposed`) and the `drift` recipe |

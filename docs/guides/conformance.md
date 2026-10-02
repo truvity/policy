@@ -17,7 +17,7 @@ gate runs and *where* a release is published, never in which rules apply.
 | service | no build step in a runtime image | the image lint; the release builds every platform in one job |
 | [config](../contracts/config.md) | the binary and the chart read one schema | the chart's tests validate what they render with the binary's schema |
 | config | strictness | a negative fixture per schema: an unknown key must fail |
-| [component](../contracts/component.md) | a service chart renders its Deployment, ServiceAccount, Service and ConfigMap with the library chart, and every port is derived from the file (C15) | chart test: `PortsEqualConfig`, `EnvIsDeclared`, and the vendored library equals its source; see [charts.md](charts.md) |
+| [component](../contracts/component.md) | a service chart renders its Deployment, ServiceAccount, Service and ConfigMap with the library chart, and every port is derived from the file (C15) | chart test: `PortsEqualConfig`, `EnvIsDeclared`, and the chart resolves the library from a committed lock; see [charts.md](charts.md) |
 | component | a service chart's configuration is `.Values.config`, verbatim (C16) | chart test: `ConfigMapEqualsConfig`, `ChecksumFollowsConfig` |
 | component | a service chart's values schema is composed from the platform schema and the service's own (C17) | chart test: `ChartSchemaIsComposed`; the `drift` recipe |
 | [repository](../contracts/repository.md) | the gate needs no credentials, no container and no cluster | CI runs recipes by name; a recipe needing more is its own job |
