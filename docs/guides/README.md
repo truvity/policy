@@ -12,6 +12,7 @@ that look like something else.
 | Guide | Covers |
 |---|---|
 | [configuration.md](configuration.md) | one file, one schema, secrets by name |
+| [charts.md](charts.md) | writing a service chart: `platform` and `config`, the library chart, the composed schema |
 | [rpc.md](rpc.md) | which boundary is an RPC, one handler for three protocols |
 | [object-storage.md](object-storage.md) | a store as an endpoint, and naming an object so a retry is safe |
 | [identity-and-secrets.md](identity-and-secrets.md) | the account a workload runs as, and how a secret reaches it |

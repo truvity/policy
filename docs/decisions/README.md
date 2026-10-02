@@ -26,3 +26,4 @@ sales pitch.
 | [0006](0006-telemetry-is-the-sdk-environment.md) | Telemetry is configured by OpenTelemetry's own environment |
 | [0007](0007-no-mesh-identity-in-process.md) | No service mesh; identity is the account, terminated in process |
 | [0008](0008-twelve-factor-is-a-map-not-a-label.md) | The twelve factors are a map to read this by, not a label to claim |
+| [0009](0009-charts-pass-config-through-and-share-a-library.md) | Charts pass configuration through verbatim; the platform pieces come from a library chart |

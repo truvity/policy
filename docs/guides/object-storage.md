@@ -40,7 +40,7 @@ The `bucket` fragment, in [`schemas/fragments/bucket.json`](../../schemas/fragme
 | Kotlin | the cloud vendor's v2 SDK; see [canon/kotlin.md](../canon/kotlin.md) | |
 | TypeScript | follows | |
 
-The chart renders it in [`config.yaml`](../../examples/url-shortener/charts/url-shortener/templates/config.yaml),
+The chart builds it in [`_components.tpl`](../../examples/url-shortener/charts/url-shortener/templates/_components.tpl),
 and the local cluster's store is an ordinary Deployment in
 [`hack/kind/localstack.yaml`](../../hack/kind/localstack.yaml).
 

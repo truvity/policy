@@ -1,6 +1,6 @@
 # The component contract
 
-Version: 1.0 · Effective: 2026-09-29 · Changes: see [CHANGELOG](../../CHANGELOG.md)
+Version: 1.1 · Effective: 2026-10-02 · Changes: see [CHANGELOG](../../CHANGELOG.md)
 
 **Normative.** What a public repository that ships *mechanism* looks like,
 so that a stranger who has read one can install, audit and change the next
@@ -26,15 +26,16 @@ contradicted each other on two; this page decides both (see
 here rather than restating a rule, because a restated rule is a second
 version of it.
 
-Every rule has an ID, **C1** to **C14**, so that a review comment, a
+Every rule has an ID, **C1** to **C17**, so that a review comment, a
 ticket and a failing check can say "C5" instead of paraphrasing. Each says
 what must be true, why, and how it is checked. **C1 to C13 are checked
 mechanically** by the `policy-conformance` action in `truvity/ci-actions`,
 which reads a checkout and reports each rule by its ID; **C13 is checked
 only for the five shapes a script can tell from a neutral default with
 confidence, and the rest is review**, because telling an estate's fact from a
-neutral default in general takes a reader; and **C14 is checked by the
-chart's own tests** in the repository that ships the chart.
+neutral default in general takes a reader; and **C14 to C17 are checked by
+the chart's own tests** in the repository that ships the chart, with the
+helpers in [`conformance`](../../conformance) that exist for the purpose.
 
 ## Scope
 
@@ -480,6 +481,117 @@ exempt. Review for a chart in another repository.
 
 ---
 
+## C15. A service chart renders its platform pieces with the library chart
+
+**What.** A chart that deploys a service (a process [service.md](service.md)
+describes) renders its Deployment, its ServiceAccount, its Service and its
+ConfigMap with the library chart `service-lib`
+([`examples/url-shortener/charts/service-lib`](../../examples/url-shortener/charts/service-lib)),
+from a `platform` block and a `config` block
+([0009](../decisions/0009-charts-pass-config-through-and-share-a-library.md)).
+No template of the chart writes a container port, a probe, a ServiceAccount,
+the identity mount, the telemetry variables or the environment variable of a
+secret. In particular:
+
+- **ports are derived from the file**: the container's ports and the
+  Service's are `config.listen`, `config.probes` and, under a permissive
+  transport, `config.tls.address`, and nothing else, so that they always
+  equal what the binary listens on;
+- **the environment is the OpenTelemetry variables and the declared
+  secrets** (`platform.secrets`, each a variable name and the Secret and key it
+  comes from), and nothing else but what a platform client library reads
+  (`platform.env`): the file is the only structural input;
+- **every component has its own ServiceAccount**, and `default` is refused
+  (C14, which the library enforces for its own pods);
+- the chart **depends on** the library as `service-lib`, version `0.0.0`, with
+  an empty `repository`, and carries it **vendored** under `charts/service-lib`
+  (`just vendor-charts`), because the release tool does not run
+  `helm dependency update`.
+
+**Why.** The same hundred lines per component, in every chart, differing in a
+port number, is where the port number goes wrong: the container, the Service
+and the file are three spellings of one fact. A library makes the fact one
+spelling, and makes "what does a pod of ours look like" a single change in a
+single place. The vendored copy is a second version of the truth, which is
+why it is checked.
+
+**Conformance.** The chart's own render test: `conformance.PortsEqualConfig`
+(the container ports and the Service's equal what `config` binds, and the
+probes are on the probes port), `conformance.EnvIsDeclared` (no environment
+variable is neither telemetry, a declared secret nor one the chart allows), and
+a test that the vendored copy equals the source
+(`examples/url-shortener`: `TestTheVendoredLibraryIsTheLibrary`). The library
+is a `type: library` chart, exempt from C2 as that rule says, and from C3 for
+the same reason: it renders only through the charts that include it, whose
+goldens are where it is held. Review for a chart in another repository.
+
+## C16. A service chart passes its configuration through verbatim
+
+**What.** A service chart's values are `platform` and `config` and nothing
+else of the service's own. `config` is **exactly the service's configuration
+schema**, and the chart renders it into the ConfigMap the process reads as the
+YAML of `.Values.config`: no key renamed, none added, none given a default in a
+template, none dropped. The rendered Deployment carries a `checksum/config`
+annotation of that file, so a change to it restarts the pods.
+
+**One exception, named so it does not grow: the product chart.** A chart that
+wires several components to each other and must agree with itself on what is
+**derived** from the release (a stream name from the namespace and the install
+name, a caller's account from the release name, the address of one component
+from another's transport mode) may take product-level values and build each
+component's `platform` and `config` from them. It does so in **one** template,
+and ends it at a dict handed to the library: the library still renders `config`
+verbatim from what it was given, and still derives everything it derives. Such
+a chart is held to what survives the mapping (C15's ports, environment and
+checksum checks, on the file it built, and the schema validation of that file
+against the binary's own schema) and to review of the mapping itself. The worked
+example's application chart is the one such chart here.
+
+**Why.** A template that writes the file is a second schema, and a second
+schema drifts: a key the binary stopped reading keeps being rendered, and a
+default in the template is one nobody chose. Rendering `config` as it came makes
+the chart unable to disagree with the binary, and the values schema (C17) the
+same document as the binary's. The exception exists because a literal in a values
+file cannot be computed from the release it is installed into, and a name two
+components must share, typed twice, is how two installs find each other's
+stream.
+
+**Conformance.** The chart's own render test: `conformance.ConfigMapEqualsConfig`
+(the file the render puts in the ConfigMap is exactly the chart's `config`,
+parsed, for the default render and for one that sets every value),
+`conformance.ChecksumFollowsConfig` (the pod annotation is the checksum of the
+file) and `conformance.ValidDocument` with the service's own schema
+(`examples/url-shortener`: `TestAFollowingChartRendersItsConfigurationVerbatim`
+on the example chart, `TestWhatTheChartRendersIsWhatTheBinariesAccept` on the
+product chart). Review for the mapping of a product chart.
+
+## C17. A service chart's values schema is composed, not written
+
+**What.** A service chart's `values.schema.json` is the platform schema
+([`schemas/fragments/platform.json`](../../schemas/fragments/platform.json)) as
+`platform` and the service's own schema as `config` (a `$ref`), bundled into one
+document by [`chartschema`](../../chartschema) from a `values.schema.src.json`
+committed beside it. Both files are committed; `just chart-schemas` rewrites the
+first from the second, and `just drift` fails when they disagree. The schema
+stays strict as C2 asks, because both parts are.
+
+A product chart (C16) keeps a hand-written schema for the values it takes, which
+C2 holds to the same strictness; it is not composed because its values are not
+the service's.
+
+**Why.** The schema Helm validates the values with and the schema the binary
+validates its file with must be one document, or a values file passes one and
+fails the other, in a cluster. A bundled copy is not editable by hand without a
+test noticing, which is the point of committing it.
+
+**Conformance.** The chart's own test: `conformance.ChartSchemaIsComposed` for
+every `values.schema.src.json` (`examples/url-shortener`:
+`TestEveryCommittedChartSchemaIsTheComposedOne`), and the `drift` recipe.
+`chartschema`'s own tests prove the composed schema is self-contained (it refers
+to nothing Helm would have to fetch) and refuses what the sources do.
+
+---
+
 ## Exemptions
 
 A rule can be wrong for a repository's *kind* without being wrong in
@@ -637,3 +749,6 @@ later is in scope by the rule, not by being added here.
 | C12 pinned installs | `policy-conformance`: no `@latest`, no unversioned `oci://` install |
 | C13 estate facts | `policy-conformance`: the five checks above (`domain`, `tenancy`, `env`, `region`, `ticket`); review for the rest; the leak canary catches the hostname, account and registry half |
 | C14 ServiceAccount per component | the chart's own render test; review elsewhere |
+| C15 library chart | the chart's own render tests (`PortsEqualConfig`, `EnvIsDeclared`) and the vendored-copy test; review elsewhere |
+| C16 configuration verbatim | the chart's own render test (`ConfigMapEqualsConfig`, `ChecksumFollowsConfig`, `ValidDocument`); review of a product chart's mapping |
+| C17 composed schema | the chart's own test (`ChartSchemaIsComposed`) and the `drift` recipe |

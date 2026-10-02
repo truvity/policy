@@ -15,13 +15,13 @@ assertion.
 |---|---|---|
 | the contracts, canons, guides, decisions and [glossary](docs/glossary.md) | [`docs/`](docs/README.md) | the tagged source |
 | configuration schemas (JSON Schema) | [`schemas/`](schemas/README.md) | the tagged source, and inside every loader |
-| the Go configuration loader and conformance helpers | `config/`, `conformance/` | Go module `github.com/truvity/policy` |
+| the Go configuration loader, conformance helpers and chart schema composer | `config/`, `conformance/`, `chartschema/` | Go module `github.com/truvity/policy` |
 | the TypeScript loader | [`ts/`](ts/package.json) | `@truvity/policy` on GitHub Packages |
 | the Python loader | [`python/`](python/README.md) | a wheel attached to each GitHub Release |
 | the Kotlin loader | [`kotlin/`](kotlin/README.md) | not published: built and tested here, used from a checkout |
 | the shared lint configuration | [`lint/`](lint/README.md) | the tagged source, copied into a repository |
 | the local cluster the example is tested on | [`hack/kind/`](hack/kind/README.md) | the tagged source, fetched at a pinned tag |
-| the worked example, a URL shortener | [`examples/url-shortener/`](examples/url-shortener/README.md) | charts `url-shortener`, `url-shortener-infra` and `url-shortener-e2e` under `oci://ghcr.io/truvity/charts`; images under `ghcr.io/truvity/policy/url-shortener/` |
+| the worked example, a URL shortener | [`examples/url-shortener/`](examples/url-shortener/README.md) | charts `url-shortener`, `url-shortener-infra`, `url-shortener-e2e` and the library chart `service-lib` under `oci://ghcr.io/truvity/charts`; images under `ghcr.io/truvity/policy/url-shortener/` |
 
 One tag stamps all of them: `vX.Y.Z` releases the documents, the schemas, the
 Go module, the TypeScript package, the Python wheel and the example's charts
@@ -168,7 +168,7 @@ they fit together. The contracts:
 - [delivery interface](docs/contracts/delivery-interface.md) — the one number a
   chart declares so a platform hands it only what it can take
 - [release](docs/contracts/release.md) — one tag, what a version means
-- [component](docs/contracts/component.md) — the rules C1–C14 for every
+- [component](docs/contracts/component.md) — the rules C1–C17 for every
   public repository that ships charts, images, libraries, CLIs or actions
 
 ## The rule that makes this repository public

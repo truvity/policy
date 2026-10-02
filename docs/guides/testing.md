@@ -456,7 +456,7 @@ tls:
 instead.
 
 The prober is not granted by the application chart the way `urls` grants
-its own counter (`charts/url-shortener/templates/config.yaml`'s own
+its own counter (`charts/url-shortener/templates/_components.tpl`'s own
 comment on that rule): that wiring is for callers a chart RENDERS itself,
 and the prober is a workload the application chart never sees. Once the
 e2e chart's transport is on, add the prober's own ServiceAccount
