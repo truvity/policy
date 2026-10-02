@@ -104,4 +104,13 @@ helmctl package \
     --require-image-digests \
     --output dist/charts
 
+# The library chart, published beside them. It carries no image, so the
+# manifest narrows to nothing for it; packaging it here is what proves the
+# release tool accepts a `type: library` chart at all, which no other lane does.
+helmctl package \
+    --chart examples/url-shortener/charts/service-lib \
+    --manifest dist/goreleaser-manifest.json \
+    --require-image-digests \
+    --output dist/charts
+
 ls dist/charts
