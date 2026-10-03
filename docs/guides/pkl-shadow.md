@@ -96,8 +96,11 @@ are in the packages' `docs/authoring.md`):
 - **A value only an install can give** (a host, a bucket, the Secret that holds a
   password) is `@A.SetAtInstall` on a `V.NonEmptyString?`, with no default. The
   schema requires it; the generated `values.yaml` leaves it out. The
-  hand-written `values.yaml` ships `""` for it, which the report counts as
-  `set-at-install`.
+  hand-written charts say the same (their `values.yaml` omits the key and the
+  schema requires a non-empty value), so it no longer shows as a difference,
+  except where the hand-written schema requires it only under a condition
+  (`alerts.remote.enabled` is false): the report counts that as a gap until the
+  vocabulary can say it.
 - **A bound that only one field has** is `@A.Range` / `@A.Length` on the
   property, over the vocabulary type. `Check.checked(module)` is Pkl's own
   enforcement of it; a chart's module that extends neither template calls it in
