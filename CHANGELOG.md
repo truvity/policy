@@ -4,6 +4,30 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+### Features
+
+- **url-shortener: the chart renders the request body limit in front of the
+  telemetry rule.** New optional `route.faro.requestBufferLimit` (a quantity
+  such as `256Ki`, empty by default) renders a `BackendTrafficPolicy`
+  (`gateway.envoyproxy.io`) named `<release>-faro` that targets the telemetry
+  rule of the route (`route.faro.ruleName`) alone and buffers a request before
+  forwarding it, answering 413 above the limit. It is the bound that counts in
+  front of a public write endpoint, because the collector compares a body with
+  its limit only after it has read it. A platform that renders this policy
+  itself today sees the same name and spec, so the hand-over is a change of
+  owner, not of object. Nothing renders unless the key is set and the rule is
+  enabled.
+
+### Contracts
+
+- **Delivery interface step 11: `route.faro.requestBufferLimit`.** The three
+  url-shortener charts now declare interface 11. A platform that implements the
+  interface must know step 11 before it promotes a release that declares it
+  (`docs/contracts/delivery-interface.md`); the first release is written there
+  as `next` until it is cut.
+
 ## v1.38.2 — 2026-10-03
 
 ### Fixes
