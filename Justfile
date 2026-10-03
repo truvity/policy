@@ -286,6 +286,57 @@ drift: schemas protos chart-schemas chart-deps
     git diff --exit-code -- 'examples/url-shortener/charts/*/values.schema.json' \
         'examples/url-shortener/charts/testdata/*/values.schema.json'
 
+# SHADOW PHASE of decision 0010 (docs/guides/pkl-shadow.md): the url-shortener's
+# data contracts are written in Pkl (examples/url-shortener/contract) and
+# generated beside the hand-written schemas, which stay authoritative. Pkl is
+# `bin/pkl`, a pinned, checksum-verified download (temporary: see the comment
+# in it); the contracts' packages are fetched from their GitHub release the
+# first time, so these need the network and are NOT part of `check`.
+#
+# Regenerate the shadow directory: JSON Schemas, each chart's values schema,
+# TypeScript with zod, Python with pydantic, the Markdown reference.
+[doc("Regenerate the Pkl contract's shadow artifacts")]
+shadow-generate:
+    hack/shadow-generate.sh
+
+# Strict: the committed shadow artifacts are exactly what the contract
+# generates, the Pkl is in Pkl's canonical format, and the pinned packages are
+# resolved (PklProject.deps.json is current). Regenerates into a temporary
+# directory and compares.
+[doc("Fail if the committed shadow artifacts are not what the contract generates")]
+shadow-generated:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    bin/pkl format --diff-name-only examples/url-shortener/contract
+    bin/pkl project resolve examples/url-shortener/contract >/dev/null
+    git diff --exit-code -- examples/url-shortener/contract/PklProject.deps.json
+    tmp="$(mktemp -d)"
+    trap 'rm -rf "$tmp"' EXIT
+    hack/shadow-generate.sh "$tmp/generated" >/dev/null
+    diff -r "$tmp/generated" examples/url-shortener/contract/generated
+    echo "shadow-generated: examples/url-shortener/contract/generated is current"
+
+# REPORT ONLY. Generates afresh and compares with the hand-written schemas,
+# semantically: every difference with its category, class and cause, and a
+# count by category to track over the shadow phase. It fails only if
+# generation fails or a file it compares is missing, never on a difference. In
+# CI the report goes to the job summary.
+[doc("Report how the generated schemas differ from the hand-written ones (report only)")]
+shadow-diff:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    tmp="$(mktemp -d)"
+    trap 'rm -rf "$tmp"' EXIT
+    hack/shadow-generate.sh "$tmp/generated" >/dev/null
+    # The Python loader's own environment, from its lock: it has jsonschema and
+    # PyYAML, which the verdicts need, and nothing else is installed for it.
+    uv run --frozen --no-dev --project python python hack/shadow-diff.py "$tmp/generated" \
+        --report "$tmp/report.md" --summary "$tmp/summary.json"
+    cat "$tmp/report.md"
+    if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+        cat "$tmp/report.md" >> "$GITHUB_STEP_SUMMARY"
+    fi
+
 # The TypeScript package: install, typecheck, test, build, and check what a
 # publish would ship. NOT part of `check`, which needs nothing but the
 # checkout: this fetches from a registry. CI runs it as its own job.

@@ -13,6 +13,7 @@ that look like something else.
 |---|---|
 | [configuration.md](configuration.md) | one file, one schema, secrets by name |
 | [charts.md](charts.md) | writing a service chart: `platform` and `config`, the library chart, the composed schema |
+| [pkl-shadow.md](pkl-shadow.md) | the url-shortener's contracts written in Pkl and generated beside the hand-written ones: the shadow phase of 0010, and how to read its report |
 | [rpc.md](rpc.md) | which boundary is an RPC, one handler for three protocols |
 | [object-storage.md](object-storage.md) | a store as an endpoint, and naming an object so a retry is safe |
 | [identity-and-secrets.md](identity-and-secrets.md) | the account a workload runs as, and how a secret reaches it |

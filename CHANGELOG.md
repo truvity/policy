@@ -20,6 +20,19 @@ subjects under them are the GitHub Release's own list.
   owner, not of object. Nothing renders unless the key is set and the rule is
   enabled.
 
+- **The Pkl shadow phase of decision 0010 begins.** The url-shortener's data
+  contracts (the configuration of each component, and the values of each of
+  its charts, the product chart included) are written in Pkl under
+  `examples/url-shortener/contract/` and generated beside the hand-written
+  schemas: JSON Schemas, each chart's values schema, TypeScript with zod,
+  Python with pydantic and a reference. **The hand-written schemas stay
+  authoritative; nothing reads the generated files.** `just shadow-diff`
+  reports every difference, with category and cause and a count by category,
+  and never fails on one; `just shadow-generated` fails when the committed
+  files are stale. Both run in CI as a `shadow` job. Pkl is `bin/pkl`, a pinned
+  and checksum-verified download, temporary until nixpkgs ships 0.32. See
+  `docs/guides/pkl-shadow.md`.
+
 ### Contracts
 
 - **Delivery interface step 11: `route.faro.requestBufferLimit`.** The three

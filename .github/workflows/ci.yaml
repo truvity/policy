@@ -53,6 +53,18 @@ jobs:
     with:
       recipes: '["charts"]'
 
+  # The shadow phase of decision 0010 (docs/guides/pkl-shadow.md). Two
+  # recipes, each its own job: `shadow-generated` is STRICT (the committed
+  # artifacts generated from the Pkl contract are current) and `shadow-diff`
+  # is REPORT-ONLY (it writes every difference between the generated schemas
+  # and the hand-written ones to the job summary, and fails only if
+  # generation does). Neither is in `check`: they fetch Pkl and the contracts'
+  # packages from GitHub, and the gate needs nothing but the checkout.
+  shadow:
+    uses: truvity/ci-workflows/.github/workflows/check.yaml@30b989fdd77b99af4be1a4b04e6353aa58aa3923 # v3.21.0
+    with:
+      recipes: '["shadow-generated", "shadow-diff"]'
+
   # The local cluster, stood up from nothing — servers only, no operator; see
   # docs/decisions/0005-kind-is-the-gate.md and hack/kind/README.md — asked
   # whether each server it carries is usable, and then made to run the
@@ -110,7 +122,7 @@ jobs:
   # every pull request would hang waiting for it. The cluster job gates merges:
   # all tests, including the end-to-end suite, must be green.
   check:
-    needs: [recipes, ts, charts, cluster]
+    needs: [recipes, ts, charts, shadow, cluster]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -119,4 +131,5 @@ jobs:
           [ "${{ needs.recipes.result }}" = "success" ] &&
           [ "${{ needs.ts.result }}" = "success" ] &&
           [ "${{ needs.charts.result }}" = "success" ] &&
+          [ "${{ needs.shadow.result }}" = "success" ] &&
           [ "${{ needs.cluster.result }}" = "success" ]

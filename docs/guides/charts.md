@@ -173,3 +173,8 @@ The library checks for the key; a chart that does its own defaulting should too.
 packaged one, with the library inside it and the images stamped; render that,
 with nothing else supplied, before calling a release done
 ([release.md §7](../contracts/release.md)).
+
+0010 ends the exception, and its first phase has begun: the product chart's
+values, with the other charts', are also written in Pkl and generated beside
+this chart's hand-written schema, which stays authoritative until the switch
+([pkl-shadow.md](pkl-shadow.md)).

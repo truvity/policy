@@ -11,6 +11,9 @@
 # invoked through a committed `exec go run` wrapper rather than installed.
 bin/*
 !bin/helmctl
+# `bin/pkl` likewise: a checked-in wrapper that downloads and verifies a pinned
+# release, not a binary.
+!bin/pkl
 /dist/
 coverage.out
 
