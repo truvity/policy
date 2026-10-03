@@ -6,6 +6,23 @@ subjects under them are the GitHub Release's own list.
 
 ## Unreleased
 
+### Fixes
+
+- **url-shortener: the front end verifies the URL service over the
+  authenticated transport.** `web` (a Node process) read its `tls` block and
+  never used it: it trusted only Node's built-in roots, so with the transport
+  on every listing failed with "unable to get local issuer certificate" and the
+  page answered 502 while every probe stayed green, and it presented no client
+  certificate to a service that demands one. The rendered Deployments and
+  ConfigMaps are unchanged from 1.36.0 (the identity mounts, `caFile`,
+  `certFile` and `keyFile` are all still there; the chart test now holds them);
+  the gap was in the front end, which now builds its connection from
+  `tls`: the platform's bundle as the only trust, the mounted certificate as
+  its identity, re-read at each connect so a rotation is picked up, and the
+  answering peer checked by its SPIFFE identity against `tls.peers` instead of
+  by name, as the Go components do. The e2e suite gains a journey that asks
+  `web` for its listing, which is the one path no other journey used.
+
 ### Contracts
 
 - **Decision 0010: data contracts are to be written once in Pkl and generated.**
