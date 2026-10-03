@@ -6,6 +6,8 @@ subjects under them are the GitHub Release's own list.
 
 ## Unreleased
 
+## v1.42.0 — 2026-10-04
+
 ### Contracts
 
 - **url-shortener: four alert values are absent by default.** `alerts.interval`,
