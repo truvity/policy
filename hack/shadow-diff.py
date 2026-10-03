@@ -28,12 +28,12 @@ Schemas are compared SEMANTICALLY: every `$ref` is resolved, so a shared
 sub-schema inlined on one side and referenced on the other is not a
 difference; `allOf` of objects is merged; `unevaluatedProperties: false` over
 a merged base equals `additionalProperties: false`; a pattern's companion
-`not: {pattern: "\\n"}` is a flag, not a second pattern; ordering is ignored.
+`not: {pattern: ...}` over the line breaks is a flag, not a second pattern; ordering is ignored.
 
 Each difference has a category (what differs), a class and a cause:
 
   expected  a semantic rule decision 0010 states (a field with a default is
-            optional, `null` is refused, a pattern refuses a newline);
+            optional, `null` is refused, a pattern refuses a line break, its `\\s` and `.` are spelled as classes);
   gap       a real difference: the contract does not say what the hand-written
             schema says (a missing constraint the vocabulary cannot spell, a
             field not modelled, ...), to be fixed in the contract or in the
@@ -234,7 +234,7 @@ class Normaliser:
                 n[k] = s[k]
         if "pattern" in s:
             n["pattern"] = s["pattern"]
-        if "not" in s and s["not"] == {"pattern": "\\n"}:
+        if "not" in s and is_line_break_guard(s["not"]):
             n["noNewline"] = True
         elif "not" in s:
             n.setdefault("other", {})["not"] = s["not"]
@@ -309,8 +309,28 @@ class Diff:
         return (self.doc, self.path, self.category)
 
 
+# What pkl-contracts spells where a hand-written pattern says `\s` or `.`
+# (v0.3.0: an explicit class, the same in every engine).
+WHITE_SPACE_CLASS = "\\t \\xA0\u1680\u2000-\u200A\u202F\u205F\u3000"
+
+
+def is_line_break_guard(n) -> bool:
+    """The companion `not: {pattern: ...}` of a pattern: `\\n` (v0.2) or a class of the seven line breaks (v0.3)."""
+    if not (isinstance(n, dict) and set(n) == {"pattern"}):
+        return False
+    p = n["pattern"]
+    return p == "\\n" or (p.startswith("[") and p.endswith("]") and "\\n" in p and "\\r" in p)
+
+
+def respelled(hand: str, gen: str) -> bool:
+    """The generated pattern is the hand-written one with `\\s` and `.` spelled as classes."""
+    return gen.replace(WHITE_SPACE_CLASS, "\\s").replace("[^\\n]", ".") == hand
+
+
 CAUSES = {
-    "newline-guard": "decision 0010: a pattern refuses a newline; the generated schema adds `not: {pattern: \"\\n\"}`",
+    "pattern-spelling": "pkl-contracts v0.3.0 spells white space and `.` as explicit classes, the same in every engine; the hand-written `\\s` and `.` are read differently by each",
+    "set-at-install": "pkl-contracts v0.3.0 `@A.SetAtInstall`: the schema requires a real value and the defaults leave it out; the hand-written values.yaml ships an empty placeholder",
+    "newline-guard": "decision 0010: a pattern refuses every line break; the generated schema adds `not: {pattern: \"[...]\"}` over them",
     "required-to-default": "decision 0010: a field with a default is optional",
     "required-to-optional": "the contract declares the field optional with no default",
     "optional-to-required": "the contract declares the field required (the hand-written schema leaves it optional)",
@@ -326,7 +346,7 @@ CAUSES = {
     "length-missing": "the vocabulary has no alias with this length bound",
     "length": "the contract's length bound is not the hand-written one",
     "enum": "the contract's allowed values are not the hand-written ones",
-    "default-missing": "the generated schema carries no `default` (pkl-contracts v0.2.0 never writes one into a JSON Schema: its generator sets Pkl's element default on a Dynamic instead of the key; the zod and pydantic output do carry it)",
+    "default-missing": "the generated schema carries no `default` where the hand-written one does",
     "default-added": "the contract states a default the hand-written schema does not",
     "default": "the contract's default is not the hand-written one",
     "closed": "the contract and the hand-written schema disagree on whether an undeclared key is refused",
@@ -341,7 +361,7 @@ CAUSES = {
     "document-extra": "a generated document with no hand-written twin",
 }  # fmt: skip
 
-EXPECTED = {"newline-guard", "required-to-default", "null-refused"}
+EXPECTED = {"set-at-install", "pattern-spelling", "newline-guard", "required-to-default", "null-refused"}
 
 
 def short(v):
@@ -385,9 +405,12 @@ def compare(doc: str, h: dict, g: dict, path: str, out: list[Diff], has_default=
             add("length-missing" if gv is None else "length", f"{k} {hv}", f"{k} {gv}")
     hp, gp = h.get("pattern"), g.get("pattern")
     if hp != gp:
-        add("pattern-missing" if gp is None else "pattern-added" if hp is None else "pattern", hp, gp)
-    elif hp is not None and g.get("noNewline") and not h.get("noNewline"):
-        add("newline-guard", hp, gp + "  +  not newline")
+        if hp is not None and gp is not None and respelled(hp, gp):
+            add("pattern-spelling", hp, gp)
+        else:
+            add("pattern-missing" if gp is None else "pattern-added" if hp is None else "pattern", hp, gp)
+    if gp is not None and g.get("noNewline") and not h.get("noNewline"):
+        add("newline-guard", hp, gp + "  +  not line break")
     if h.get("format") != g.get("format"):
         add("format", h.get("format"), g.get("format"))
     if h.get("enum") != g.get("enum"):
@@ -461,20 +484,31 @@ def readme_rows(readme: Path) -> dict[str, object]:
     return out
 
 
-def walk_defaults(chart: str, values, rows: dict, path: str, out: list[Diff]):
+def set_at_install(readme: Path) -> set[str]:
+    """The values the contract marks `@A.SetAtInstall`: required by the schema and
+    absent from the defaults, so the values table says so."""
+    if not readme.exists():
+        return set()
+    return {m.group(1) for line in readme.read_text(encoding="utf-8").splitlines() if (m := re.match(r"^\| `([^`]+)` \| .*? \|\s*\| \*\*Set at install\.\*\*", line))}
+
+
+def walk_defaults(chart: str, values, rows: dict, path: str, out: list[Diff], at_install: frozenset | set = frozenset()):
     """What values.yaml sets, against the defaults the contract states."""
     doc = chart + " values.yaml"
     if isinstance(values, dict) and any(r.startswith(path + ".") if path else True for r in rows):
         for k, v in values.items():
-            walk_defaults(chart, v, rows, f"{path}.{k}" if path else k, out)
+            walk_defaults(chart, v, rows, f"{path}.{k}" if path else k, out, at_install)
         return
     stated = rows.get(path, MISSING)
     if stated is not MISSING:
         if not jeq(stated, values):
             out.append(Diff(doc, path, "default", "gap", values, stated, CAUSES["default"]))
         return
+    if values == "" and path in at_install:
+        out.append(Diff(doc, path, "set-at-install", "expected", values, None, CAUSES["set-at-install"]))
+        return
     if isinstance(values, dict) and values:
-        cause = "an object-valued default is not expressible: the contract states defaults for scalars, lists and maps only"
+        cause = "the contract states no default for this object (an object default is expressible since pkl-contracts v0.3.0; the property is not modelled, or has none)"
     elif values == "":
         cause = "values.yaml ships an empty string for a field the contract requires non-empty (required, no default)"
     else:
@@ -605,7 +639,7 @@ def main() -> int:
             # the defaults are modelled: the generated file is compared whole
             diff_values_files(chart, load_yaml(vpath) or {}, load_yaml(gv) or {}, "", diffs)
         else:
-            walk_defaults(chart, load_yaml(vpath) or {}, readme_rows(gen_dir / "charts" / chart / "README.md"), "", diffs)
+            walk_defaults(chart, load_yaml(vpath) or {}, readme_rows(gen_dir / "charts" / chart / "README.md"), "", diffs, set_at_install(gen_dir / "charts" / chart / "README.md"))
 
     hand_by_name = {n: h for n, h, _, k in pairs if k == "document"}
     gen_by_name = {n: g for n, _, g, k in pairs if k == "document"}
