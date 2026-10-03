@@ -59,6 +59,7 @@ first time) and are not part of `check`. After a change to a contract, run
 | Class | Meaning |
 |---|---|
 | expected | a semantic rule 0010 states: a field with a default is optional (`required-to-default`), `null` is not a value (`null-refused`), a pattern refuses every line break (`newline-guard`) and spells white space and `.` as explicit classes (`pattern-spelling`), a value only an install can give is required and left out of the defaults (`set-at-install`) |
+| structural | a by-design consequence of generating from one source, gone at the switch, so not a finding: the generated schemas state the defaults (`default-added`) and the hand-written ones keep them in `values.yaml`. Listed in a collapsed section of the report |
 | gap | a real difference: the contract does not say what the hand-written schema says. Fix it in the contract or the vocabulary, or accept it into the hand-written schema at the switch |
 | doc | the description text only |
 
@@ -84,7 +85,7 @@ Three more sections follow the differences:
 
 The last lines are a **machine-readable summary**: counts by class, category
 and document, in JSON, and a single `SHADOW_SUMMARY {...}` line on stderr. The
-numbers to watch over the phase are the `gap` count (it should fall) and the
+numbers to watch over the phase are the `gap` count (`structural` is not a finding and is left out of the trend) (it should fall) and the
 verdict disagreements (it should be none that are not an expected rule).
 
 ## Writing the contract
