@@ -191,6 +191,11 @@ Used in production by its maintainers. Released from `v0.1.0`; tags follow
 semver from `v1.25.0` ([release.md §2](docs/contracts/release.md)). Every
 contract is at version 1.0, effective 2026-09-29.
 
+In progress: the url-shortener's data contracts are also written in Pkl and
+generated beside the hand-written schemas, which stay authoritative
+([guides/pkl-shadow.md](docs/guides/pkl-shadow.md): the shadow phase of
+[decision 0010](docs/decisions/0010-data-contracts-are-written-in-pkl.md)).
+
 What is not done: the Kotlin loader is built and tested but not published,
 and two guides — keys and signing, and migrating off a framework — arrive
 with the component that proves them
