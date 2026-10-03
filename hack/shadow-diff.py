@@ -32,6 +32,9 @@ a merged base equals `additionalProperties: false`; a pattern's companion
 
 Each difference has a category (what differs), a class and a cause:
 
+  structural  a by-design consequence of generating from one source, gone at
+            the switch (the generated schemas state defaults, the hand-written
+            ones keep them in values.yaml); neither a rule nor a finding;
   expected  a semantic rule decision 0010 states (a field with a default is
             optional, `null` is refused, a pattern refuses a line break, its `\\s` and `.` are spelled as classes);
   gap       a real difference: the contract does not say what the hand-written
@@ -361,6 +364,10 @@ CAUSES = {
     "document-extra": "a generated document with no hand-written twin",
 }  # fmt: skip
 
+# By-design consequences of generating from one source, gone at the switch:
+# the hand-written schemas keep no defaults (values.yaml has them), the
+# generated ones do.
+STRUCTURAL = {"default-added"}
 EXPECTED = {"set-at-install", "pattern-spelling", "newline-guard", "required-to-default", "null-refused"}
 
 
@@ -376,7 +383,7 @@ def jeq(a, b):
 
 def compare(doc: str, h: dict, g: dict, path: str, out: list[Diff], has_default=None, expand=None):
     def add(cat, hand, gen, klass=None):
-        out.append(Diff(doc, path or "(document)", cat, klass or ("expected" if cat in EXPECTED else "doc" if cat in ("description", "description-added", "title") else "gap"), hand, gen, CAUSES[cat]))  # fmt: skip
+        out.append(Diff(doc, path or "(document)", cat, klass or ("expected" if cat in EXPECTED else "structural" if cat in STRUCTURAL else "doc" if cat in ("description", "description-added", "title") else "gap"), hand, gen, CAUSES[cat]))  # fmt: skip
 
     if "ref" in h or "ref" in g:
         if "ref" in h and "ref" in g:
@@ -523,7 +530,7 @@ def diff_values_files(chart: str, hand, gen, path: str, out: list[Diff]):
             if k not in gen:
                 out.append(Diff(chart + " values.yaml (file)", sub, "default-missing", "gap", hand[k], None, "the generated values.yaml lacks a key the hand-written one has"))
             elif k not in hand:
-                out.append(Diff(chart + " values.yaml (file)", sub, "default-added", "gap", None, gen[k], "the generated values.yaml has a key the hand-written one lacks"))
+                out.append(Diff(chart + " values.yaml (file)", sub, "default-added", "structural", None, gen[k], "the generated values.yaml has a key the hand-written one lacks"))
             else:
                 diff_values_files(chart, hand[k], gen[k], sub, out)
     elif not jeq(hand, gen):
@@ -696,6 +703,8 @@ def main() -> int:
         by_class[d.klass] += 1
         by_doc[d.doc] += 1
     agree = sum(1 for _, _, h, g in verdicts if (h is None) == (g is None))
+    for k in ("expected", "structural", "gap", "doc"):
+        by_class.setdefault(k, 0)
     summary = {
         "schema": 1,
         "documents": sum(1 for p in pairs if p[3] == "document"),
@@ -712,7 +721,7 @@ def main() -> int:
         "Report only. The hand-written schemas are authoritative; nothing here fails a build.",
         "",
         f"**{len(diffs)} differences** in {summary['documents']} documents and {summary['charts']} chart schemas:"
-        f" {by_class['expected']} expected (decision 0010's semantic rules), {by_class['gap']} gaps, {by_class['doc']} documentation only.",
+        f" {by_class['expected']} expected (decision 0010's semantic rules), {by_class['structural']} structural (gone at the switch), {by_class['gap']} gaps, {by_class['doc']} documentation only.",
         "",
         "| Category | Class | Count |",
         "|---|---|---:|",
@@ -734,7 +743,12 @@ def main() -> int:
         return out
 
     lines += ["", "## Differences", ""]
-    lines += table([d for d in diffs if d.klass != "doc"]) or ["None."]
+    lines += table([d for d in diffs if d.klass not in ("doc", "structural")]) or ["None."]
+    structural = [d for d in diffs if d.klass == "structural"]
+    if structural:
+        lines += ["", "<details><summary>Structural differences (%d)</summary>" % len(structural), ""]
+        lines += table(structural)
+        lines += ["", "</details>"]
     docs_only = [d for d in diffs if d.klass == "doc"]
     if docs_only:
         lines += ["", "<details><summary>Documentation-only differences (%d)</summary>" % len(docs_only), ""]
