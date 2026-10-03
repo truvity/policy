@@ -8,20 +8,18 @@ subjects under them are the GitHub Release's own list.
 
 ### Fixes
 
-- **url-shortener: the front end accepts the platform's trust bundle as the Go
-  components do.** The previous fix wired `tls.caFile` into the front end, but
-  OpenSSL under Node accepts only a self-signed root as a trust anchor, so a
-  bundle that holds the issuing authority (not self-signed, which the Go
-  callers accept) was refused with "unable to get issuer certificate" and the
-  page still answered 502. The front end now opens its connection with the
-  secure-context option `allowPartialTrustChain`, which makes any certificate
-  in the bundle a trust anchor, exactly Go's rule. OpenSSL still verifies the
-  chain and certificate validation stays on; the answering peer's SPIFFE
-  identity is then checked against `tls.peers` as before. A refused answer is
-  logged at error level with the reason, and every refused call logs its code
-  and underlying cause, so a 502 is never silent. A test builds the platform's
-  certificate shape (empty subject, critical URI name, issuing authority under
-  a root) and runs the front end's own client against each bundle shape.
+- **url-shortener: web logs why a call to the URL service was refused.** With
+  the authenticated transport on, a refused answer made the page answer 502
+  with nothing in the log. A refused answer is now logged at error level with
+  the reason, and every refused call logs its Connect code and underlying
+  cause. The trust bundle (`tls.caFile`) must contain a self-signed anchor the
+  URL service's chain leads to: Node's chain verification (OpenSSL) is left on
+  and refuses a bundle that holds only an issuing authority with "unable to get
+  issuer certificate", which the log now shows. The answering peer's SPIFFE
+  identity is checked against `tls.peers` as before. A test builds the
+  platform's certificate shape (empty subject, critical URI name, issuing
+  authority under a root) and runs the front end's own client against each
+  bundle shape.
 
 ## v1.38.1 — 2026-10-03
 
