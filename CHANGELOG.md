@@ -12,7 +12,9 @@ subjects under them are the GitHub Release's own list.
   record the OpenTelemetry semantic-convention histogram
   `http.server.request.duration` (seconds; a Prometheus-compatible store sees
   `http_server_request_duration_seconds_*`) with `http.request.method`,
-  `http.route` and `http.response.status_code`. The route is the registered
+  `http.route`, `http.response.status_code` and `url_shortener.component`
+  (`redirect` or `web`: a store that keeps no resource attribute as a label
+  cannot otherwise tell the two apart). The route is the registered
   template (`/r/:key`, `/api/urls/:key`, `unmatched` for a 404 no route
   matched), never the path, so a short key never becomes a label value.
   Recorded where each service already traces a request, and exported only when
