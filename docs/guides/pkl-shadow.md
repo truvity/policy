@@ -58,7 +58,7 @@ first time) and are not part of `check`. After a change to a contract, run
 
 | Class | Meaning |
 |---|---|
-| expected | a semantic rule 0010 states: a field with a default is optional (`required-to-default`), `null` is not a value (`null-refused`), a pattern refuses a newline (`newline-guard`) |
+| expected | a semantic rule 0010 states: a field with a default is optional (`required-to-default`), `null` is not a value (`null-refused`), a pattern refuses every line break (`newline-guard`) and spells white space and `.` as explicit classes (`pattern-spelling`), a value only an install can give is required and left out of the defaults (`set-at-install`) |
 | gap | a real difference: the contract does not say what the hand-written schema says. Fix it in the contract or the vocabulary, or accept it into the hand-written schema at the switch |
 | doc | the description text only |
 
@@ -86,6 +86,26 @@ The last lines are a **machine-readable summary**: counts by class, category
 and document, in JSON, and a single `SHADOW_SUMMARY {...}` line on stderr. The
 numbers to watch over the phase are the `gap` count (it should fall) and the
 verdict disagreements (it should be none that are not an expected rule).
+
+## Writing the contract
+
+What the contracts packages offer, and where the contract uses it (the rules
+are in the packages' `docs/authoring.md`):
+
+- **A value only an install can give** (a host, a bucket, the Secret that holds a
+  password) is `@A.SetAtInstall` on a `V.NonEmptyString?`, with no default. The
+  schema requires it; the generated `values.yaml` leaves it out. The
+  hand-written `values.yaml` ships `""` for it, which the report counts as
+  `set-at-install`.
+- **A bound that only one field has** is `@A.Range` / `@A.Length` on the
+  property, over the vocabulary type. `Check.checked(module)` is Pkl's own
+  enforcement of it; a chart's module that extends neither template calls it in
+  its `output`.
+- **A default may be an object** (the `resources` blocks).
+- **A literal union in two modules** is refused by the generator: it belongs in
+  the vocabulary as an enum. Where there is none (`off` | `permissive`), the
+  contract uses the nearest enum and the report shows the wider set as an `enum`
+  gap.
 
 ## The time box, and what decides
 

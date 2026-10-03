@@ -4,6 +4,18 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+### Tooling
+
+- **The Pkl shadow moves to pkl-contracts v0.3.0 and adopts its vocabulary.** The
+  url-shortener's shadow contract now marks what only an install can give as
+  set-at-install, bounds fields with `@A.Range` and `@A.Length`, gives the
+  `resources` blocks object defaults, and uses the vocabulary's `OtelProtocol` and
+  `BufferLimit`; `just shadow-diff` recognises v0.3.0's line-break guard and
+  explicit white-space classes. Shadow only: the hand-written schemas stay
+  authoritative and nothing a consumer depends on changes.
+
 ## v1.40.0 — 2026-10-03
 
 ### Features
