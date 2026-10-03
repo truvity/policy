@@ -36,6 +36,12 @@ current and correct. A hand-written struct beside a schema, with a test that
 they agree, costs one test.
 [0003](../decisions/0003-schemas-not-generators.md) is the decision.
 
+> **Forward note.** [0010](../decisions/0010-data-contracts-are-written-in-pkl.md)
+> supersedes 0003 for data contracts: the schema and the type in each language
+> are to be generated from one Pkl source, in a shadow phase beside the
+> hand-written ones. This section and the "no drift" rule stay in force, and the
+> hand-written schemas stay authoritative, until a later change switches.
+
 ## 3. Strictness
 
 Everything the service defines is strict: `additionalProperties: false` on

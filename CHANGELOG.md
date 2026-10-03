@@ -6,6 +6,21 @@ subjects under them are the GitHub Release's own list.
 
 ## Unreleased
 
+### Contracts
+
+- **Decision 0010: data contracts are to be written once in Pkl and generated.**
+  Service configuration schemas, chart values (`platform` and `config`) and
+  deployment fragments will have one typed source, built into JSON Schemas, chart
+  values schemas and defaults, Go, Kotlin, TypeScript and Python types, and
+  documentation. The generated JSON Schema stays the validator in every language;
+  Pkl is a build tool and is never present at run time; and nothing that is the
+  shape of a program is generated. It supersedes
+  [0003](docs/decisions/0003-schemas-not-generators.md) for data contracts only.
+  **Nothing changes for a consumer yet:** a time-boxed shadow phase produces the
+  generated files beside the hand-written ones, which remain authoritative, and a
+  later decision switches or stops. The configuration contract carries a forward
+  note to the same effect.
+
 ## v1.38.0 — 2026-10-03
 
 ### Features
