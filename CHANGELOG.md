@@ -8,6 +8,29 @@ subjects under them are the GitHub Release's own list.
 
 ### Features
 
+- **url-shortener: the chart renders the product's own alert rules.** New
+  `alerts` block (off by default; `alerts.enabled`) renders a `VMRule`
+  (`operator.victoriametrics.com`) named `<release>-alerts` with eight alerts
+  over what the product pushes over OTLP, under the names a Prometheus-compatible
+  store gives it: `UrlShortenerJourneyFailing` (critical; the prober's
+  non-success ratio per journey, `probe_journey_total{result!="success"}`),
+  `UrlShortenerProberAbsent`, `UrlsRpcLatencyHigh` (p99 of
+  `rpc_server_call_duration_seconds`), `UrlsRpcErrorRatio` (server-fault
+  `rpc_response_status_code` values only; the caller's own refusals are an
+  answer), and for redirect and web `RedirectHttp5xxRatio`,
+  `RedirectHttpLatencyHigh`, `WebHttp5xxRatio`, `WebHttpLatencyHigh` from
+  `http_server_request_duration_seconds_*` (needs a release that exports the
+  request metrics). Every aggregation is `by (k8s_cluster_name, ...)`,
+  thresholds, windows and `for` are values, each rule has an `enabled` switch,
+  `alerts.ruleLabels` labels the object and `alerts.alertLabels` every alert.
+  `alerts.remote.{enabled,clusterName,namespace}` renders the rule object ALONE
+  (named `<release>-alerts-<clusterName>`, the cluster in every selector and on
+  every alert), for an install that runs on another cluster and is evaluated
+  where the shared store's evaluator runs; no other value is required then,
+  and no workload, route or database object renders. A VMRule operator defaults
+  `record: ""` on alert rules, which the chart does not render, so a GitOps
+  controller that compares the object ignores `/spec/groups/*/rules/*/record`.
+
 - **url-shortener: the chart renders the request body limit in front of the
   telemetry rule.** New optional `route.faro.requestBufferLimit` (a quantity
   such as `256Ki`, empty by default) renders a `BackendTrafficPolicy`
@@ -21,6 +44,14 @@ subjects under them are the GitHub Release's own list.
   enabled.
 
 ### Contracts
+
+- **Delivery interface step 12: `alerts`.** The three url-shortener charts now
+  declare interface 12. A platform that implements the interface must know step
+  12 before it promotes a release that declares it
+  (`docs/contracts/delivery-interface.md`); the first release is written there
+  as `next` until it is cut. The application chart's schema no longer lists
+  `database`, `events` and the other workload keys as required when
+  `alerts.remote.enabled` is true (they are still required otherwise).
 
 - **Delivery interface step 11: `route.faro.requestBufferLimit`.** The three
   url-shortener charts now declare interface 11. A platform that implements the

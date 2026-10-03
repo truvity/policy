@@ -75,6 +75,7 @@ The key names are [platform.md §10](platform.md#10-what-a-platform-passes-by-na
 | 9 | `postgres.platformOwned` | infra | The platform renders the database; the chart renders the runtime role only. |
 | 10 | `web.faro`, `route.faro` | application | Browser telemetry: the page's runtime configuration, and the public rule a browser reports through. |
 | 11 | `route.faro.requestBufferLimit` | application | The gateway's request body limit on the telemetry rule, rendered by the chart as a policy that targets that rule alone, so a platform no longer renders it beside the chart. |
+| 12 | `alerts` | application | The product's own alert rules as a `VMRule` (`alerts.enabled`, off by default): `alerts.remote.enabled`, `.clusterName`, `.namespace` render the rule object alone, for an install evaluated on another cluster (nothing else renders and no other value is required), and `alerts.ruleLabels`, `.alertLabels`, `.interval` and one block of thresholds per rule. A platform no longer writes the product's rules beside the chart. |
 
 ## 4. The first release of each step
 
@@ -95,6 +96,7 @@ below it.
 | 9 | 1.34.0 | not yet |
 | 10 | 1.35.0 | not yet |
 | 11 | next | not yet |
+| 12 | next | not yet |
 
 "Not yet" is a step the product's charts do not read: its number stops below
 it, and a platform renders none of that step's keys for it. The numbers are
