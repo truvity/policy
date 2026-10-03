@@ -4,6 +4,24 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+### Fixes
+
+- **url-shortener: the front end accepts the platform's trust bundle as the Go
+  components do.** The previous fix wired `tls.caFile` into the front end, but
+  Node's TLS stack accepts only a self-signed root as a trust anchor, so a
+  bundle that holds the issuing authority (not self-signed, which the Go
+  callers accept) was refused with "unable to get issuer certificate" and the
+  page still answered 502. The front end now verifies the chain itself against
+  the bundle, with any certificate in it as an anchor, before the HTTP/2
+  session exists, then checks the answering peer's SPIFFE identity against
+  `tls.peers` as before. A refused answer is logged at error level with the
+  reason, and every refused call logs its code and underlying cause, so a 502 is
+  never silent. A test builds the platform's certificate shape (empty subject,
+  critical URI name, issuing authority under a root) and runs the front end's
+  own client against each bundle shape.
+
 ## v1.38.1 — 2026-10-03
 
 ### Fixes
