@@ -96,7 +96,7 @@ below it.
 | 9 | 1.34.0 | not yet |
 | 10 | 1.35.0 | not yet |
 | 11 | 1.39.0 | not yet |
-| 12 | next | not yet |
+| 12 | 1.40.0 | not yet |
 
 "Not yet" is a step the product's charts do not read: its number stops below
 it, and a platform renders none of that step's keys for it. The numbers are
