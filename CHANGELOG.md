@@ -6,6 +6,8 @@ subjects under them are the GitHub Release's own list.
 
 ## Unreleased
 
+## v1.41.0 — 2026-10-03
+
 ### Contracts
 
 - **The values only an install can give are no longer in `values.yaml`; the
