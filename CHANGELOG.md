@@ -6,6 +6,30 @@ subjects under them are the GitHub Release's own list.
 
 ## Unreleased
 
+### Contracts
+
+- **url-shortener: four alert values are absent by default.** `alerts.interval`,
+  `alerts.prober.namespace`, `alerts.remote.namespace` and `alerts.remote.clusterName`
+  shipped `""` in `values.yaml`; the keys are now left out (`alerts.prober` is `{}`),
+  and the templates read an absent value as none, as they read `""`. Not breaking:
+  the schema is unchanged, so `""` is still accepted and means none, and every
+  render of v1.41.0 (a value set, `""`, or left out; the remote install with and
+  without its cluster and namespace, refused with the same message) is
+  byte-identical. `helm show values` no longer lists the four keys, so a values file
+  that edits a copy of the old defaults can drop its empty lines.
+
+### Tooling
+
+- **The Pkl shadow moves to pkl-contracts v0.4.0 and closes the gaps it was built for.**
+  The url-shortener's shadow contract uses `PromDuration`, `DnsLabel`,
+  `StatusCodeList` and `GatewayTlsMode`, exclusive `@A.Range` bounds, `@A.DenyKeys` on
+  `alerts.alertLabels` and `@A.RequiredUnless` for the values an install must give
+  unless it only renders rules. `just shadow-diff` reads v0.3.1's output: a block
+  with a default is `required-to-default`, `x-set-at-install` is a marker and not an
+  unknown keyword, a bar escaped in the reference table is read back, an `else` is
+  compared, and the empty form the hand-written schema keeps is `expected`. Shadow
+  only: the hand-written schemas stay authoritative.
+
 ## v1.41.0 — 2026-10-03
 
 ### Contracts
