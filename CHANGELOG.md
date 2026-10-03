@@ -6,6 +6,32 @@ subjects under them are the GitHub Release's own list.
 
 ## Unreleased
 
+### Contracts
+
+- **Breaking: the values only an install can give are no longer in
+  `values.yaml`, and an empty one is refused by the schema.** The three
+  url-shortener charts used to ship `""` for them and refuse the empty string
+  later, in a template or in a `minLength` that applied at some paths only. Now
+  the key is absent from the defaults and the schema names it as missing:
+  `database.host`, `database.owner.passwordSecret`, `database.app.passwordSecret`,
+  `events.url` and `archive.bucket.name` of the application chart, and
+  `appRelease`, `database.{host,name,owner.role,app.role,app.passwordSecret}`,
+  `events.{stream,redirectSubject,requestSubject,statConsumer,logConsumer}` and
+  `archive.bucket` of the test chart. An install that sets them is unchanged. An
+  install (or `helm lint` / `ct lint`) that leaves one out was already refused and
+  still is, but at the schema: `helm template`, `lint` and `install` now report a
+  missing property where they reported an empty string, and `archive.bucket.name`
+  is refused by the schema where the template used to refuse it. `helm show
+  values` no longer lists the keys, so a values file that edits a copy of the old
+  defaults should drop its empty lines. The application chart still asks for none
+  of them when `alerts.remote.enabled` is true. Step to take: set each of them
+  (the example's `hack/install.sh` and `hack/install-e2e-chart.sh` already do),
+  and stop passing `""`.
+- **Breaking: `route.faro.requestBufferLimit` is absent by default, and `""` is
+  refused.** Absent renders no policy, as the empty string did; a platform that
+  passes `requestBufferLimit: ""` to mean "none" must leave the key out. The
+  value is still a quantity such as `256Ki`.
+
 ### Tooling
 
 - **The Pkl shadow moves to pkl-contracts v0.3.0 and adopts its vocabulary.** The
@@ -15,6 +41,12 @@ subjects under them are the GitHub Release's own list.
   `BufferLimit`; `just shadow-diff` recognises v0.3.0's line-break guard and
   explicit white-space classes. Shadow only: the hand-written schemas stay
   authoritative and nothing a consumer depends on changes.
+- **The Pkl shadow models the application chart's `alerts` block.** Every verdict
+  the shadow gave on the chart's fixtures now agrees with the hand-written schema.
+  What the v0.3.0 vocabulary cannot say shows in `just shadow-diff` as gaps for
+  pkl-contracts (the `s|m|h` durations, the exclusive lower bounds, the closed
+  set of label names, the `alerts.remote` conditional); nothing a consumer
+  depends on changes in this entry.
 
 ## v1.40.0 — 2026-10-03
 
