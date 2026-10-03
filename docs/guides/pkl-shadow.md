@@ -43,6 +43,7 @@ not something to hide with a constraint written in place.
 | | |
 |---|---|
 | `just shadow-generate` | regenerate `generated/` |
+| `just generate` | the same, under the name the contracts pin-bump job runs |
 | `just shadow-generated` | **strict**: the Pkl is formatted, the pins are resolved, and `generated/` is exactly what the contract generates. CI runs it |
 | `just shadow-diff` | **report only**: regenerate, compare, print the report. In CI it also goes to the job summary |
 

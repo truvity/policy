@@ -299,6 +299,15 @@ drift: schemas protos chart-schemas chart-deps
 shadow-generate:
     hack/shadow-generate.sh
 
+# The name the fleet's Pkl pin-bump job looks for (truvity/ci-workflows
+# pkl-fleet): after it moves the contracts pin and resolves it, it runs the
+# repository's `generate` recipe, so a bump pull request carries regenerated
+# shadow artifacts and passes `shadow-generated`. It is a recipe and not an
+# `alias` because the job finds recipes with `just --summary`, which does not
+# list aliases.
+[doc("Regenerate the Pkl contract's shadow artifacts (the name the pin-bump job runs)")]
+generate: shadow-generate
+
 # Strict: the committed shadow artifacts are exactly what the contract
 # generates, the Pkl is in Pkl's canonical format, and the pinned packages are
 # resolved (PklProject.deps.json is current). Regenerates into a temporary
