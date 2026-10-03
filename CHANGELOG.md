@@ -8,6 +8,18 @@ subjects under them are the GitHub Release's own list.
 
 ### Features
 
+- **url-shortener: redirect and web export HTTP server request metrics.** Both
+  record the OpenTelemetry semantic-convention histogram
+  `http.server.request.duration` (seconds; a Prometheus-compatible store sees
+  `http_server_request_duration_seconds_*`) with `http.request.method`,
+  `http.route` and `http.response.status_code`. The route is the registered
+  template (`/r/:key`, `/api/urls/:key`, `unmatched` for a 404 no route
+  matched), never the path, so a short key never becomes a label value.
+  Recorded where each service already traces a request, and exported only when
+  a telemetry endpoint is configured, as the other signals are. redirect
+  recorded runtime metrics only and web none, so a request ratio or latency
+  for either needed the gateway's metrics until now.
+
 - **url-shortener: the chart renders the request body limit in front of the
   telemetry rule.** New optional `route.faro.requestBufferLimit` (a quantity
   such as `256Ki`, empty by default) renders a `BackendTrafficPolicy`
