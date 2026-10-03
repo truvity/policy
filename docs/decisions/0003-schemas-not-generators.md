@@ -1,6 +1,8 @@
 # 0003 — A schema and a hand-written type, not a code generator
 
-**Status:** accepted
+**Status:** accepted. Superseded for data contracts by
+[0010](0010-data-contracts-are-written-in-pkl.md); it still holds for
+everything that is not a data contract, and for generating the program.
 
 ## Context
 
