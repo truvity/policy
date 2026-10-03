@@ -73,6 +73,11 @@ KNOWN = {
     "allOf", "anyOf", "if", "then", "else", "not", "propertyNames",
 }  # fmt: skip
 
+# Keywords no validator reads: carried as a flag of their own, never as a
+# keyword only one side has. `x-set-at-install` is pkl-contracts' mark for a
+# value only an install can give (v0.3.1), see the `set-at-install-marker` category.
+ANNOTATIONS = {"x-set-at-install"}
+
 # ----------------------------------------------------------------- documents
 
 # (name used in the report, hand-written file, generated file relative to the
@@ -268,14 +273,20 @@ class Normaliser:
             )
         conds = list(n.get("conditionals", []))
         if "if" in s:
-            conds.append({"if": self.norm(s["if"], base, root), "then": self.norm(s.get("then", {}), base, root)})
+            cond = {"if": self.norm(s["if"], base, root), "then": self.norm(s.get("then", {}), base, root)}
+            if "else" in s:
+                # `@RequiredUnless` is an `if`/`else`; a rule that only differs in its `else` is a difference
+                cond["else"] = self.norm(s["else"], base, root)
+            conds.append(cond)
         for member in s.get("allOf", []):
             m = self.norm(member, base, root)
             conds.extend(m.pop("conditionals", []))
             merge_into(n, m)
         if conds:
             n["conditionals"] = sorted(conds, key=lambda x: json.dumps(x, sort_keys=True))
-        extra = {k: v for k, v in s.items() if k not in KNOWN}
+        if s.get("x-set-at-install") is True:
+            n["setAtInstall"] = True
+        extra = {k: v for k, v in s.items() if k not in KNOWN and k not in ANNOTATIONS}
         if extra:
             n.setdefault("other", {}).update(extra)
         return n
@@ -336,11 +347,12 @@ def respelled(hand: str, gen: str) -> bool:
 
 
 CAUSES = {
-    "empty-form-kept": "the hand-written schema keeps the empty string as a value meaning \"none\", for compatibility, until the switch; the contract has the field absent instead (an optional field is absent or non-empty)",
+    "empty-form-kept": "the hand-written schema keeps the empty string as a value meaning \"none\" so that a published chart's `\"\"` keeps rendering (taking it out is a major release); the contract has the field absent instead (an optional field is absent or non-empty). Gone at the switch, which is that release",
     "pattern-spelling": "pkl-contracts v0.3.0 spells white space and `.` as explicit classes, the same in every engine; the hand-written `\\s` and `.` are read differently by each",
     "set-at-install": "pkl-contracts v0.3.0 `@A.SetAtInstall`: the schema requires a real value and the defaults leave it out; the hand-written values.yaml ships an empty placeholder",
     "newline-guard": "decision 0010: a pattern refuses every line break; the generated schema adds `not: {pattern: \"[...]\"}` over them",
-    "required-to-default": "decision 0010: a field with a default is optional",
+    "set-at-install-marker": "pkl-contracts v0.3.1 marks a value only an install can give `x-set-at-install: true` (an annotation no validator reads); the hand-written schema marks nothing, it only requires the key",
+    "required-to-default": "decision 0010: a field with a default is optional (the generated property carries the `default`, a block's own default when every field of it has one)",
     "required-to-optional": "the contract declares the field optional with no default",
     "optional-to-required": "the contract declares the field required (the hand-written schema leaves it optional)",
     "null-refused": "decision 0010: `null` is not a value for an optional field",
@@ -354,6 +366,7 @@ CAUSES = {
     "range": "the contract's bound is not the hand-written one (the nearest vocabulary alias differs)",
     "length-missing": "the vocabulary has no alias with this length bound",
     "length": "the contract's length bound is not the hand-written one",
+    "length-added": "the contract's type bounds the length (a DNS label is at most 63 characters, RFC 1123) where the hand-written pattern leaves it open; nothing a cluster accepts is longer, so the switch refuses nothing real",
     "enum": "the contract's allowed values are not the hand-written ones",
     "default-missing": "the generated schema carries no `default` where the hand-written one does",
     "default-added": "the contract states a default the hand-written schema does not",
@@ -361,6 +374,7 @@ CAUSES = {
     "closed": "the contract and the hand-written schema disagree on whether an undeclared key is refused",
     "union": "the contract's alternatives are not the hand-written ones",
     "conditional": "the cross-field rule differs",
+    "conditional-blocks": "the same rule (the same `if`, the same values required in its `else`); it differs only in the blocks on the way that it also names. The generated rule names the blocks it walks through (`database.owner`, `archive.bucket`), the hand-written one names the top-level blocks that carry a default (`log`, `replicas`, `resources`, `route`, `images`, now optional with their default); a block is in every value set once `values.yaml`'s defaults are merged, so no render is accepted or refused differently",
     "keyword": "a keyword only one side carries",
     "format": "the contract's `format` is not the hand-written one",
     "title": "the document's title differs",
@@ -374,7 +388,53 @@ CAUSES = {
 # the hand-written schemas keep no defaults (values.yaml has them), the
 # generated ones do.
 STRUCTURAL = {"default-added"}
-EXPECTED = {"set-at-install", "pattern-spelling", "newline-guard", "required-to-default", "null-refused"}
+EXPECTED = {"set-at-install", "set-at-install-marker", "pattern-spelling", "newline-guard", "required-to-default", "null-refused", "empty-form-kept", "conditional-blocks"}
+
+
+def required_paths(node, prefix="") -> set[str]:
+    """Every dotted path a normalised schema requires, blocks on the way included."""
+    out: set[str] = set()
+    for name in node.get("required", []):
+        out.add(prefix + name)
+    for name, sub in node.get("props", {}).items():
+        out |= required_paths(sub, f"{prefix}{name}.")
+    return out
+
+
+def node_at(root: dict, path: str):
+    node = root
+    for part in path.split("."):
+        node = node.get("props", {}).get(part)
+        if node is None:
+            return None
+    return node
+
+
+def values_of(paths: set[str], root: dict) -> set[str]:
+    """The paths that are values: not a block (an object with properties of its own)
+    in the document, and not a prefix of another path."""
+    out = set()
+    for p in paths:
+        if any(q.startswith(p + ".") for q in paths):
+            continue
+        node = node_at(root, p)
+        if node is not None and node.get("props"):
+            continue
+        out.add(p)
+    return out
+
+
+def same_leaves(hc, gc, h_root, g_root) -> bool:
+    """Two rules that carry the same `if`/`then` and require the same VALUES in their
+    `else`, and differ only in which blocks (objects of the document's own) they also name."""
+    if not hc or not gc or len(hc) != 1 or len(gc) != 1:
+        return False
+    h, g = hc[0], gc[0]
+    if not jeq(h.get("if"), g.get("if")) or not jeq(h.get("then"), g.get("then")) or "else" not in h or "else" not in g:
+        return False
+    hv = values_of(required_paths(h["else"]), h_root)
+    gv = values_of(required_paths(g["else"]), g_root)
+    return hv == gv and bool(gv)
 
 
 def short(v):
@@ -415,7 +475,7 @@ def compare(doc: str, h: dict, g: dict, path: str, out: list[Diff], has_default=
     for k in ("minLength", "maxLength"):
         if h.get(k) != g.get(k):
             hv, gv = h.get(k), g.get(k)
-            add("length-missing" if gv is None else "length", f"{k} {hv}", f"{k} {gv}")
+            add("length-missing" if gv is None else "length-added" if hv is None else "length", f"{k} {hv}", f"{k} {gv}")
     hp, gp = h.get("pattern"), g.get("pattern")
     if hp != gp:
         if hp is not None and gp is not None and respelled(hp, gp):
@@ -443,8 +503,10 @@ def compare(doc: str, h: dict, g: dict, path: str, out: list[Diff], has_default=
         add("description" if h.get("description") else "description-added", h.get("description"), g.get("description"))
     if h.get("title") != g.get("title"):
         add("title", h.get("title"), g.get("title"))
+    if g.get("setAtInstall") and not h.get("setAtInstall"):
+        add("set-at-install-marker", None, "x-set-at-install: true")
     if not jeq(h.get("conditionals"), g.get("conditionals")):
-        add("conditional", h.get("conditionals"), g.get("conditionals"))
+        add("conditional-blocks" if same_leaves(h.get("conditionals"), g.get("conditionals"), h, g) else "conditional", h.get("conditionals"), g.get("conditionals"))
     if not jeq(h.get("anyOf"), g.get("anyOf")):
         add("union", h.get("anyOf"), g.get("anyOf"))
     if not jeq(h.get("other"), g.get("other")):
@@ -490,7 +552,8 @@ def readme_rows(readme: Path) -> dict[str, object]:
             if raw is None:
                 out[m.group(1)] = MISSING
                 continue
-            text = raw[1:-1]
+            # the table escapes a bar in a cell as `\|` (pkl-contracts v0.3.1)
+            text = raw[1:-1].replace("\\|", "|")
             text = {"Map()": "{}", "List()": "[]"}.get(text, text)
             try:
                 out[m.group(1)] = json.loads(text)
@@ -644,7 +707,11 @@ def main() -> int:
         # Whether the CONTRACT gives a field a default, which the schemas do not
         # say: a chart's values table does; for a document, the hand-written
         # schema's own default is what a field made optional by one stands for.
-        given = (lambda path, hnode, gnode: path in stated) if chart else (lambda path, hnode, gnode: "default" in hnode)
+        given = (
+            (lambda path, hnode, gnode: path in stated or "default" in gnode)
+            if chart
+            else (lambda path, hnode, gnode: "default" in hnode or "default" in gnode)
+        )
         compare(name, hn, gn, "", diffs, given, (nh.expand, ng.expand))
 
     # defaults

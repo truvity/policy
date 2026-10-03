@@ -58,7 +58,7 @@ first time) and are not part of `check`. After a change to a contract, run
 
 | Class | Meaning |
 |---|---|
-| expected | a semantic rule 0010 states: a field with a default is optional (`required-to-default`), `null` is not a value (`null-refused`), a pattern refuses every line break (`newline-guard`) and spells white space and `.` as explicit classes (`pattern-spelling`), a value only an install can give is required and left out of the defaults (`set-at-install`) |
+| expected | a semantic rule 0010 states: a field with a default is optional (`required-to-default`), `null` is not a value (`null-refused`), a pattern refuses every line break (`newline-guard`) and spells white space and `.` as explicit classes (`pattern-spelling`), a value only an install can give is required and left out of the defaults (`set-at-install`, and `set-at-install-marker` for the `x-set-at-install` annotation), a field whose empty string the hand-written schema still accepts is absent in the contract (`empty-form-kept`: a published chart's `""` keeps rendering until a major release), the same cross-field rule differing only in the blocks it names (`conditional-blocks`) |
 | structural | a by-design consequence of generating from one source, gone at the switch, so not a finding: the generated schemas state the defaults (`default-added`) and the hand-written ones keep them in `values.yaml`. Listed in a collapsed section of the report |
 | gap | a real difference: the contract does not say what the hand-written schema says. Fix it in the contract or the vocabulary, or accept it into the hand-written schema at the switch |
 | doc | the description text only |
@@ -94,22 +94,26 @@ What the contracts packages offer, and where the contract uses it (the rules
 are in the packages' `docs/authoring.md`):
 
 - **A value only an install can give** (a host, a bucket, the Secret that holds a
-  password) is `@A.SetAtInstall` on a `V.NonEmptyString?`, with no default. The
-  schema requires it; the generated `values.yaml` leaves it out. The
-  hand-written charts say the same (their `values.yaml` omits the key and the
-  schema requires a non-empty value), so it no longer shows as a difference,
-  except where the hand-written schema requires it only under a condition
-  (`alerts.remote.enabled` is false): the report counts that as a gap until the
-  vocabulary can say it.
+  password) is a `V.NonEmptyString?` with no default. Where the schema must
+  require it everywhere, it is also `@A.SetAtInstall`. Where it is required
+  unless the install only renders rules (`alerts.remote.enabled`), the chart
+  module carries `@A.RequiredUnless` over the dotted paths and the properties
+  are not set-at-install: a conditional value cannot also be unconditionally
+  required. The generated `values.yaml` leaves the keys out either way.
+- **A Prometheus duration, a namespace or cluster name, a list of status code
+  names** are `V.PromDuration`, `V.DnsLabel` and `V.StatusCodeList`. None admits
+  `""`: a field the chart reads `""` as "none" for is `?`, absent by default,
+  and the hand-written schema keeps accepting `""` (the report's
+  `empty-form-kept`). A bound of "more than zero" is `@A.Range { exclusiveMin = 0 }`,
+  and labels the platform owns are `@A.DenyKeys`.
 - **A bound that only one field has** is `@A.Range` / `@A.Length` on the
   property, over the vocabulary type. `Check.checked(module)` is Pkl's own
   enforcement of it; a chart's module that extends neither template calls it in
   its `output`.
 - **A default may be an object** (the `resources` blocks).
-- **A literal union in two modules** is refused by the generator: it belongs in
-  the vocabulary as an enum. Where there is none (`off` | `permissive`), the
-  contract uses the nearest enum and the report shows the wider set as an `enum`
-  gap.
+- **A gateway listener's mutual TLS** is `V.GatewayTlsMode` (`off` | `permissive`,
+  never `strict`). A literal union in two modules is refused by the generator:
+  it belongs in the vocabulary as an enum.
 
 ## The time box, and what decides
 
