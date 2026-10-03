@@ -1,0 +1,36 @@
+/// The `log` chart's values: the defaults the chart ships, written once, checked
+/// against the contract at evaluation time, rendered as `values.yaml`.
+module spike.charts.log.Values
+
+import "../../contract/Charts.pkl"
+import "../../contract/urlshortener/LogArchiver.pkl" as LogArchiver
+
+values: Charts.LogValues = new {
+  platform = null
+  config = (LogArchiver) {
+    probes { address = ":7070" }
+    log { level = "info" }
+    events {
+      nats { url = "nats://nats.nats.svc:4222" }
+      consumer { stream = "URL_SHORTENER_LOG"; durable = "log" }
+    }
+    archive {
+      bucket { name = "url-shortener-archive" }
+      prefix = "url-shortener/requests"
+      batch { maxRecords = 500; maxSeconds = 60 }
+    }
+  }
+  images {
+    log {
+      registry = "ghcr.io"
+      repository = "truvity/policy/url-shortener/log"
+      tag = ""
+      digest = ""
+    }
+  }
+}
+
+output {
+  renderer = new YamlRenderer {}
+  value = values
+}

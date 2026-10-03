@@ -1,0 +1,4 @@
+/// A typo in an address: caught by `HostPort`.
+amends "../prod/web.pkl"
+
+config { listen { address = "8080" } }

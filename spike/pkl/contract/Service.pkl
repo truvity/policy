@@ -1,0 +1,11 @@
+/// The envelope every service's configuration carries. A service references this from its own schema with allOf, and adds its own properties beside it. What is in here is what EVERY component has, including a job that exits and a consumer that answers nothing: somewhere to report health, a log level, and a shutdown budget. A listener is not one of those — see docs/contracts/config.md.
+@A.Schema { id = "https://github.com/truvity/policy/schemas/service.json"; title = "service" }
+open module spike.contract.Service
+
+import "../vocab/Vocab.pkl" as V
+import "../vocab/Annotations.pkl" as A
+import "Fragments.pkl" as F
+
+  probes: F.Probes
+  log: F.Log?
+  drain: F.Drain?

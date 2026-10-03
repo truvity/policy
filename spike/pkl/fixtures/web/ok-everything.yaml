@@ -1,0 +1,25 @@
+listen: {address: ":8080"}
+probes: {address: ":7070"}
+urls: {address: "http://urls:8080"}
+assets: {directory: /srv/web}
+log: {level: debug}
+drain: {seconds: 30}
+tls:
+  mode: strict
+  certFile: /var/run/identity/tls.crt
+  keyFile: /var/run/identity/tls.key
+  caFile: /var/run/identity/ca.crt
+  trustDomain: example.internal
+  peers:
+    - {namespace: edge, serviceAccount: gateway}
+csp:
+  mode: enforce
+  connectSrc: ["https://collector.example", "http://localhost:4318"]
+  reportUri: /csp-report
+faro:
+  enabled: true
+  collectorUrl: https://collector.example/faro/collect
+  apiKey: pub-key_1.2~3
+  appName: shop-web
+  environment: devel
+  sampleRate: 0.25

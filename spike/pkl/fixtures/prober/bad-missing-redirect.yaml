@@ -1,0 +1,3 @@
+probes: {address: ":7070"}
+interval: 10s
+urls: {address: "http://u"}

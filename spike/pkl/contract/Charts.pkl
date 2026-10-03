@@ -1,0 +1,97 @@
+/// The values of a service chart that follows the library convention (decision
+/// 0009): `platform`, `config` (exactly the service's own contract) and the
+/// image map a release stamps, and nothing else of its own.
+module spike.contract.Charts
+
+import "../vocab/Vocab.pkl" as V
+import "../vocab/Annotations.pkl" as A
+import "Platform.pkl" as P
+import "urlshortener/Web.pkl" as Web
+import "urlshortener/Urls.pkl" as Urls
+import "urlshortener/Redirect.pkl" as Redirect
+import "urlshortener/Stat.pkl" as Stat
+import "urlshortener/LogArchiver.pkl" as LogArchiver
+import "urlshortener/Prober.pkl" as Prober
+import "urlshortener/Migrate.pkl" as Migrate
+
+/// Not a value: Helm puts a key named for every sub-chart into the values it validates, and the library chart is one.
+class ServiceLib {
+  global: V.OpenObject?
+}
+
+/// Two blocks and the image map: `platform` is the platform schema, `config` is the service's own schema, and the chart adds nothing between them.
+@A.Chart { title = "web chart values" }
+class WebValues {
+  /// Not a value: Helm puts a key named for every sub-chart into the values it validates.
+  `service-lib`: ServiceLib?
+  platform: P?
+  config: Web
+  images: WebImages
+}
+class WebImages { web: P.PlatformImage }
+
+/// Two blocks and the image map: `platform` is the platform schema, `config` is the service's own schema, and the chart adds nothing between them.
+@A.Chart { title = "urls chart values" }
+class UrlsValues {
+  /// Not a value: Helm puts a key named for every sub-chart into the values it validates.
+  `service-lib`: ServiceLib?
+  platform: P?
+  config: Urls
+  images: UrlsImages
+}
+class UrlsImages { urls: P.PlatformImage }
+
+/// Two blocks and the image map: `platform` is the platform schema, `config` is the service's own schema, and the chart adds nothing between them.
+@A.Chart { title = "redirect chart values" }
+class RedirectValues {
+  /// Not a value: Helm puts a key named for every sub-chart into the values it validates.
+  `service-lib`: ServiceLib?
+  platform: P?
+  config: Redirect
+  images: RedirectImages
+}
+class RedirectImages { redirect: P.PlatformImage }
+
+/// Two blocks and the image map: `platform` is the platform schema, `config` is the service's own schema, and the chart adds nothing between them.
+@A.Chart { title = "stat chart values" }
+class StatValues {
+  /// Not a value: Helm puts a key named for every sub-chart into the values it validates.
+  `service-lib`: ServiceLib?
+  platform: P?
+  config: Stat
+  images: StatImages
+}
+class StatImages { stat: P.PlatformImage }
+
+/// Two blocks and the image map: `platform` is the platform schema, `config` is the service's own schema, and the chart adds nothing between them.
+@A.Chart { title = "log chart values" }
+class LogValues {
+  /// Not a value: Helm puts a key named for every sub-chart into the values it validates.
+  `service-lib`: ServiceLib?
+  platform: P?
+  config: LogArchiver
+  images: LogImages
+}
+class LogImages { log: P.PlatformImage }
+
+/// Two blocks and the image map: `platform` is the platform schema, `config` is the service's own schema, and the chart adds nothing between them.
+@A.Chart { title = "prober chart values" }
+class ProberValues {
+  /// Not a value: Helm puts a key named for every sub-chart into the values it validates.
+  `service-lib`: ServiceLib?
+  platform: P?
+  config: Prober
+  images: ProberImages
+}
+class ProberImages { prober: P.PlatformImage }
+
+/// Two blocks and the image map: `platform` is the platform schema, `config` is the service's own schema, and the chart adds nothing between them.
+@A.Chart { title = "migrate chart values" }
+class MigrateValues {
+  /// Not a value: Helm puts a key named for every sub-chart into the values it validates.
+  `service-lib`: ServiceLib?
+  platform: P?
+  config: Migrate
+  images: MigrateImages
+}
+class MigrateImages { migrate: P.PlatformImage }

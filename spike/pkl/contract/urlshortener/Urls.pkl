@@ -1,0 +1,11 @@
+/// The service that owns the URL tables. Everything that writes them asks it.
+@A.Schema { id = "https://example.com/url-shortener/schemas/urls.json"; title = "urls" }
+module spike.contract.urlshortener.Urls
+extends "../Service.pkl"
+
+import "../../vocab/Vocab.pkl" as V
+import "../../vocab/Annotations.pkl" as A
+import "../Fragments.pkl" as F
+
+  listen: F.Listen
+  tls: F.Tls?

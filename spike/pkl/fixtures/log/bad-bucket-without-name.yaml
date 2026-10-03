@@ -1,0 +1,6 @@
+probes: {address: ":7070"}
+events:
+  nats: {url: "nats://n:4222"}
+  consumer: {stream: S, durable: d}
+archive:
+  bucket: {region: r}

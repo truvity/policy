@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/spike/schemas/showcase.json",
+  "title": "showcase",
+  "description": "One optional property per vocabulary type, so that every alias can be\nprobed on its own: this is the module the generated probe fixtures run\nagainst, and what proves each alias's constraint and annotation agree.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "port": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535
+    },
+    "percent": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "ratio": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "positiveInt": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "nonNegativeInt": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "bytes": {
+      "type": "string",
+      "pattern": "^[0-9]+(Ki|Mi|Gi|Ti|K|M|G|T)?$"
+    },
+    "duration": {
+      "type": "string",
+      "pattern": "^[0-9]+(ns|us|µs|ms|s|m|h)$"
+    },
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "hostname": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9]([-A-Za-z0-9]{0,61}[A-Za-z0-9])?(\\.[A-Za-z0-9]([-A-Za-z0-9]{0,61}[A-Za-z0-9])?)*$"
+    },
+    "hostPort": {
+      "type": "string",
+      "pattern": "^[^\\s]*:[0-9]{1,5}$"
+    },
+    "postgresUrl": {
+      "type": "string",
+      "pattern": "^postgres(ql)?://"
+    },
+    "imageDigest": {
+      "type": "string",
+      "pattern": "^(sha256:[0-9a-f]{64})?$"
+    },
+    "absPath": {
+      "type": "string",
+      "pattern": "^/.+"
+    },
+    "rootedPath": {
+      "type": "string",
+      "pattern": "^/"
+    },
+    "envName": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+    },
+    "httpOrigin": {
+      "type": "string",
+      "pattern": "^https?://[A-Za-z0-9.*-]+(:[0-9]+)?$"
+    },
+    "reportUri": {
+      "type": "string",
+      "pattern": "^[^\\s;,'\"]*$"
+    },
+    "collectorUrl": {
+      "type": "string",
+      "pattern": "^(https://[^\\s'\"<>;,]+|/[^\\s'\"<>;,?#]*)$"
+    },
+    "publicKey": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._~-]*$"
+    },
+    "urlPath": {
+      "type": "string",
+      "pattern": "^/[^\\s'\"<>;,?#]*$"
+    },
+    "urlPathOrEmpty": {
+      "type": "string",
+      "pattern": "^(/[^\\s'\"<>;,?#]*)?$"
+    },
+    "dnsName": {
+      "type": "string",
+      "pattern": "^([a-z0-9]([-a-z0-9.]*[a-z0-9])?)?$"
+    },
+    "logLevel": {
+      "enum": [
+        "debug",
+        "info",
+        "warn",
+        "error"
+      ]
+    },
+    "tlsMode": {
+      "enum": [
+        "off",
+        "permissive",
+        "strict"
+      ]
+    },
+    "cspMode": {
+      "enum": [
+        "off",
+        "report-only",
+        "enforce"
+      ]
+    },
+    "pullPolicy": {
+      "enum": [
+        "Always",
+        "IfNotPresent",
+        "Never"
+      ]
+    },
+    "otelProtocol": {
+      "enum": [
+        "grpc",
+        "http/protobuf",
+        "http/json"
+      ]
+    }
+  }
+}

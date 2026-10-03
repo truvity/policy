@@ -1,0 +1,12 @@
+{
+  "web":      {"gen": "web.json",      "hand": "examples/url-shortener/schemas/web.json",      "pkl": "contract/urlshortener/Web.pkl"},
+  "urls":     {"gen": "urls.json",     "hand": "examples/url-shortener/schemas/urls.json",     "pkl": "contract/urlshortener/Urls.pkl"},
+  "redirect": {"gen": "redirect.json", "hand": "examples/url-shortener/schemas/redirect.json", "pkl": "contract/urlshortener/Redirect.pkl"},
+  "stat":     {"gen": "stat.json",     "hand": "examples/url-shortener/schemas/stat.json",     "pkl": "contract/urlshortener/Stat.pkl"},
+  "prober":   {"gen": "prober.json",   "hand": "examples/url-shortener/schemas/prober.json",   "pkl": "contract/urlshortener/Prober.pkl"},
+  "migrate":  {"gen": "migrate.json",  "hand": "examples/url-shortener/schemas/migrate.json",  "pkl": "contract/urlshortener/Migrate.pkl"},
+  "log":      {"gen": "log.json",      "hand": "examples/url-shortener/log/src/url_shortener_log/log.schema.json", "pkl": "contract/urlshortener/LogArchiver.pkl"},
+  "shortener":{"gen": "shortener.json","hand": "config/testdata/shortener.schema.json",        "pkl": "contract/urlshortener/Shortener.pkl"},
+  "platform": {"gen": "fragments/platform.json", "hand": "schemas/fragments/platform.json",    "pkl": "contract/Platform.pkl"},
+  "showcase": {"gen": "showcase.json", "hand": null,                                           "pkl": "contract/Showcase.pkl"}
+}

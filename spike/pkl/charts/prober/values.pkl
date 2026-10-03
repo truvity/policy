@@ -1,0 +1,31 @@
+/// The `prober` chart's values: the defaults the chart ships, written once, checked
+/// against the contract at evaluation time, rendered as `values.yaml`.
+module spike.charts.prober.Values
+
+import "../../contract/Charts.pkl"
+import "../../contract/urlshortener/Prober.pkl" as Prober
+
+values: Charts.ProberValues = new {
+  platform = null
+  config = (Prober) {
+    probes { address = ":7070" }
+    log { level = "info" }
+    interval = "10s"
+    keyPrefix = "probe-"
+    urls { address = "http://url-shortener-urls:8080" }
+    redirect { address = "http://url-shortener-redirect:8080" }
+  }
+  images {
+    prober {
+      registry = "ghcr.io"
+      repository = "truvity/policy/url-shortener/prober"
+      tag = ""
+      digest = ""
+    }
+  }
+}
+
+output {
+  renderer = new YamlRenderer {}
+  value = values
+}

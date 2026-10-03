@@ -1,0 +1,3 @@
+probes: {address: ":7070"}
+urls: {address: "http://u"}
+assets: {directory: /d}

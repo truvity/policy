@@ -1,0 +1,18 @@
+/// devel: one replica, debug logs, browser telemetry on, CSP report-only,
+/// cleartext transport.
+amends "../base/web.pkl"
+
+platform {
+  replicas = 1
+}
+
+config {
+  log { level = "debug" }
+  csp { mode = "report-only" }
+  faro {
+    enabled = true
+    appName = "url-shortener-web"
+    environment = "devel"
+    sampleRate = 1
+  }
+}

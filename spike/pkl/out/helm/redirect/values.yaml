@@ -1,0 +1,18 @@
+config:
+  probes:
+    address: :7070
+  log:
+    level: info
+  listen:
+    address: :8080
+  events:
+    nats:
+      url: nats://nats.nats.svc:4222
+    redirectSubject: url-shortener.redirect
+    requestSubject: url-shortener.log
+images:
+  redirect:
+    registry: ghcr.io
+    repository: truvity/policy/url-shortener/redirect
+    tag: ''
+    digest: ''

@@ -1,0 +1,28 @@
+/// The `migrate` chart's values: the defaults the chart ships, written once, checked
+/// against the contract at evaluation time, rendered as `values.yaml`.
+module spike.charts.migrate.Values
+
+import "../../contract/Charts.pkl"
+import "../../contract/urlshortener/Migrate.pkl" as Migrate
+
+values: Charts.MigrateValues = new {
+  platform = null
+  config = (Migrate) {
+    log { level = "info" }
+    ownerRole = "url_shortener_owner"
+    appRole = "url_shortener_app"
+  }
+  images {
+    migrate {
+      registry = "ghcr.io"
+      repository = "truvity/policy/url-shortener/migrate"
+      tag = ""
+      digest = ""
+    }
+  }
+}
+
+output {
+  renderer = new YamlRenderer {}
+  value = values
+}

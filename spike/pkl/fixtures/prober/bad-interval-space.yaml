@@ -1,0 +1,4 @@
+probes: {address: ":7070"}
+interval: 10 s
+urls: {address: "http://u"}
+redirect: {address: "http://r"}

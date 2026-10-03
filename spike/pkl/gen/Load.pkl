@@ -1,0 +1,39 @@
+/// Reads a parsed YAML document into a typed instance of a contract module,
+/// so that Pkl's own enforcement (types, closed classes, alias constraints)
+/// answers "is this document valid". It is the oracle the conformance table
+/// compares every other validator with, and it is also what a gitops pipeline
+/// that holds its values as YAML would call.
+///
+/// `Dynamic.toTyped` is shallow, so the nested conversion is done here by
+/// reflecting on the property types.
+module spike.gen.Load
+
+import "pkl:reflect"
+
+local function conv(v: Any, t: reflect.Type): Any =
+  if (v == null) null
+  else if (t is reflect.NullableType) conv(v, t.member)
+  else if (t is reflect.DeclaredType) declared(v, t)
+  else v
+
+local function declared(v: Any, t: reflect.DeclaredType): Any =
+  let (r = t.referent)
+    if (r is reflect.TypeAlias) conv(v, r.referent)
+    else if (r.enclosingDeclaration.uri == "pkl:base")
+      if (r.name == "Listing" && v is Listing) new Listing { for (e in v) { conv(e, t.typeArguments[0]) } }
+      else if (r.name == "Mapping" && v is Dynamic) new Mapping { for (k, e in v.toMap()) { [k] = conv(e, t.typeArguments[1]) } }
+      else v
+    else typed(v, r as reflect.Class)
+
+local function typed(v: Any, c: reflect.Class): Any =
+  if (v is Dynamic) 
+    let (props = c.allProperties.toMap().filter((_, p) -> !p.modifiers.contains("hidden")))
+    let (extra = v.toMap().keys.filter((k) -> !props.containsKey(k)))
+      if (!extra.isEmpty) throw("Cannot find property `\(extra.first)` in class `\(c.name)`")
+      else v.toMap().mapValues((k, e) -> if (props.containsKey(k)) conv(e, props[k].type) else e).toDynamic().toTyped(c.reflectee)
+  else v
+
+/// The instance of module `m` that `data` (parsed YAML) denotes.
+function load(m: Module, data: Any): Any =
+  if (data is Dynamic) typed(data, reflect.Module(m).moduleClass)
+  else throw("a configuration document must be an object")

@@ -1,0 +1,129 @@
+/// The shapes that mean the same thing in more than one service (schemas/fragments/).
+module spike.contract.Fragments
+
+import "../vocab/Vocab.pkl" as V
+import "../vocab/Annotations.pkl" as A
+
+/// A TCP listener. `address` is a host:port the service binds; an empty host binds every interface.
+@A.Schema { id = "https://github.com/truvity/policy/schemas/fragments/listen.json"; title = "listen" }
+class Listen {
+  /// host:port, for example ":8080" or "127.0.0.1:8080".
+  address: V.HostPort
+}
+
+/// The health listener. Separate from the service's own traffic, so that readiness is answerable when the service's listener is saturated, and so that a probe is not reachable from outside.
+@A.Schema { id = "https://github.com/truvity/policy/schemas/fragments/probes.json"; title = "probes" }
+class Probes {
+  /// host:port for /health/live and /health/ready.
+  address: V.HostPort
+}
+
+/// Structured logging. One level for the whole service: per-package levels are deliberately not part of the contract.
+@A.Schema { id = "https://github.com/truvity/policy/schemas/fragments/log.json"; title = "log" }
+class Log {
+  /// The lowest level that is written.
+  level: V.LogLevel = "info"
+}
+
+/// How long the service may take to finish in-flight work after SIGTERM. It is one number shared with whatever deploys the service: the grace period granted to the process and the pre-stop delay before it are derived from this, so that a draining process is never killed at the moment it would have finished.
+@A.Schema { id = "https://github.com/truvity/policy/schemas/fragments/drain.json"; title = "drain" }
+class Drain {
+  /// Seconds to finish in-flight work. Unset means the service's own default, which is only correct if nothing external is counting.
+  seconds: V.PositiveInt = 20
+}
+
+/// A PostgreSQL connection. The URL carries no password: it names the environment variable that does.
+@A.Schema { id = "https://github.com/truvity/policy/schemas/fragments/postgres.json"; title = "postgres" }
+class Postgres {
+  /// A connection URL without credentials, for example postgres://user@host:5432/dbname?sslmode=require.
+  url: V.PostgresUrl
+  /// The NAME of the environment variable holding the password. Unset means the connection needs none.
+  passwordEnv: V.NonEmptyString?
+  /// Pool size for this instance. Sized against the server's limit divided by the number of instances, not guessed.
+  maxConnections: V.PositiveInt = 10
+}
+
+/// A NATS connection, and nothing else. What a service does with the connection — publish to a subject, bind a durable consumer to a stream — differs per component and is described beside it: a publisher with a `consumer` field it never reads is a field somebody will eventually set.
+@A.Schema { id = "https://github.com/truvity/policy/schemas/fragments/nats.json"; title = "nats" }
+class Nats {
+  /// The server URL, for example nats://nats:4222.
+  url: V.NonEmptyString
+  /// Path to a file holding the token the client authenticates with, mounted by the platform and re-read on every reconnect so that a rotated token is picked up without a restart. It is the workload's own account token: the broker asks an authorisation service who the bearer is, and that service answers from the account rather than from anything the client claims. Unset with `tls` unset means no authentication, which is a test configuration and not a deployment; unset with `tls` set means the certificate is the credential.
+  tokenFile: V.NonEmptyString?
+  /// Connect over TLS and authenticate with the service's own workload identity instead of a token. The certificate presented is the one the service's own top-level `tls` block loads (its mode must not be `off`); the broker maps the identity in it to a user with its own permissions, so what the service may do is the broker's decision and nothing in this file. The certificate is re-read on every connect, so the platform's rotation is picked up without a restart and a rotation drops no connection already made. Only a service that declares this key in its own schema acts on it.
+  tls: NatsTls?
+}
+
+/// Connect over TLS and authenticate with the service's own workload identity instead of a token. The certificate presented is the one the service's own top-level `tls` block loads (its mode must not be `off`); the broker maps the identity in it to a user with its own permissions, so what the service may do is the broker's decision and nothing in this file. The certificate is re-read on every connect, so the platform's rotation is picked up without a restart and a rotation drops no connection already made. Only a service that declares this key in its own schema acts on it.
+class NatsTls {
+  /// Path to the trust bundle the BROKER's certificate is verified against. The broker's, not the workload identity's: a broker has a name and no workload identity, and usually a different chain.
+  caFile: V.NonEmptyString
+  /// The name the broker's certificate was issued for, when that is not the host in `url`. Empty verifies the host dialled.
+  serverName: String?
+}
+
+/// What a consumer binds to: a stream, a durable name, and the subject it filters. Durable by name, because a consumer that forgets its position on restart replays or loses whatever arrived while it was gone.
+@A.Schema { id = "https://github.com/truvity/policy/schemas/fragments/nats-consumer.json"; title = "nats-consumer" }
+class NatsConsumer {
+  /// The stream to consume from. It exists already: a service does not create the stream it reads.
+  stream: V.NonEmptyString
+  /// The durable consumer name. Shared by every replica of this component, which is what makes them one consumer group rather than several.
+  durable: V.NonEmptyString
+  /// Filter the stream to this subject. Unset consumes everything the stream holds.
+  subject: V.NonEmptyString?
+}
+
+/// An object store addressed by the S3 API. The vendor is not part of the configuration: an endpoint, a region and a path-style flag are enough to reach a cloud service, an in-cluster store or a test double, and a service that hard-codes one of them cannot be tested without it.
+@A.Schema { id = "https://github.com/truvity/policy/schemas/fragments/bucket.json"; title = "bucket" }
+class Bucket {
+  /// The bucket. It exists already: a service does not create its own store.
+  name: V.NonEmptyString
+  /// The region the bucket is in.
+  region: V.NonEmptyString?
+  /// Override the API endpoint. Unset means the SDK's own resolution for the region.
+  endpoint: V.Url?
+  /// Path to a certificate authority bundle the platform mounts, for a store whose endpoint is not signed by a public root. A store inside somebody's own network is the ordinary case, not the exotic one. Unset means the system trust store.
+  ca: V.NonEmptyString?
+  /// Address the bucket as a path rather than as a host. Required by most non-cloud implementations.
+  pathStyle: Boolean = false
+  /// The NAMES of the environment variables holding the credentials, never the values. Unset means the SDK's ambient credentials, which is what a workload identity provides.
+  credentialsEnv: BucketCredentialsEnv?
+}
+
+/// The NAMES of the environment variables holding the credentials, never the values. Unset means the SDK's ambient credentials, which is what a workload identity provides.
+class BucketCredentialsEnv {
+  accessKeyID: V.NonEmptyString
+  secretAccessKey: V.NonEmptyString
+}
+
+class TlsPeer {
+  namespace: V.NonEmptyString
+  serviceAccount: V.NonEmptyString
+}
+
+/// Mutually authenticated transport, where the platform provides the identity. A workload presents a certificate it did not mint, reloads it without restarting, and admits peers by the account they run as rather than by the address they call from. Absent, or mode 'off', means cleartext: a service must be installable on a platform that provides none of this.
+class TlsFields {
+  /// 'off' serves cleartext only. 'permissive' serves BOTH, on two ports, so that an edge can migrate one side at a time without a coordinated window. 'strict' serves only the authenticated port. One listener cannot be both in every runtime, which is why permissive is two ports rather than one that sniffs.
+  mode: V.TlsMode = "off"
+  /// Where the authenticated listener binds under 'permissive', beside the cleartext one. Under 'strict' there is one listener and it is the service's own, so this is unused: the protocol changes, the address does not, and nothing downstream has to be told.
+  address: V.NonEmptyString?
+  /// The certificate this workload presents, mounted and rotated by the platform. Re-read when it changes, never cached for the process's lifetime: a one-hour certificate outlives no deployment.
+  certFile: V.NonEmptyString?
+  /// Its private key. It lives in the pod and never in a secret, so a workload that can read secrets in its namespace still cannot read a neighbour's key.
+  keyFile: V.NonEmptyString?
+  /// The authority peers are verified against, distributed by the platform as a trust bundle.
+  caFile: V.NonEmptyString?
+  /// The root of every identity this service will admit, for example 'example.internal'. A peer whose identity belongs to another trust domain is refused before its account is even considered.
+  trustDomain: V.NonEmptyString?
+  /// Who may call. Each entry is an ACCOUNT, not an address: an address resolves to whoever holds it today. An empty list admits no one, which is the correct default for a service nobody has been granted.
+  peers: Listing<TlsPeer>?
+}
+
+/// Mutually authenticated transport, where the platform provides the identity. A workload presents a certificate it did not mint, reloads it without restarting, and admits peers by the account they run as rather than by the address they call from. Absent, or mode 'off', means cleartext: a service must be installable on a platform that provides none of this.
+@A.Schema { id = "https://github.com/truvity/policy/schemas/fragments/tls.json"; title = "tls" }
+@A.RequiredWhen {
+  property = "mode"
+  `in` { "permissive"; "strict" }
+  require { "certFile"; "keyFile"; "caFile"; "trustDomain" }
+}
+typealias Tls = TlsFields(mode == "off" || (certFile != null && keyFile != null && caFile != null && trustDomain != null))

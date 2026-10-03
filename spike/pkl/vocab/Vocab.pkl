@@ -1,0 +1,144 @@
+/// The constrained vocabulary of a data contract: named types that mean the
+/// same thing wherever they appear, and the annotations a generator reads.
+///
+/// `pkl:reflect` does not expose constraint lambdas, so a constraint is
+/// written TWICE in kind and ONCE in value:
+///
+///   - the alias carries the constraint as a lambda (what Pkl itself enforces);
+///   - an annotation on the alias carries the same constraint as data (what a
+///     generator reads).
+///
+/// Where the value is a `local const` (every regular expression, the port
+/// bounds) both spellings reference it, so it cannot drift. Small literals
+/// (`>= 1`) are written twice, and so is the KIND (an alias that annotates
+/// `Range` but constrains a pattern). What covers both is the probe fixtures
+/// (`gen/Probes.pkl`): generated from the annotations, run against Pkl's own
+/// enforcement as the oracle and against every generated validator. They
+/// caught a real drift on their first run: see `Pattern` in Annotations.pkl.
+module spike.vocab.Vocab
+
+import "Annotations.pkl" as A
+
+// ----------------------------------------------------------- numbers and sizes
+
+local const portMin = 1
+local const portMax = 65535
+/// A TCP or UDP port.
+@A.Range { min = portMin; max = portMax }
+typealias Port = Int(isBetween(portMin, portMax))
+
+/// Zero to a hundred, whole.
+@A.Range { min = 0; max = 100 }
+typealias Percent = Int(isBetween(0, 100))
+
+/// A fraction, zero to one.
+@A.Range { min = 0; max = 1 }
+typealias Ratio = Number(isBetween(0, 1))
+
+@A.Range { min = 1 }
+typealias PositiveInt = Int(this >= 1)
+
+@A.Range { min = 0 }
+typealias NonNegativeInt = Int(this >= 0)
+
+local const bytesRe = #"^[0-9]+(Ki|Mi|Gi|Ti|K|M|G|T)?$"#
+/// A byte quantity in Kubernetes' spelling: `128Mi`, `5G`, `1024`.
+@A.Pattern { regex = bytesRe; valid { "128Mi"; "1024"; "5G" }; invalid { "-1"; "1.5Gi"; "Mi"; "10mb" } }
+typealias Bytes = String(contains(Regex(bytesRe)))
+
+local const durationRe = #"^[0-9]+(ns|us|µs|ms|s|m|h)$"#
+/// A duration in Go's spelling, as a string: `10s`, `500ms`. Pkl's own
+/// `Duration` renders as an object, which no other language reads.
+@A.Pattern { regex = durationRe; valid { "10s"; "500ms"; "0s" }; invalid { "10"; "1.5s"; "10 s"; "s"; "10d" } }
+typealias GoDuration = String(contains(Regex(durationRe)))
+
+// ------------------------------------------------------------------- strings
+
+@A.Length { min = 1 }
+typealias NonEmptyString = String(length >= 1)
+
+/// An RFC 3986 URI. `format: uri` is an annotation in this repository, never
+/// asserted (schemas/README.md), so the alias asserts nothing either.
+@A.Format { name = "uri" }
+typealias Url = String
+
+local const hostnameRe = #"^[A-Za-z0-9]([-A-Za-z0-9]{0,61}[A-Za-z0-9])?(\.[A-Za-z0-9]([-A-Za-z0-9]{0,61}[A-Za-z0-9])?)*$"#
+/// An RFC 1123 host name.
+@A.Pattern { regex = hostnameRe; valid { "example.com"; "a"; "db-1.internal" }; invalid { "-a.com"; "a..b"; "a b"; "" } }
+typealias Hostname = String(contains(Regex(hostnameRe)))
+
+local const hostPortRe = #"^[^\s]*:[0-9]{1,5}$"#
+/// host:port as the configuration contract spells it today. It does NOT bound
+/// the port at 65535, because the hand-written pattern does not; `Port` is the
+/// stricter vocabulary a contract may move to.
+@A.Pattern { regex = hostPortRe; valid { ":8080"; "127.0.0.1:80" }; invalid { "8080"; "host"; "a b:80"; ":123456" } }
+typealias HostPort = String(contains(Regex(hostPortRe)))
+
+local const postgresRe = #"^postgres(ql)?://"#
+@A.Pattern { regex = postgresRe; valid { "postgres://u@h:5432/db"; "postgresql://h/db" }; invalid { "mysql://h/db"; "h/db" } }
+typealias PostgresUrl = String(contains(Regex(postgresRe)))
+
+local const digestRe = #"^(sha256:[0-9a-f]{64})?$"#
+@A.Pattern { regex = digestRe; valid { ""; "sha256:0000000000000000000000000000000000000000000000000000000000000000" }; invalid { "sha256:abc"; "md5:00" } }
+typealias ImageDigest = String(contains(Regex(digestRe)))
+
+local const absPathRe = #"^/.+"#
+@A.Pattern { regex = absPathRe; valid { "/etc/x" }; invalid { "etc/x"; "/" } }
+typealias AbsPath = String(contains(Regex(absPathRe)))
+
+local const rootedRe = #"^/"#
+@A.Pattern { regex = rootedRe; valid { "/"; "/live" }; invalid { "live"; "" } }
+typealias RootedPath = String(contains(Regex(rootedRe)))
+
+local const envNameRe = #"^[A-Za-z_][A-Za-z0-9_]*$"#
+@A.Pattern { regex = envNameRe; valid { "A"; "_x1" }; invalid { "1a"; "a-b"; "" } }
+typealias EnvName = String(contains(Regex(envNameRe)))
+
+local const originRe = #"^https?://[A-Za-z0-9.*-]+(:[0-9]+)?$"#
+@A.Pattern { regex = originRe; valid { "https://c.example"; "http://a:80" }; invalid { "https://c.example/p"; "ftp://a"; "c.example" } }
+typealias HttpOrigin = String(contains(Regex(originRe)))
+
+local const reportUriRe = #"^[^\s;,'"]*$"#
+@A.Pattern { regex = reportUriRe; valid { ""; "/r"; "https://r.example/x" }; invalid { "a b"; "a;b"; "a'b" } }
+typealias ReportUri = String(contains(Regex(reportUriRe)))
+
+local const collectorRe = #"^(https://[^\s'"<>;,]+|/[^\s'"<>;,?#]*)$"#
+@A.Pattern { regex = collectorRe; valid { "/faro/collect"; "https://c.example/x" }; invalid { "http://c.example"; "faro"; "/a?b" } }
+typealias CollectorUrl = String(contains(Regex(collectorRe)))
+
+local const publicKeyRe = #"^[A-Za-z0-9._~-]*$"#
+@A.Pattern { regex = publicKeyRe; valid { ""; "ab.C_1~-" }; invalid { "a b"; "a/b" } }
+typealias PublicKey = String(contains(Regex(publicKeyRe)))
+
+local const urlPathRe = #"^/[^\s'"<>;,?#]*$"#
+@A.Pattern { regex = urlPathRe; valid { "/"; "/faro/collect" }; invalid { "faro"; "/a?b" } }
+typealias UrlPath = String(contains(Regex(urlPathRe)))
+
+local const urlPathOrEmptyRe = #"^(/[^\s'"<>;,?#]*)?$"#
+@A.Pattern { regex = urlPathOrEmptyRe; valid { ""; "/x" }; invalid { "x"; "/a?b" } }
+typealias UrlPathOrEmpty = String(contains(Regex(urlPathOrEmptyRe)))
+
+local const dnsLabelRe = #"^([a-z0-9]([-a-z0-9.]*[a-z0-9])?)?$"#
+@A.Pattern { regex = dnsLabelRe; valid { ""; "a-b.c" }; invalid { "-a"; "A"; "a_b" } }
+typealias DnsName = String(contains(Regex(dnsLabelRe)))
+
+// --------------------------------------------------------------------- enums
+
+typealias LogLevel = "debug" | "info" | "warn" | "error"
+typealias TlsMode = "off" | "permissive" | "strict"
+typealias CspMode = "off" | "report-only" | "enforce"
+typealias PullPolicy = "Always" | "IfNotPresent" | "Never"
+typealias OtelProtocol = "grpc" | "http/protobuf" | "http/json"
+
+// ------------------------------------------------------------- open objects
+
+/// Kubernetes' own object shape, passed through unchanged.
+typealias OpenObject = Dynamic
+
+/// An open object that must carry `name`.
+@A.RequiresKeys { keys { "name" } }
+typealias Named = Dynamic(hasProperty("name"))
+
+/// An open object that must carry `name` and `mountPath`.
+@A.RequiresKeys { keys { "name"; "mountPath" } }
+typealias Mounted = Dynamic(hasProperty("name") && hasProperty("mountPath"))

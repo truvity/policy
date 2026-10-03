@@ -1,0 +1,36 @@
+/// The `stat` chart's values: the defaults the chart ships, written once, checked
+/// against the contract at evaluation time, rendered as `values.yaml`.
+module spike.charts.stat.Values
+
+import "../../contract/Charts.pkl"
+import "../../contract/urlshortener/Stat.pkl" as Stat
+
+values: Charts.StatValues = new {
+  platform = null
+  config = (Stat) {
+    probes { address = ":7070" }
+    log { level = "info" }
+    urls { address = "http://url-shortener-urls:8080" }
+    events {
+      nats { url = "nats://nats.nats.svc:4222" }
+      consumer {
+        stream = "URL_SHORTENER_STAT"
+        durable = "stat"
+        subject = "url-shortener.redirect"
+      }
+    }
+  }
+  images {
+    stat {
+      registry = "ghcr.io"
+      repository = "truvity/policy/url-shortener/stat"
+      tag = ""
+      digest = ""
+    }
+  }
+}
+
+output {
+  renderer = new YamlRenderer {}
+  value = values
+}

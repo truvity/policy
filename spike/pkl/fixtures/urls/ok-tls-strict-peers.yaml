@@ -1,0 +1,9 @@
+listen: {address: ":8080"}
+probes: {address: ":7070"}
+tls:
+  mode: strict
+  certFile: /i/c
+  keyFile: /i/k
+  caFile: /i/ca
+  trustDomain: example.internal
+  peers: [{namespace: a, serviceAccount: b}]

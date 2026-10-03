@@ -1,0 +1,186 @@
+# Generated JSON Schemas vs the hand-written ones
+
+== fragments/bucket.json  vs  schemas/fragments/bucket.json: IDENTICAL
+== fragments/drain.json  vs  schemas/fragments/drain.json: IDENTICAL
+== fragments/listen.json  vs  schemas/fragments/listen.json: IDENTICAL
+== fragments/log.json  vs  schemas/fragments/log.json: IDENTICAL
+== fragments/nats-consumer.json  vs  schemas/fragments/nats-consumer.json: IDENTICAL
+== fragments/nats.json  vs  schemas/fragments/nats.json: IDENTICAL
+== fragments/platform.json  vs  schemas/fragments/platform.json: IDENTICAL
+== fragments/postgres.json  vs  schemas/fragments/postgres.json: IDENTICAL
+== fragments/probes.json  vs  schemas/fragments/probes.json: IDENTICAL
+== fragments/tls.json  vs  schemas/fragments/tls.json: IDENTICAL
+== log.json  vs  examples/url-shortener/log/src/url_shortener_log/log.schema.json: IDENTICAL
+== migrate.json  vs  examples/url-shortener/schemas/migrate.json: IDENTICAL
+== prober.json  vs  examples/url-shortener/schemas/prober.json: IDENTICAL
+== redirect.json  vs  examples/url-shortener/schemas/redirect.json: IDENTICAL
+== service.json  vs  schemas/service.json: IDENTICAL
+== shortener.json  vs  config/testdata/shortener.schema.json: IDENTICAL
+== showcase.json  vs  (no hand-written counterpart: new in the Pkl contract): NEW
+== stat.json  vs  examples/url-shortener/schemas/stat.json: IDENTICAL
+== urls.json  vs  examples/url-shortener/schemas/urls.json: IDENTICAL
+== web.json  vs  examples/url-shortener/schemas/web.json: 1 difference(s)
+   /properties/faro/properties/enabled/default
+      hand: false
+      gen : "<absent>"
+
+TOTAL: 20 documents, 19 identical, 1 differences
+
+# Generated chart values.schema.json vs chartschema.Compose of the hand-written schemas
+
+== helm/log: 5 difference(s)
+   /properties/images/properties/log/$ref
+      hand: "https://github.com/truvity/policy/schemas/fragments/platform.json#/properties/image"
+      gen : "<absent>"
+   /properties/images/properties/log/additionalProperties
+      hand: "<absent>"
+      gen : false
+   /properties/images/properties/log/properties
+      hand: "<absent>"
+      gen : {"digest": {"pattern": "^(sha256:[0-9a-f]{64})?$", "type": "string"}, "registry": {"type": "string"}, "repository": {"minLength": 1, "type": "string"}, "tag": {
+   /properties/images/properties/log/required
+      hand: "<absent>"
+      gen : ["repository"]
+   /properties/images/properties/log/type
+      hand: "<absent>"
+      gen : "object"
+== helm/migrate: 5 difference(s)
+   /properties/images/properties/migrate/$ref
+      hand: "https://github.com/truvity/policy/schemas/fragments/platform.json#/properties/image"
+      gen : "<absent>"
+   /properties/images/properties/migrate/additionalProperties
+      hand: "<absent>"
+      gen : false
+   /properties/images/properties/migrate/properties
+      hand: "<absent>"
+      gen : {"digest": {"pattern": "^(sha256:[0-9a-f]{64})?$", "type": "string"}, "registry": {"type": "string"}, "repository": {"minLength": 1, "type": "string"}, "tag": {
+   /properties/images/properties/migrate/required
+      hand: "<absent>"
+      gen : ["repository"]
+   /properties/images/properties/migrate/type
+      hand: "<absent>"
+      gen : "object"
+== helm/prober: 5 difference(s)
+   /properties/images/properties/prober/$ref
+      hand: "https://github.com/truvity/policy/schemas/fragments/platform.json#/properties/image"
+      gen : "<absent>"
+   /properties/images/properties/prober/additionalProperties
+      hand: "<absent>"
+      gen : false
+   /properties/images/properties/prober/properties
+      hand: "<absent>"
+      gen : {"digest": {"pattern": "^(sha256:[0-9a-f]{64})?$", "type": "string"}, "registry": {"type": "string"}, "repository": {"minLength": 1, "type": "string"}, "tag": {
+   /properties/images/properties/prober/required
+      hand: "<absent>"
+      gen : ["repository"]
+   /properties/images/properties/prober/type
+      hand: "<absent>"
+      gen : "object"
+== helm/redirect: 5 difference(s)
+   /properties/images/properties/redirect/$ref
+      hand: "https://github.com/truvity/policy/schemas/fragments/platform.json#/properties/image"
+      gen : "<absent>"
+   /properties/images/properties/redirect/additionalProperties
+      hand: "<absent>"
+      gen : false
+   /properties/images/properties/redirect/properties
+      hand: "<absent>"
+      gen : {"digest": {"pattern": "^(sha256:[0-9a-f]{64})?$", "type": "string"}, "registry": {"type": "string"}, "repository": {"minLength": 1, "type": "string"}, "tag": {
+   /properties/images/properties/redirect/required
+      hand: "<absent>"
+      gen : ["repository"]
+   /properties/images/properties/redirect/type
+      hand: "<absent>"
+      gen : "object"
+== helm/stat: 5 difference(s)
+   /properties/images/properties/stat/$ref
+      hand: "https://github.com/truvity/policy/schemas/fragments/platform.json#/properties/image"
+      gen : "<absent>"
+   /properties/images/properties/stat/additionalProperties
+      hand: "<absent>"
+      gen : false
+   /properties/images/properties/stat/properties
+      hand: "<absent>"
+      gen : {"digest": {"pattern": "^(sha256:[0-9a-f]{64})?$", "type": "string"}, "registry": {"type": "string"}, "repository": {"minLength": 1, "type": "string"}, "tag": {
+   /properties/images/properties/stat/required
+      hand: "<absent>"
+      gen : ["repository"]
+   /properties/images/properties/stat/type
+      hand: "<absent>"
+      gen : "object"
+== helm/urls: 5 difference(s)
+   /properties/images/properties/urls/$ref
+      hand: "https://github.com/truvity/policy/schemas/fragments/platform.json#/properties/image"
+      gen : "<absent>"
+   /properties/images/properties/urls/additionalProperties
+      hand: "<absent>"
+      gen : false
+   /properties/images/properties/urls/properties
+      hand: "<absent>"
+      gen : {"digest": {"pattern": "^(sha256:[0-9a-f]{64})?$", "type": "string"}, "registry": {"type": "string"}, "repository": {"minLength": 1, "type": "string"}, "tag": {
+   /properties/images/properties/urls/required
+      hand: "<absent>"
+      gen : ["repository"]
+   /properties/images/properties/urls/type
+      hand: "<absent>"
+      gen : "object"
+== helm/web: 6 difference(s)
+   /$defs/https://example.com/url-shortener/schemas/web.json/properties/faro/properties/enabled/default
+      hand: false
+      gen : "<absent>"
+   /properties/images/properties/web/$ref
+      hand: "https://github.com/truvity/policy/schemas/fragments/platform.json#/properties/image"
+      gen : "<absent>"
+   /properties/images/properties/web/additionalProperties
+      hand: "<absent>"
+      gen : false
+   /properties/images/properties/web/properties
+      hand: "<absent>"
+      gen : {"digest": {"pattern": "^(sha256:[0-9a-f]{64})?$", "type": "string"}, "registry": {"type": "string"}, "repository": {"minLength": 1, "type": "string"}, "tag": {
+   /properties/images/properties/web/required
+      hand: "<absent>"
+      gen : ["repository"]
+   /properties/images/properties/web/type
+      hand: "<absent>"
+      gen : "object"
+
+TOTAL helm: 36 differences
+
+# Generated values.yaml validated against both (the library Helm validates with)
+
+log       generated values.yaml vs generated     schema: accept
+log       generated values.yaml vs hand-composed schema: accept
+migrate   generated values.yaml vs generated     schema: accept
+migrate   generated values.yaml vs hand-composed schema: accept
+prober    generated values.yaml vs generated     schema: accept
+prober    generated values.yaml vs hand-composed schema: accept
+redirect  generated values.yaml vs generated     schema: accept
+redirect  generated values.yaml vs hand-composed schema: accept
+stat      generated values.yaml vs generated     schema: accept
+stat      generated values.yaml vs hand-composed schema: accept
+urls      generated values.yaml vs generated     schema: accept
+urls      generated values.yaml vs hand-composed schema: accept
+web       generated values.yaml vs generated     schema: accept
+web       generated values.yaml vs hand-composed schema: accept
+
+# helm lint of the generated charts
+
+helm lint web: pass
+helm lint urls: pass
+helm lint redirect: pass
+helm lint stat: pass
+helm lint log: pass
+helm lint prober: pass
+helm lint migrate: pass
+helm lint web with log.level=verbose: NOT REJECTED
+
+# gitops: rendered environments and failing modules
+
+helm lint devel: pass
+helm lint prod: pass
+image-digest-not-a-digest: Type constraint `contains(Regex(digestRe))` violated. Value: "latest" 
+listen-without-port: Type constraint `contains(Regex(hostPortRe))` violated. Value: "8080" 
+log-level-not-a-level: Expected value of type `"debug"|"info"|"warn"|"error"`, but got `"verbose"`.  
+sample-rate-out-of-range: Type constraint `isBetween(0, 1)` violated. Value: 10 
+tls-strict-without-files: Type constraint `mode == "off" || (certFile != null && keyFile != null && caFile != null && trustDomain != null)` violated. Value: new TlsFields { mode = "strict"; address = ?; certFile = null; keyFile = ?; c... 
+unknown-key: Cannot find property `moed` in object of type `spike.contract.urlshortener.Web#Csp`.  

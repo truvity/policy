@@ -1,0 +1,22 @@
+/// Helm artifacts from the contract: `values.schema.json` composed the way
+/// `chartschema.Compose` composes it (every referenced document embedded under
+/// `$defs` by its `$id`, so Helm validates offline), and `values.yaml`.
+module spike.gen.Helm
+
+import "Model.pkl"
+import "JsonSchema.pkl"
+
+/// The composed schema of a chart whose values class is `root`.
+function valuesSchema(root: Model.Node): Dynamic =
+  let (docs = Model.walk(root).filter((n) -> n.schema != null).distinctBy((n) -> n.schema.id))
+  (JsonSchema.objectBody(root.cls, "additionalProperties")) {
+    ["$schema"] = "https://json-schema.org/draft/2020-12/schema"
+    ["title"] = root.chart.title
+    when (root.cls.doc != null) { ["description"] = root.cls.doc }
+    ["$defs"] = new Dynamic {
+      for (d in docs) { [d.schema.id] = JsonSchema.documentIn(d, false) }
+    }
+  }
+
+/// The chart's default values.
+function valuesYaml(values: Any): String = new YamlRenderer {}.renderValue(values)

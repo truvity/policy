@@ -1,0 +1,5 @@
+probes: {address: ":7070"}
+urls: {address: "http://u"}
+events:
+  nats: {url: "nats://n:4222", tokenFile: /t}
+  consumer: {stream: S, durable: d, subject: a.b}

@@ -1,0 +1,29 @@
+/// The `urls` chart's values: the defaults the chart ships, written once, checked
+/// against the contract at evaluation time, rendered as `values.yaml`.
+module spike.charts.urls.Values
+
+import "../../contract/Charts.pkl"
+import "../../contract/urlshortener/Urls.pkl" as Urls
+
+values: Charts.UrlsValues = new {
+  platform = null
+  config = (Urls) {
+    listen { address = ":8080" }
+    probes { address = ":7070" }
+    log { level = "info" }
+    drain { seconds = 20 }
+  }
+  images {
+    urls {
+      registry = "ghcr.io"
+      repository = "truvity/policy/url-shortener/urls"
+      tag = ""
+      digest = ""
+    }
+  }
+}
+
+output {
+  renderer = new YamlRenderer {}
+  value = values
+}

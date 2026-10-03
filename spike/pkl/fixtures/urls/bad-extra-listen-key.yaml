@@ -1,0 +1,2 @@
+listen: {address: ":8080", tls: true}
+probes: {address: ":7070"}

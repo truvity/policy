@@ -1,0 +1,5 @@
+listen: {address: ":8080"}
+probes: {address: ":7070"}
+urls: {address: "http://urls:8080"}
+assets: {directory: /srv/web}
+tls: {mode: permissive, certFile: /a, keyFile: /b, trustDomain: x}

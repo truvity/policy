@@ -1,0 +1,33 @@
+/// The `redirect` chart's values: the defaults the chart ships, written once, checked
+/// against the contract at evaluation time, rendered as `values.yaml`.
+module spike.charts.redirect.Values
+
+import "../../contract/Charts.pkl"
+import "../../contract/urlshortener/Redirect.pkl" as Redirect
+
+values: Charts.RedirectValues = new {
+  platform = null
+  config = (Redirect) {
+    listen { address = ":8080" }
+    probes { address = ":7070" }
+    log { level = "info" }
+    events {
+      nats { url = "nats://nats.nats.svc:4222" }
+      redirectSubject = "url-shortener.redirect"
+      requestSubject = "url-shortener.log"
+    }
+  }
+  images {
+    redirect {
+      registry = "ghcr.io"
+      repository = "truvity/policy/url-shortener/redirect"
+      tag = ""
+      digest = ""
+    }
+  }
+}
+
+output {
+  renderer = new YamlRenderer {}
+  value = values
+}

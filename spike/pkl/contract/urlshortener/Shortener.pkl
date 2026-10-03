@@ -1,0 +1,11 @@
+@A.Schema { id = "https://example.com/schemas/shortener.json" }
+module spike.contract.urlshortener.Shortener
+extends "../Service.pkl"
+
+import "../../vocab/Vocab.pkl" as V
+import "../../vocab/Annotations.pkl" as A
+import "../Fragments.pkl" as F
+
+  listen: F.Listen
+  baseURL: V.Url
+  database: F.Postgres

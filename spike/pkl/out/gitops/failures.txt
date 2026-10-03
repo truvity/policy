@@ -1,0 +1,6 @@
+image-digest-not-a-digest: Type constraint `contains(Regex(digestRe))` violated. Value: "latest" 
+listen-without-port: Type constraint `contains(Regex(hostPortRe))` violated. Value: "8080" 
+log-level-not-a-level: Expected value of type `"debug"|"info"|"warn"|"error"`, but got `"verbose"`.  
+sample-rate-out-of-range: Type constraint `isBetween(0, 1)` violated. Value: 10 
+tls-strict-without-files: Type constraint `mode == "off" || (certFile != null && keyFile != null && caFile != null && trustDomain != null)` violated. Value: new TlsFields { mode = "strict"; address = ?; certFile = null; keyFile = ?; c... 
+unknown-key: Cannot find property `moed` in object of type `spike.contract.urlshortener.Web#Csp`.  

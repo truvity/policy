@@ -1,0 +1,61 @@
+/// Generate the artifacts of the Pkl contract.
+///
+///     pkl run gen.pkl -- --dir out --target jsonschema --target zod
+///
+/// Go and Kotlin are not here: they come from the official generators
+/// (`conformance/generate-go.sh`, `conformance/generate-kotlin.sh`).
+extends "pkl:Command"
+
+import "gen/Index.pkl"
+import "gen/JsonSchema.pkl"
+import "gen/Zod.pkl"
+import "gen/Pydantic.pkl"
+import "gen/Probes.pkl"
+import "gen/Helm.pkl"
+
+typealias Target = "jsonschema" | "zod" | "pydantic" | "probes" | "helm"
+
+options: Options
+
+class Options {
+  /// The directory to write into, relative to the working directory.
+  dir: String = "out"
+
+  /// An artifact to generate; repeat for several. Default: all.
+  target: Listing<Target> = new { "jsonschema"; "zod"; "pydantic"; "probes"; "helm" }
+}
+
+local function wants(t: Target): Boolean = options.target.toList().contains(t)
+
+output {
+  files {
+    when (wants("jsonschema")) {
+      for (k, n in Index.documents) {
+        ["\(options.dir)/jsonschema/\(k).json"] {
+          value = JsonSchema.document(n)
+          renderer = new JsonRenderer { indent = "  " }
+        }
+      }
+    }
+    when (wants("zod")) {
+      ["\(options.dir)/ts/contract.zod.ts"] { text = Zod.render(Index.documents) }
+    }
+    when (wants("pydantic")) {
+      ["\(options.dir)/py/contract_pyd.py"] { text = Pydantic.render(Index.documents) }
+    }
+    when (wants("helm")) {
+      for (k, c in Index.charts) {
+        ["\(options.dir)/helm/\(k)/values.schema.json"] {
+          value = Helm.valuesSchema(c.node)
+          renderer = new JsonRenderer { indent = "  " }
+        }
+        ["\(options.dir)/helm/\(k)/values.yaml"] { text = Helm.valuesYaml(c.values) }
+      }
+    }
+    when (wants("probes")) {
+      for (k, v in Probes.files(Index.documents["showcase"])) {
+        ["\(options.dir)/probes/\(k)"] { value = v; renderer = new JsonRenderer { indent = "" } }
+      }
+    }
+  }
+}

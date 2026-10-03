@@ -1,0 +1,58 @@
+/// Every document of the contract, in one place: the modules a generator
+/// reads. `pkl:reflect` cannot enumerate imports, so this list is the module
+/// graph. Adding a module to the contract means adding a line here; `conformance/semdiff.py`
+/// reports a hand-written schema that has no generated counterpart.
+module spike.gen.Index
+
+import "Model.pkl"
+import "../contract/Fragments.pkl"
+import "../contract/Service.pkl"
+import "../contract/Platform.pkl"
+import "../contract/urlshortener/Migrate.pkl"
+import "../contract/urlshortener/Prober.pkl"
+import "../contract/urlshortener/Redirect.pkl"
+import "../contract/urlshortener/Stat.pkl"
+import "../contract/urlshortener/Urls.pkl"
+import "../contract/urlshortener/Web.pkl"
+import "../contract/urlshortener/LogArchiver.pkl"
+import "../contract/urlshortener/Shortener.pkl"
+import "../contract/Showcase.pkl"
+import "../contract/Charts.pkl"
+import "../charts/web/values.pkl" as WebValues
+import "../charts/urls/values.pkl" as UrlsValues
+import "../charts/redirect/values.pkl" as RedirectValues
+import "../charts/stat/values.pkl" as StatValues
+import "../charts/log/values.pkl" as LogValues
+import "../charts/prober/values.pkl" as ProberValues
+import "../charts/migrate/values.pkl" as MigrateValues
+
+local nodes: List<Model.Node> =
+  Model.documentNames(Fragments).map((n) -> Model.declNode(Fragments, n)) + List(
+    Model.moduleNode(Service), Model.moduleNode(Platform), Model.moduleNode(Migrate), Model.moduleNode(Prober),
+    Model.moduleNode(Redirect), Model.moduleNode(Stat), Model.moduleNode(Urls), Model.moduleNode(Web),
+    Model.moduleNode(LogArchiver), Model.moduleNode(Shortener), Model.moduleNode(Showcase))
+
+/// Path (relative to the schema root, no extension) to root node. The path is
+/// the tail of the document's `$id`.
+documents: Mapping<String, Model.Node> = new {
+  for (n in nodes) {
+    [n.schema.id.split("/schemas/").last.replaceAll(".json", "")] = n
+  }
+}
+
+class ChartEntry {
+  node: Model.Node
+  /// The chart's default values, as a typed instance.
+  values: Any
+}
+
+/// The service charts: values schema node and the defaults instance.
+charts: Mapping<String, ChartEntry> = new {
+  ["web"] = new { node = Model.declNode(Charts, "WebValues"); values = WebValues.values }
+  ["urls"] = new { node = Model.declNode(Charts, "UrlsValues"); values = UrlsValues.values }
+  ["redirect"] = new { node = Model.declNode(Charts, "RedirectValues"); values = RedirectValues.values }
+  ["stat"] = new { node = Model.declNode(Charts, "StatValues"); values = StatValues.values }
+  ["log"] = new { node = Model.declNode(Charts, "LogValues"); values = LogValues.values }
+  ["prober"] = new { node = Model.declNode(Charts, "ProberValues"); values = ProberValues.values }
+  ["migrate"] = new { node = Model.declNode(Charts, "MigrateValues"); values = MigrateValues.values }
+}

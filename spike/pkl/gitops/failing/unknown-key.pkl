@@ -1,0 +1,4 @@
+/// A misspelled key: the class is closed.
+amends "../devel/web.pkl"
+
+config { csp { moed = "enforce" } }

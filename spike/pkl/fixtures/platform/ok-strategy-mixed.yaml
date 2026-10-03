@@ -1,0 +1,2 @@
+strategy: {maxUnavailable: 1, maxSurge: "25%"}
+telemetry: {sampleRatio: 0.25}

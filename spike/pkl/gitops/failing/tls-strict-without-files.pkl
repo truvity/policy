@@ -1,0 +1,4 @@
+/// A cross-field rule: strict transport needs the identity files.
+amends "../devel/web.pkl"
+
+config { tls { mode = "strict" } }

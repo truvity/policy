@@ -1,0 +1,4 @@
+/// A range: `Ratio` is 0 to 1.
+amends "../prod/web.pkl"
+
+config { faro { sampleRate = 10 } }

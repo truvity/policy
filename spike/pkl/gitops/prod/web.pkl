@@ -1,0 +1,37 @@
+/// prod: three replicas with limits, a pinned image, a longer drain, CSP
+/// enforced, browser telemetry sampled, and mutually authenticated transport
+/// that only the gateway may call.
+amends "../base/web.pkl"
+
+platform {
+  replicas = 3
+  resources { limits { memory = "192Mi" } }
+}
+
+config {
+  drain { seconds = 45 }
+  tls {
+    mode = "strict"
+    certFile = "/var/run/identity/tls.crt"
+    keyFile = "/var/run/identity/tls.key"
+    caFile = "/var/run/identity/ca.crt"
+    trustDomain = "example.internal"
+    peers { new { namespace = "edge"; serviceAccount = "gateway" } }
+  }
+  csp {
+    mode = "enforce"
+    connectSrc { "https://collector.example" }
+  }
+  faro {
+    enabled = true
+    collectorUrl = "https://collector.example/faro/collect"
+    environment = "prod"
+    sampleRate = 0.1
+  }
+}
+
+images {
+  web {
+    digest = "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+  }
+}

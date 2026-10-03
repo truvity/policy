@@ -888,6 +888,54 @@
         }
       }
     },
+    "pkl@0.31.1": {
+      "last_modified": "2026-09-29T03:29:29Z",
+      "resolved": "github:NixOS/nixpkgs/b6c8664de9b6cc07fe5666a29f91884ba81197c4#pkl",
+      "source": "devbox-search",
+      "version": "0.31.1",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/8axry6pjwm74p54k7ysq9fskg6vk3h8p-pkl-0.31.1",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/8axry6pjwm74p54k7ysq9fskg6vk3h8p-pkl-0.31.1"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/j1s6cnaz82p53bjxsqdqhr9zs4vq8s07-pkl-0.31.1",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/j1s6cnaz82p53bjxsqdqhr9zs4vq8s07-pkl-0.31.1"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/x0qwpr63nrfyxmrbj862qllxvsihni74-pkl-0.31.1",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/x0qwpr63nrfyxmrbj862qllxvsihni74-pkl-0.31.1"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/587v3c0y7axpzwxazj215ag1vi2ii6ns-pkl-0.31.1",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/587v3c0y7axpzwxazj215ag1vi2ii6ns-pkl-0.31.1"
+        }
+      }
+    },
     "protoc-gen-connect-go@1.20.0": {
       "last_modified": "2026-08-27T07:16:00Z",
       "resolved": "github:NixOS/nixpkgs/c27cdad491a991b11ed731760aa2ef8db0cb0410#protoc-gen-connect-go",

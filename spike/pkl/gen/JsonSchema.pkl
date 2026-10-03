@@ -1,0 +1,96 @@
+/// JSON Schema (draft 2020-12) from the intermediate form.
+module spike.gen.JsonSchema
+
+import "Model.pkl"
+
+local const function bounds(d: Dynamic, lo: String, hi: String, r: Any): Dynamic =
+  (d) {
+    when (r?.min != null) { [lo] = r.min }
+    when (r?.max != null) { [hi] = r.max }
+  }
+
+/// The schema of a node used as a property type or an item type.
+function ofNode(n: Model.Node): Dynamic =
+  if (n.def != null) new Dynamic { ["$ref"] = "#/$defs/\(n.def.name)" }
+  else if (n.schema != null) new Dynamic { ["$ref"] = n.schema.id }
+  else body(n)
+
+local function body(n: Model.Node): Dynamic =
+  if (n.kind == "enum") new Dynamic { ["enum"] = n.values }
+  else if (n.kind == "string")
+    (new Dynamic { ["type"] = "string" }) {
+      when (n.length?.min != null) { ["minLength"] = n.length.min }
+      when (n.length?.max != null) { ["maxLength"] = n.length.max }
+      when (n.pattern != null) { ["pattern"] = n.pattern.regex }
+      when (n.format != null) { ["format"] = n.format.name }
+    }
+  else if (n.kind == "integer") bounds(new Dynamic { ["type"] = "integer" }, "minimum", "maximum", n.range)
+  else if (n.kind == "number") bounds(new Dynamic { ["type"] = "number" }, "minimum", "maximum", n.range)
+  else if (n.kind == "boolean") new Dynamic { ["type"] = "boolean" }
+  else if (n.kind == "list") new Dynamic { ["type"] = "array"; ["items"] = ofNode(n.items) }
+  else if (n.kind == "map")
+    (new Dynamic { ["type"] = "object" }) {
+      when (n.key.pattern != null) { ["propertyNames"] = new Dynamic { ["pattern"] = n.key.pattern.regex } }
+      when (n.items.kind != "any") { ["additionalProperties"] = ofNode(n.items) }
+    }
+  else if (n.kind == "open")
+    (new Dynamic { ["type"] = "object" }) {
+      when (n.requiresKeys != null) { ["required"] = n.requiresKeys.keys.toList() }
+    }
+  else if (n.kind == "union")
+    if (n.members.every((m) -> m.pattern == null && m.range == null && m.length == null && m.kind != "enum" && m.kind != "object"))
+      new Dynamic { ["type"] = n.members.map((m) -> (body(m)) ["type"]) }
+    else new Dynamic { ["anyOf"] = n.members.map((m) -> ofNode(m)) }
+  else if (n.kind == "object") objectBody(n.cls, "additionalProperties")
+  else new Dynamic {}
+
+local function propSchema(p: Model.Prop): Dynamic =
+  (ofNode(p.type)) {
+    when (p.doc != null) { ["description"] = p.doc }
+    when (p.hasDefault) { ["default"] = p.default }
+  }
+
+function objectBody(c: Model.Cls, closer: String): Dynamic =
+  let (req = c.props.filter((p) -> p.required).map((p) -> p.name))
+    new Dynamic {
+      ["type"] = "object"
+      when (closer != "") { [closer] = false }
+      when (!req.isEmpty) { ["required"] = req }
+      ["properties"] = new Dynamic {
+        for (p in c.props) { [p.name] = propSchema(p) }
+      }
+    }
+
+local const schemaUri = "https://json-schema.org/draft/2020-12/schema"
+
+/// A whole document: `$id`, the object, what it extends, its conditionals and
+/// its `$defs`.
+function document(n: Model.Node): Dynamic = documentIn(n, true)
+
+/// `standalone: false` omits `$schema`, as for a document embedded under `$defs`.
+function documentIn(n: Model.Node, standalone: Boolean): Dynamic =
+  let (defs = Model.walkOwn(n).filter((d) -> d.def != null).distinctBy((d) -> d.def.name))
+  let (hasBase = n.cls.base != null)
+  let (inner = objectBody(n.cls, if (n.cls.isOpen) "" else if (hasBase) "unevaluatedProperties" else "additionalProperties"))
+    new Dynamic {
+      when (standalone) { ["$schema"] = schemaUri }
+      ["$id"] = n.schema.id
+      when (n.schema.title != null) { ["title"] = n.schema.title }
+      when ((n.cls.doc ?? n.doc) != null) { ["description"] = n.cls.doc ?? n.doc }
+      when (hasBase || n.requiredWhen != null) {
+        ["allOf"] = (if (hasBase) List(new Dynamic { ["$ref"] = n.cls.base.schema.id }) else List()) +
+          (if (n.requiredWhen == null) List() else List(new Dynamic {
+            ["if"] = new Dynamic {
+              ["properties"] = new Dynamic { ["mode"] = new Dynamic { ["enum"] = n.requiredWhen.`in`.toList() } }
+              ["required"] = List(n.requiredWhen.property)
+            }
+            ["then"] = new Dynamic { ["required"] = n.requiredWhen.require.toList() }
+          }))
+      }
+      ...inner
+      when (!defs.isEmpty) {
+        ["$defs"] = new Dynamic {
+          for (d in defs) { [d.def.name] = body(d) }
+        }
+      }
+    }

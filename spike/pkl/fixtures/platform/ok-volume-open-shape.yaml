@@ -1,0 +1,4 @@
+volumes:
+  - {name: v, emptyDir: {}}
+volumeMounts:
+  - {name: v, mountPath: /x, readOnly: true}

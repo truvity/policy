@@ -1,0 +1,66 @@
+/// The annotations a generator reads. They sit in their own module so that a
+/// language generator which wants only the types (Go, Kotlin) need not generate
+/// them: `pkl-codegen-kotlin` otherwise demands the generated `pkl:base`.
+module spike.vocab.Annotations
+
+/// Marks a module, class or alias as a standalone JSON Schema document.
+class Schema extends Annotation {
+  id: String
+  title: String?
+}
+
+/// A numeric range, inclusive at both ends.
+class Range extends Annotation {
+  min: Number?
+  max: Number?
+}
+
+/// A string length bound.
+class Length extends Annotation {
+  min: Int?
+  max: Int?
+}
+
+/// A regular expression with JSON Schema `pattern` semantics: it may match
+/// ANYWHERE in the string. Pkl's `String.matches` is a FULL match, so an alias
+/// that constrains with `matches(Regex(...))` and annotates a prefix pattern
+/// such as `^/` would accept less than its schema says; the probes caught
+/// exactly that on the first run. Aliases use `contains(Regex(...))`.
+///
+/// Also carries the examples a probe uses to check the alias's
+/// constraint and this annotation still agree.
+class Pattern extends Annotation {
+  regex: String
+  valid: Listing<String>
+  invalid: Listing<String>
+}
+
+/// A JSON Schema `format`: documentation, not validation (schemas/README.md).
+class Format extends Annotation {
+  name: String
+}
+
+/// A conditional requirement: when `property` is one of `in`, every property
+/// in `require` must be present. Pkl cannot reflect a class-level constraint.
+class RequiredWhen extends Annotation {
+  property: String
+  `in`: Listing<String>
+  require: Listing<String>
+}
+
+/// An open object (Pkl `Dynamic`) that must still carry certain keys.
+class RequiresKeys extends Annotation {
+  keys: Listing<String>
+}
+
+/// A class that is reached by `$ref` to `#/$defs/<name>` rather than inlined.
+class Def extends Annotation {
+  name: String
+}
+
+
+/// A class that is the values of a chart: not a document of its own (it has no
+/// `$id`), so it is composed with the documents it refers to.
+class Chart extends Annotation {
+  title: String
+}

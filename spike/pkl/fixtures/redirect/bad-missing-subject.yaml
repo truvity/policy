@@ -1,0 +1,5 @@
+listen: {address: ":8080"}
+probes: {address: ":7070"}
+events:
+  nats: {url: "nats://n:4222"}
+  redirectSubject: a.redirect

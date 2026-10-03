@@ -1,0 +1,25 @@
+config:
+  probes:
+    address: :7070
+  log:
+    level: info
+  events:
+    nats:
+      url: nats://nats.nats.svc:4222
+    consumer:
+      stream: URL_SHORTENER_LOG
+      durable: log
+  archive:
+    bucket:
+      name: url-shortener-archive
+      pathStyle: false
+    prefix: url-shortener/requests
+    batch:
+      maxRecords: 500
+      maxSeconds: 60
+images:
+  log:
+    registry: ghcr.io
+    repository: truvity/policy/url-shortener/log
+    tag: ''
+    digest: ''

@@ -1,0 +1,32 @@
+/// What every environment shares for the `web` chart: the chart's values,
+/// typed by the contract. An environment AMENDS this module and overrides what
+/// differs; whatever it writes is checked against the contract when Pkl
+/// evaluates, so a constraint violation fails the render, not the rollout.
+module gitops.base.Web
+
+import "../../contract/Charts.pkl"
+import "../../contract/Platform.pkl" as P
+import "../../contract/urlshortener/Web.pkl" as Web
+
+platform: P = (P) {
+  replicas = 2
+  resources { requests { cpu = "50m"; memory = "96Mi" } }
+}
+
+config: Web = (Web) {
+  listen { address = ":8080" }
+  probes { address = ":7070" }
+  log { level = "info" }
+  drain { seconds = 20 }
+  urls { address = "http://url-shortener-urls:8080" }
+  assets { directory = "/srv/web" }
+}
+
+images: Charts.WebImages = new {
+  web {
+    registry = "ghcr.io"
+    repository = "truvity/policy/url-shortener/web"
+    tag = ""
+    digest = ""
+  }
+}

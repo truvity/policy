@@ -1,0 +1,4 @@
+/// The image digest has a shape.
+amends "../prod/web.pkl"
+
+images { web { digest = "latest" } }

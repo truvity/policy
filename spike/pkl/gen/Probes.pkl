@@ -1,0 +1,39 @@
+/// Boundary fixtures for the vocabulary, generated from the annotations.
+///
+/// Each alias is probed at and just outside its range, at and just under its
+/// minimum length, with its pattern's own examples, with every enum member and
+/// one that is not, and with a value of the wrong type. The expectation comes
+/// from the ANNOTATION; the fixtures are then run against Pkl's own
+/// enforcement and every generated validator, so an alias whose lambda and
+/// annotation disagree shows up as a probe that Pkl and a generator answer
+/// differently.
+module spike.gen.Probes
+
+import "Model.pkl"
+
+/// property name -> list of (label, value)
+local function probesOf(n: Model.Node): List<Pair<String, Any>> =
+  (if (n.range != null)
+    (if (n.range.min != null) List(Pair("ok", n.range.min)) else List()) +
+    (if (n.range.max != null) List(Pair("ok", n.range.max)) else List()) +
+    (if (n.range.min != null) List(Pair("bad", n.range.min - 1)) else List()) +
+    (if (n.range.max != null) List(Pair("bad", n.range.max + 1)) else List()) +
+    List(Pair("bad", "1"))
+  else List()) +
+  (if (n.length != null && n.length.min != null)
+    List(Pair("ok", "x".repeat(n.length.min)), Pair("bad", "x".repeat(n.length.min - 1))) else List()) +
+  (if (n.pattern != null)
+    n.pattern.valid.toList().map((v) -> Pair("ok", v)) + n.pattern.invalid.toList().map((v) -> Pair("bad", v)) else List()) +
+  (if (n.kind == "enum")
+    n.values.map((v) -> Pair("ok", v)) + List(Pair("bad", "not-a-member"), Pair("bad", 1)) else List()) +
+  (if (n.kind == "string" && n.pattern == null && n.length == null) List(Pair("bad", 1)) else List()) +
+  (if (n.kind == "integer" && n.range == null) List(Pair("ok", 3), Pair("bad", "3")) else List())
+
+/// file name to the one-property document.
+function files(root: Model.Node): Mapping<String, Dynamic> = new {
+  for (p in root.cls.props) {
+    for (i, pr in probesOf(p.type).toList()) {
+      ["\(pr.first)-\(p.name)-\(i).json"] = new Dynamic { [p.name] = pr.second }
+    }
+  }
+}

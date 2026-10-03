@@ -1,0 +1,11 @@
+config:
+  log:
+    level: info
+  ownerRole: url_shortener_owner
+  appRole: url_shortener_app
+images:
+  migrate:
+    registry: ghcr.io
+    repository: truvity/policy/url-shortener/migrate
+    tag: ''
+    digest: ''

@@ -1,0 +1,37 @@
+/// One optional property per vocabulary type, so that every alias can be
+/// probed on its own: this is the module the generated probe fixtures run
+/// against, and what proves each alias's constraint and annotation agree.
+@A.Schema { id = "https://example.com/spike/schemas/showcase.json"; title = "showcase" }
+module spike.contract.Showcase
+
+import "../vocab/Vocab.pkl" as V
+import "../vocab/Annotations.pkl" as A
+
+port: V.Port?
+percent: V.Percent?
+ratio: V.Ratio?
+positiveInt: V.PositiveInt?
+nonNegativeInt: V.NonNegativeInt?
+bytes: V.Bytes?
+duration: V.GoDuration?
+nonEmptyString: V.NonEmptyString?
+url: V.Url?
+hostname: V.Hostname?
+hostPort: V.HostPort?
+postgresUrl: V.PostgresUrl?
+imageDigest: V.ImageDigest?
+absPath: V.AbsPath?
+rootedPath: V.RootedPath?
+envName: V.EnvName?
+httpOrigin: V.HttpOrigin?
+reportUri: V.ReportUri?
+collectorUrl: V.CollectorUrl?
+publicKey: V.PublicKey?
+urlPath: V.UrlPath?
+urlPathOrEmpty: V.UrlPathOrEmpty?
+dnsName: V.DnsName?
+logLevel: V.LogLevel?
+tlsMode: V.TlsMode?
+cspMode: V.CspMode?
+pullPolicy: V.PullPolicy?
+otelProtocol: V.OtelProtocol?

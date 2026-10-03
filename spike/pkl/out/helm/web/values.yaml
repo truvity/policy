@@ -1,0 +1,19 @@
+config:
+  probes:
+    address: :7070
+  log:
+    level: info
+  drain:
+    seconds: 20
+  listen:
+    address: :8080
+  urls:
+    address: http://url-shortener-urls:8080
+  assets:
+    directory: /srv/web
+images:
+  web:
+    registry: ghcr.io
+    repository: truvity/policy/url-shortener/web
+    tag: ''
+    digest: ''

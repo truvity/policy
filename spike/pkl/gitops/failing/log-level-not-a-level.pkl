@@ -1,0 +1,4 @@
+/// An enum.
+amends "../devel/web.pkl"
+
+config { log { level = "verbose" } }

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/shortener.json",
+  "allOf": [
+    {
+      "$ref": "https://github.com/truvity/policy/schemas/service.json"
+    }
+  ],
+  "type": "object",
+  "unevaluatedProperties": false,
+  "required": [
+    "listen",
+    "baseURL",
+    "database"
+  ],
+  "properties": {
+    "listen": {
+      "$ref": "https://github.com/truvity/policy/schemas/fragments/listen.json"
+    },
+    "baseURL": {
+      "type": "string",
+      "format": "uri"
+    },
+    "database": {
+      "$ref": "https://github.com/truvity/policy/schemas/fragments/postgres.json"
+    }
+  }
+}

@@ -1,0 +1,34 @@
+platform:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 96Mi
+config:
+  probes:
+    address: :7070
+  log:
+    level: debug
+  drain:
+    seconds: 20
+  listen:
+    address: :8080
+  urls:
+    address: http://url-shortener-urls:8080
+  csp:
+    mode: report-only
+    connectSrc: []
+  faro:
+    enabled: true
+    collectorUrl: /faro/collect
+    appName: url-shortener-web
+    environment: devel
+    sampleRate: 1
+  assets:
+    directory: /srv/web
+images:
+  web:
+    registry: ghcr.io
+    repository: truvity/policy/url-shortener/web
+    tag: ''
+    digest: ''

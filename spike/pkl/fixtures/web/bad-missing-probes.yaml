@@ -1,0 +1,3 @@
+listen: {address: ":8080"}
+urls: {address: "http://u"}
+assets: {directory: /d}

@@ -1,0 +1,40 @@
+== our generators (Pkl)                         lines   code
+gen/JsonSchema.pkl (jsonschema)                    96     82
+gen/Helm.pkl (helm: schema + values.yaml)          22     14
+gen/Zod.pkl (TypeScript + zod)                     72     52
+gen/Pydantic.pkl (Python + pydantic)              107     80
+gen/Probes.pkl (boundary fixtures)                 39     25
+gen/Model.pkl (reflection -> shared IR)           208    161
+gen/Index.pkl (module graph + chart list)          58     45
+gen.pkl (pkl:Command entry point)                  61     46
+gen/Load.pkl (YAML -> typed instance: oracle)      39     25
+vocab/Annotations.pkl (annotation vocabulary)      66     35
+-- total generator code (all of the above)
+TOTAL                                             768    565
+
+== official generators: our glue only
+conformance/go/generate.sh (pkl-go)                25     22
+conformance/kotlin/run.sh generate step            21     15
+
+== the contract: Pkl vs the hand-written JSON Schema it reproduces
+Pkl: vocab/Vocab.pkl                              144     76
+Pkl: contract/Fragments.pkl                       129     74
+Pkl: contract/Service.pkl                          11      8
+Pkl: contract/Platform.pkl                        152     92
+Pkl: contract/urlshortener/*.pkl (8 modules)      194    125
+Pkl: contract/Charts.pkl + charts/*/values.pkl    321    259
+Pkl TOTAL (contract + vocabulary + charts)        988    666
+JSON: schemas/service.json + fragments/*.json     507    507
+JSON: url-shortener schemas (6 + log + shortener)    378    378
+JSON TOTAL                                        885    885
+
+== generated
+out/jsonschema/** (20 documents)                 1273   1273
+out/helm/**                                      4596   4596
+out/ts/contract.zod.ts                            575    522
+out/py/contract_pyd.py                            554    355
+Go: pkl-gen-go output                            1686   1053
+Kotlin: pkl-codegen-kotlin output (no platform)    828    703
+
+== hand-written loader tests, for scale (the runners of this spike)
+conformance runners (go, ts, py, kt, driver)      892    764

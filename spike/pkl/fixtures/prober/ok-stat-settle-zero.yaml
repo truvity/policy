@@ -1,0 +1,5 @@
+probes: {address: ":7070"}
+interval: 10s
+statSettle: 0s
+urls: {address: "http://u"}
+redirect: {address: "http://r"}

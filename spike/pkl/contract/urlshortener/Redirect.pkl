@@ -1,0 +1,20 @@
+/// The redirect service: resolve a short key and emit what happened.
+@A.Schema { id = "https://example.com/url-shortener/schemas/redirect.json"; title = "redirect" }
+module spike.contract.urlshortener.Redirect
+extends "../Service.pkl"
+
+import "../../vocab/Vocab.pkl" as V
+import "../../vocab/Annotations.pkl" as A
+import "../Fragments.pkl" as F
+
+  listen: F.Listen
+  tls: F.Tls?
+  events: Events
+
+class Events {
+  nats: F.Nats
+  /// Where a resolved redirect is published. One event kind per subject, so a consumer never has to guess what it decoded.
+  redirectSubject: V.NonEmptyString
+  /// Where the request log is published. A separate subject from the redirect, for the same reason.
+  requestSubject: V.NonEmptyString
+}

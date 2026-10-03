@@ -1,0 +1,208 @@
+/// Reflection into a small intermediate form that every generator reads.
+///
+/// This is where `pkl:reflect`'s gaps are paid for once: it has no constrained
+/// type (so constraints come from annotations on aliases), no way to tell an
+/// explicit default from an implicit one (so optional means nullable, and an
+/// object-valued property that is not nullable is required), and no module
+/// graph (so documents are listed in `Index.pkl`).
+module spike.gen.Model
+
+import "pkl:reflect"
+import "../vocab/Annotations.pkl" as A
+
+class Node {
+  /// string integer number boolean enum list map object open any union
+  kind: String
+  /// The vocabulary alias this type was spelled with, if any.
+  alias: String?
+  doc: String?
+  items: Node?
+  key: Node?
+  members: List<Node>?
+  values: List<String>?
+  /// For `object`: the class.
+  cls: Cls?
+  schema: A.Schema?
+  def: A.Def?
+  range: A.Range?
+  length: A.Length?
+  pattern: A.Pattern?
+  format: A.Format?
+  requiresKeys: A.RequiresKeys?
+  requiredWhen: A.RequiredWhen?
+  chart: A.Chart?
+}
+
+class Prop {
+  name: String
+  type: Node
+  required: Boolean
+  hasDefault: Boolean
+  default: Any
+  doc: String?
+}
+
+class Cls {
+  /// Unique across the contract: module short name + class name.
+  qname: String
+  doc: String?
+  props: List<Prop>
+  /// `open` in Pkl: another document extends it, so it must not close itself.
+  isOpen: Boolean = false
+  /// The documented class this one extends (allOf), if any.
+  base: Node?
+}
+
+local const function short(n: String): String = n.split(".").last
+
+local function qualify(mod: String, cls: String): String =
+  if (mod == "Fragments" || cls.startsWith(mod)) cls else mod + cls
+
+local function annots(a: List<Annotation>): Dynamic = new Dynamic {
+  schema = a.findOrNull((x) -> x is A.Schema)
+  def = a.findOrNull((x) -> x is A.Def)
+  range = a.findOrNull((x) -> x is A.Range)
+  length = a.findOrNull((x) -> x is A.Length)
+  pattern = a.findOrNull((x) -> x is A.Pattern)
+  format = a.findOrNull((x) -> x is A.Format)
+  requiresKeys = a.findOrNull((x) -> x is A.RequiresKeys)
+  requiredWhen = a.findOrNull((x) -> x is A.RequiredWhen)
+  chart = a.findOrNull((x) -> x is A.Chart)
+}
+
+local function withAnnots(n: Node, a: List<Annotation>, adoc: String?, aalias: String?): Node = let (x = annots(a))
+  (n) {
+    when (aalias != null) { alias = aalias }
+    when (adoc != null && n.doc == null) { doc = adoc }
+    when (x.schema != null) { schema = x.schema }
+    when (x.def != null) { def = x.def }
+    when (x.range != null) { range = x.range }
+    when (x.length != null) { length = x.length }
+    when (x.pattern != null) { pattern = x.pattern }
+    when (x.format != null) { format = x.format }
+    when (x.requiresKeys != null) { requiresKeys = x.requiresKeys }
+    when (x.requiredWhen != null) { requiredWhen = x.requiredWhen }
+    when (x.chart != null) { chart = x.chart }
+  }
+
+function nodeOf(t: reflect.Type): Node =
+  if (t is reflect.NullableType) nodeOf(t.member)
+  else if (t is reflect.StringLiteralType) new Node { kind = "enum"; values = List(t.value) }
+  else if (t is reflect.UnionType) union(t)
+  else if (t is reflect.DeclaredType) declared(t)
+  else new Node { kind = "any" }
+
+local function union(t: reflect.UnionType): Node =
+  let (ms = t.members.map((m) -> nodeOf(m)))
+    if (ms.every((m) -> m.kind == "enum"))
+      new Node { kind = "enum"; values = ms.flatMap((m) -> m.values) }
+    else
+      new Node { kind = "union"; members = ms }
+
+local function declared(t: reflect.DeclaredType): Node =
+  let (r = t.referent)
+    if (r is reflect.TypeAlias)
+      withAnnots(nodeOf(r.referent), r.annotations, r.docComment, r.name)
+    else if (r.enclosingDeclaration.uri == "pkl:base")
+      base(r.name, t)
+    else if (r.name == "ModuleClass") fromMirror(r.enclosingDeclaration as reflect.Module)
+    else
+      withAnnots(new Node { kind = "object"; cls = classOf(r) }, r.annotations, r.docComment, null)
+
+local function base(name: String, t: reflect.DeclaredType): Node =
+  if (name == "String") new Node { kind = "string" }
+  else if (name == "Int") new Node { kind = "integer" }
+  else if (name == "Float" || name == "Number") new Node { kind = "number" }
+  else if (name == "Boolean") new Node { kind = "boolean" }
+  else if (name == "Listing" || name == "List") new Node { kind = "list"; items = nodeOf(t.typeArguments[0]) }
+  else if (name == "Mapping" || name == "Map") new Node { kind = "map"; key = nodeOf(t.typeArguments[0]); items = nodeOf(t.typeArguments[1]) }
+  else if (name == "Dynamic") new Node { kind = "open" }
+  else if (name == "Any") new Node { kind = "any" }
+  else throw("Model: unsupported standard type \(name)")
+
+local function isScalarish(n: Node): Boolean = !(n.kind == "object" || n.kind == "open" || n.kind == "any")
+
+local function jsonValue(v: Any): Any =
+  if (v is Listing) v.toList().map((e) -> jsonValue(e))
+  else if (v is Mapping) v.toMap().mapValues((_, e) -> jsonValue(e))
+  else v
+
+local function propOf(pname: String, p: reflect.Property): Prop = let (n = nodeOf(p.type)) let (nullable = p.type is reflect.NullableType)
+    new Prop {
+      name = pname
+      type = n
+      doc = p.docComment
+      required = !nullable && (if (isScalarish(n)) p.defaultValue == null else true)
+      hasDefault = isScalarish(n) && p.defaultValue != null
+      default = if (isScalarish(n) && p.defaultValue != null) jsonValue(p.defaultValue) else null
+    }
+
+local function propsOf(props: Map<String, reflect.Property>): List<Prop> =
+  props.toMap().filter((_, p) -> !p.modifiers.contains("hidden") && !p.modifiers.contains("local"))
+    .toMap().entries.map((e) -> propOf(e.first, e.second))
+
+local function classOf(c: reflect.Class): Cls =
+  let (mod = c.enclosingDeclaration)
+  let (sup = c.superclass)
+  new Cls {
+    qname = qualify(short(mod.name), c.name)
+    doc = c.docComment
+    props = propsOf(c.properties)
+    when (sup != null && sup.enclosingDeclaration.uri != "pkl:base" && annots(sup.annotations).schema != null) {
+      base = declared(reflect.DeclaredType(sup))
+    }
+  }
+
+/// The root node of a module that is itself a document.
+function moduleNode(m: Module): Node = fromMirror(reflect.Module(m))
+
+local function fromMirror(mm: reflect.Module): Node =
+  let (sup = mm.supermodule)
+  withAnnots(new Node {
+    kind = "object"
+    cls = new Cls {
+      qname = short(mm.name)
+      doc = mm.docComment
+      props = propsOf(mm.moduleClass.properties)
+      isOpen = mm.modifiers.contains("open")
+      when (sup != null && sup.annotations.any((a) -> a is A.Schema)) {
+        base = fromMirror(sup)
+      }
+    }
+  }, mm.annotations, mm.docComment, null)
+
+/// The root node of a class or alias in `m` that is a document.
+function declNode(m: Module, name: String): Node =
+  let (mm = reflect.Module(m))
+  if (mm.typeAliases.containsKey(name)) declared(reflect.DeclaredType(mm.typeAliases[name]))
+  else declared(reflect.DeclaredType(mm.classes[name]))
+
+/// The names in `m` that are documents: annotated with `@Schema`.
+function documentNames(m: Module): List<String> =
+  let (mm = reflect.Module(m))
+  mm.classes.toMap().filter((_, c) -> c.annotations.any((a) -> a is A.Schema)).keys.toList() +
+  mm.typeAliases.toMap().filter((_, c) -> c.annotations.any((a) -> a is A.Schema)).keys.toList()
+
+local function kids(n: Node): List<Node> =
+  if (n.kind == "object") n.cls.props.map((p) -> p.type) + (if (n.cls.base != null) List(n.cls.base) else List())
+  else if (n.kind == "list") List(n.items)
+  else if (n.kind == "map") List(n.key, n.items)
+  else if (n.kind == "union") n.members
+  else List()
+
+/// Every node in the subtree of `n`, `n` first.
+function walk(n: Node): List<Node> = List(n) + kids(n).flatMap((c) -> walk(c))
+
+/// The same, but without descending into other documents (they are `$ref`s).
+function walkOwn(n: Node): List<Node> = List(n) + kids(n).flatMap((c) -> if (c.schema != null) List(c) else walkOwn(c))
+
+/// The distinct classes and aliases reachable from `roots`, in first-seen order.
+function classes(roots: List<Node>): List<Node> =
+  roots.flatMap((r) -> walk(r)).filter((n) -> n.kind == "object").distinctBy((n) -> n.cls.qname)
+
+function aliases(roots: List<Node>): List<Node> =
+  roots.flatMap((r) -> walk(r)).filter((n) -> n.alias != null && n.kind != "object").distinctBy((n) -> n.alias)
+
+/// Aliases that name a class (a class plus a constraint on it).
+function classAliases(roots: List<Node>): List<Node> =
+  roots.flatMap((r) -> walk(r)).filter((n) -> n.alias != null && n.kind == "object").distinctBy((n) -> n.alias)

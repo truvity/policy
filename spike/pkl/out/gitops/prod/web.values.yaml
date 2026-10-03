@@ -1,0 +1,46 @@
+platform:
+  replicas: 3
+  resources:
+    requests:
+      cpu: 50m
+      memory: 96Mi
+    limits:
+      memory: 192Mi
+config:
+  probes:
+    address: :7070
+  log:
+    level: info
+  drain:
+    seconds: 45
+  listen:
+    address: :8080
+  tls:
+    mode: strict
+    certFile: /var/run/identity/tls.crt
+    keyFile: /var/run/identity/tls.key
+    caFile: /var/run/identity/ca.crt
+    trustDomain: example.internal
+    peers:
+    - namespace: edge
+      serviceAccount: gateway
+  urls:
+    address: http://url-shortener-urls:8080
+  csp:
+    mode: enforce
+    connectSrc:
+    - https://collector.example
+  faro:
+    enabled: true
+    collectorUrl: https://collector.example/faro/collect
+    appName: url-shortener-web
+    environment: prod
+    sampleRate: 0.1
+  assets:
+    directory: /srv/web
+images:
+  web:
+    registry: ghcr.io
+    repository: truvity/policy/url-shortener/web
+    tag: ''
+    digest: sha256:1111111111111111111111111111111111111111111111111111111111111111
