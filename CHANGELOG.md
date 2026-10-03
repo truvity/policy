@@ -8,29 +8,25 @@ subjects under them are the GitHub Release's own list.
 
 ### Contracts
 
-- **Breaking: the values only an install can give are no longer in
-  `values.yaml`, and an empty one is refused by the schema.** The three
-  url-shortener charts used to ship `""` for them and refuse the empty string
-  later, in a template or in a `minLength` that applied at some paths only. Now
-  the key is absent from the defaults and the schema names it as missing:
-  `database.host`, `database.owner.passwordSecret`, `database.app.passwordSecret`,
-  `events.url` and `archive.bucket.name` of the application chart, and
-  `appRelease`, `database.{host,name,owner.role,app.role,app.passwordSecret}`,
+- **The values only an install can give are no longer in `values.yaml`; the
+  schema asks for them by name.** The three url-shortener charts used to ship
+  `""` for them. Now the key is absent from the defaults: `database.host`,
+  `database.owner.passwordSecret`, `database.app.passwordSecret`, `events.url`
+  and `archive.bucket.name` of the application chart, and `appRelease`,
+  `database.{host,name,owner.role,app.role,app.passwordSecret}`,
   `events.{stream,redirectSubject,requestSubject,statConsumer,logConsumer}` and
-  `archive.bucket` of the test chart. An install that sets them is unchanged. An
-  install (or `helm lint` / `ct lint`) that leaves one out was already refused and
-  still is, but at the schema: `helm template`, `lint` and `install` now report a
-  missing property where they reported an empty string, and `archive.bucket.name`
-  is refused by the schema where the template used to refuse it. `helm show
-  values` no longer lists the keys, so a values file that edits a copy of the old
-  defaults should drop its empty lines. The application chart still asks for none
-  of them when `alerts.remote.enabled` is true. Step to take: set each of them
-  (the example's `hack/install.sh` and `hack/install-e2e-chart.sh` already do),
-  and stop passing `""`.
-- **Breaking: `route.faro.requestBufferLimit` is absent by default, and `""` is
-  refused.** Absent renders no policy, as the empty string did; a platform that
-  passes `requestBufferLimit: ""` to mean "none" must leave the key out. The
-  value is still a quantity such as `256Ki`.
+  `archive.bucket` of the test chart. Nothing that rendered before stops
+  rendering: each of them was already refused, in every configuration where it is
+  refused now (the application chart renders all five components whatever their
+  replicas, so the archiver's `archive.bucket.name` check always ran; the test
+  chart's schema already required all of them). What differs is the message:
+  `helm template`, `lint` and `install` report a missing property from the schema
+  where they reported an empty string or, for `archive.bucket.name`, the
+  template's own error. `helm show values` no longer lists the keys, so a values
+  file that edits a copy of the old defaults can drop its empty lines. With
+  `alerts.remote.enabled` the application chart still needs none of them.
+- **`route.faro.requestBufferLimit` is absent by default.** Absent renders no
+  policy; `""` is still accepted and means none, exactly as before.
 
 ### Tooling
 

@@ -325,12 +325,18 @@ def is_line_break_guard(n) -> bool:
     return p == "\\n" or (p.startswith("[") and p.endswith("]") and "\\n" in p and "\\r" in p)
 
 
+def empty_form_kept(hand: str, gen: str) -> bool:
+    """The hand-written pattern is the generated one with the empty string also allowed: `^(X)?$` against `^X$`."""
+    return gen.startswith("^") and gen.endswith("$") and hand == f"^({gen[1:-1]})?$"
+
+
 def respelled(hand: str, gen: str) -> bool:
     """The generated pattern is the hand-written one with `\\s` and `.` spelled as classes."""
     return gen.replace(WHITE_SPACE_CLASS, "\\s").replace("[^\\n]", ".") == hand
 
 
 CAUSES = {
+    "empty-form-kept": "the hand-written schema keeps the empty string as a value meaning \"none\", for compatibility, until the switch; the contract has the field absent instead (an optional field is absent or non-empty)",
     "pattern-spelling": "pkl-contracts v0.3.0 spells white space and `.` as explicit classes, the same in every engine; the hand-written `\\s` and `.` are read differently by each",
     "set-at-install": "pkl-contracts v0.3.0 `@A.SetAtInstall`: the schema requires a real value and the defaults leave it out; the hand-written values.yaml ships an empty placeholder",
     "newline-guard": "decision 0010: a pattern refuses every line break; the generated schema adds `not: {pattern: \"[...]\"}` over them",
@@ -414,6 +420,8 @@ def compare(doc: str, h: dict, g: dict, path: str, out: list[Diff], has_default=
     if hp != gp:
         if hp is not None and gp is not None and respelled(hp, gp):
             add("pattern-spelling", hp, gp)
+        elif hp is not None and gp is not None and empty_form_kept(hp, gp):
+            add("empty-form-kept", hp, gp)
         else:
             add("pattern-missing" if gp is None else "pattern-added" if hp is None else "pattern", hp, gp)
     if gp is not None and g.get("noNewline") and not h.get("noNewline"):
