@@ -1,0 +1,7 @@
+apiVersion: example.com/notifier/v2
+probes:
+  address: ":7070"
+endpoint: https://example.com/hook
+retry:
+  attempts: 5
+  backoff: 200ms

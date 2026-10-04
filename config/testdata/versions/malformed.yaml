@@ -1,0 +1,5 @@
+# Not <group>/<kind>/v<N>. Refused by its form, before any schema is chosen.
+apiVersion: notifier-two
+probes:
+  address: ":7070"
+endpoint: https://example.com/hook

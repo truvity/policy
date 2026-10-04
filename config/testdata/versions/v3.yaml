@@ -1,0 +1,7 @@
+# Newer than any binary that reads N=2 and N-1=1. Refused, never read as v2.
+apiVersion: example.com/notifier/v3
+probes:
+  address: ":7070"
+endpoint: https://example.com/hook
+retry:
+  attempts: 5

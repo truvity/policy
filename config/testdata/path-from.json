@@ -1,0 +1,20 @@
+{
+  "$comment": "How a binary finds its one configuration file (docs/contracts/service.md, rule 1): the argument --config (or -config, the spelling Go's flag package and the library chart use), else the one environment variable the binary names, here EXAMPLE_CONFIG. Every loader that resolves the path runs these. `env` is the whole environment for the case; `want` is the path, `refused` what the error must contain.",
+  "env": "EXAMPLE_CONFIG",
+  "cases": [
+    { "name": "the argument", "args": ["--config", "/etc/svc/a.yaml"], "env": {}, "want": "/etc/svc/a.yaml" },
+    { "name": "the argument, joined", "args": ["--config=/etc/svc/a.yaml"], "env": {}, "want": "/etc/svc/a.yaml" },
+    { "name": "the argument, one dash", "args": ["-config", "/etc/svc/a.yaml"], "env": {}, "want": "/etc/svc/a.yaml" },
+    { "name": "the argument, one dash, joined", "args": ["-config=/etc/svc/a.yaml"], "env": {}, "want": "/etc/svc/a.yaml" },
+    { "name": "the variable", "args": [], "env": { "EXAMPLE_CONFIG": "/opt/svc/b.yaml" }, "want": "/opt/svc/b.yaml" },
+    { "name": "the argument wins over the variable", "args": ["--config", "/etc/svc/a.yaml"], "env": { "EXAMPLE_CONFIG": "/opt/svc/b.yaml" }, "want": "/etc/svc/a.yaml" },
+    { "name": "other arguments are not this helper's business", "args": ["serve", "--verbose", "--config", "/etc/svc/a.yaml", "extra"], "env": {}, "want": "/etc/svc/a.yaml" },
+    { "name": "nothing after -- is an option", "args": ["--", "--config", "/etc/svc/a.yaml"], "env": { "EXAMPLE_CONFIG": "/opt/svc/b.yaml" }, "want": "/opt/svc/b.yaml" },
+    { "name": "neither names both ways to give it", "args": [], "env": {}, "refused": ["--config", "EXAMPLE_CONFIG"] },
+    { "name": "an empty variable is not a path", "args": [], "env": { "EXAMPLE_CONFIG": "" }, "refused": ["EXAMPLE_CONFIG is empty"] },
+    { "name": "the argument with no value", "args": ["--config"], "env": { "EXAMPLE_CONFIG": "/opt/svc/b.yaml" }, "refused": ["--config has no value"] },
+    { "name": "the argument followed by another option", "args": ["--config", "--verbose"], "env": {}, "refused": ["--config has no value"] },
+    { "name": "the argument with an empty value", "args": ["--config="], "env": {}, "refused": ["--config has no value"] },
+    { "name": "the argument twice", "args": ["--config", "/etc/svc/a.yaml", "-config=/etc/svc/b.yaml"], "env": {}, "refused": ["--config is given more than once"] }
+  ]
+}

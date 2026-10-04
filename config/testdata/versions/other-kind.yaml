@@ -1,0 +1,8 @@
+# The right version of the wrong kind of document: a file mounted into the
+# wrong workload.
+apiVersion: example.com/archiver/v2
+probes:
+  address: ":7070"
+endpoint: https://example.com/hook
+retry:
+  attempts: 5

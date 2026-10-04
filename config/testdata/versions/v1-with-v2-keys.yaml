@@ -1,0 +1,8 @@
+# Labelled v1 and shaped like v2. It is validated against v1, which does not
+# know `retry`; it is never upgraded, and never guessed at.
+apiVersion: example.com/notifier/v1
+probes:
+  address: ":7070"
+endpoint: https://example.com/hook
+retry:
+  attempts: 5

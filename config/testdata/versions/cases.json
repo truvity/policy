@@ -1,0 +1,88 @@
+{
+  "$comment": "Every loader that reads versions runs these, with the same upgrade written in its own language: v1's `retries` becomes v2's `retry.attempts`. `reads` is what the binary declares: `both` is N=2 with N-1=1 and an upgrade, `current` is N=2 alone, `load` is the plain loader (which reads v1 only) given `schema`. `upgrade` replaces the good upgrade with one that drops `retry` (`drops-retry`) or fails (`fails`). `want` maps a dotted path to the value the loaded document holds there; `refused` lists what the error must contain. No error may contain a value from the file but the version.",
+  "kind": "example.com/notifier",
+  "cases": [
+    {
+      "name": "the current version loads as it is",
+      "file": "v2.yaml",
+      "reads": "both",
+      "want": { "apiVersion": "example.com/notifier/v2", "retry.attempts": 5, "retry.backoff": "200ms" }
+    },
+    {
+      "name": "the previous version is validated as itself, then upgraded",
+      "file": "v1.yaml",
+      "reads": "both",
+      "want": { "apiVersion": "example.com/notifier/v2", "retry.attempts": 4 }
+    },
+    {
+      "name": "no apiVersion is v1, and is upgraded",
+      "file": "v1-implied.yaml",
+      "reads": "both",
+      "want": { "apiVersion": "example.com/notifier/v2", "retry.attempts": 2 }
+    },
+    {
+      "name": "a newer version is refused, not read as the current one",
+      "file": "v3.yaml",
+      "reads": "both",
+      "refused": ["apiVersion: v3 is newer than this binary reads (v2, v1)"]
+    },
+    {
+      "name": "another kind of document is refused",
+      "file": "other-kind.yaml",
+      "reads": "both",
+      "refused": ["apiVersion: names another kind of document; this binary reads example.com/notifier"]
+    },
+    {
+      "name": "a version that is not of the form is refused by its form",
+      "file": "malformed.yaml",
+      "reads": "both",
+      "refused": ["apiVersion: not of the form <group>/<kind>/v<N>"]
+    },
+    {
+      "name": "a v1 document is validated against v1, never guessed at",
+      "file": "v1-with-v2-keys.yaml",
+      "reads": "both",
+      "refused": ["(as example.com/notifier/v1)", "retry: not a key this service reads"]
+    },
+    {
+      "name": "a binary that reads only v2 refuses v1",
+      "file": "v1.yaml",
+      "reads": "current",
+      "refused": ["apiVersion: v1 is older than this binary reads (v2)"]
+    },
+    {
+      "name": "a binary that reads only v2 refuses a document with no version",
+      "file": "v1-implied.yaml",
+      "reads": "current",
+      "refused": ["apiVersion: absent, which is v1, older than this binary reads (v2)"]
+    },
+    {
+      "name": "an upgrade that produces an invalid document is refused, and says it was upgraded",
+      "file": "v1.yaml",
+      "reads": "both",
+      "upgrade": "drops-retry",
+      "refused": ["(upgraded from v1 to example.com/notifier/v2)", "missing property 'retry'"]
+    },
+    {
+      "name": "an upgrade that fails is refused, naming both versions",
+      "file": "v1.yaml",
+      "reads": "both",
+      "upgrade": "fails",
+      "refused": ["upgrading v1 to v2"]
+    },
+    {
+      "name": "the plain loader reads v1",
+      "file": "v1.yaml",
+      "reads": "load",
+      "schema": "notifier.v1.schema.json",
+      "want": { "apiVersion": "example.com/notifier/v1", "retries": 4 }
+    },
+    {
+      "name": "the plain loader refuses any version but v1",
+      "file": "v2.yaml",
+      "reads": "load",
+      "schema": "notifier.v2.schema.json",
+      "refused": ["apiVersion: v2 is newer than this binary reads (v1)"]
+    }
+  ]
+}

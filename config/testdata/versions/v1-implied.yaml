@@ -1,0 +1,5 @@
+# No apiVersion: a document written before the kind had versions. It is v1.
+probes:
+  address: ":7070"
+endpoint: https://example.com/hook
+retries: 2

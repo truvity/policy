@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/santhosh-tekuri/jsonschema/v6"
+	"github.com/santhosh-tekuri/jsonschema/v6/kind"
 	yaml "go.yaml.in/yaml/v3"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -36,44 +37,74 @@ import (
 //
 // schema is the service's own schema. Any `$ref` to a shape this repository
 // publishes resolves from the embedded copies; nothing is fetched.
+//
+// Load reads version 1 of a document and nothing else: a document whose
+// `apiVersion` names a later version is refused before it is validated,
+// rather than checked against a schema it was not written for. A binary that
+// reads a later version, or two, declares them with [Kind] and calls
+// [LoadKind].
 func Load(filePath string, schema []byte, v any) error {
+	doc, err := read(filePath)
+	if err != nil {
+		return err
+	}
+	if failure := versionFailure(doc, Kind{Version: 1}); failure != "" {
+		return &Error{File: filePath, Failures: []string{failure}}
+	}
+	if err := Validate(doc, schema); err != nil {
+		return inFile(err, filePath, "")
+	}
+	return decode(filePath, doc, v)
+}
+
+// read parses the file at filePath into a document, normalised through JSON
+// so that validation and decoding see exactly the same thing: the schema is a
+// JSON Schema, and the struct tags a service writes are JSON tags.
+func read(filePath string) (any, error) {
 	raw, err := os.ReadFile(filePath)
 	if err != nil {
-		return &Error{File: filePath, Err: err}
+		return nil, &Error{File: filePath, Err: err}
 	}
 
 	var doc any
 	if err := yaml.Unmarshal(raw, &doc); err != nil {
-		return &Error{File: filePath, Err: fmt.Errorf("not valid YAML: %w", err)}
+		return nil, &Error{File: filePath, Err: fmt.Errorf("not valid YAML: %w", err)}
 	}
 	if doc == nil {
-		return &Error{File: filePath, Err: errors.New("file is empty")}
+		return nil, &Error{File: filePath, Err: errors.New("file is empty")}
 	}
 
-	// Round-trip through JSON so that validation and decoding see exactly the
-	// same document: the schema is a JSON Schema, and the struct tags a
-	// service writes are JSON tags.
 	asJSON, err := json.Marshal(doc)
 	if err != nil {
-		return &Error{File: filePath, Err: fmt.Errorf("cannot be represented as JSON: %w", err)}
+		return nil, &Error{File: filePath, Err: fmt.Errorf("cannot be represented as JSON: %w", err)}
 	}
 	var normalised any
 	if err := json.Unmarshal(asJSON, &normalised); err != nil {
+		return nil, &Error{File: filePath, Err: err}
+	}
+	return normalised, nil
+}
+
+// decode writes an already-validated document into v.
+func decode(filePath string, doc any, v any) error {
+	asJSON, err := json.Marshal(doc)
+	if err != nil {
 		return &Error{File: filePath, Err: err}
 	}
-
-	if err := Validate(normalised, schema); err != nil {
-		var ve *Error
-		if errors.As(err, &ve) {
-			ve.File = filePath
-		}
-		return err
-	}
-
 	if err := json.Unmarshal(asJSON, v); err != nil {
 		return &Error{File: filePath, Err: fmt.Errorf("valid against the schema but does not fit %T: %w", v, err)}
 	}
 	return nil
+}
+
+// inFile names the file, and how it was read, on an error from Validate.
+func inFile(err error, filePath, as string) error {
+	var ve *Error
+	if errors.As(err, &ve) {
+		ve.File = filePath
+		ve.As = as
+	}
+	return err
 }
 
 // Validate checks an already-decoded document against schema. Load calls it;
@@ -156,6 +187,18 @@ func flatten(ve *jsonschema.ValidationError) []string {
 			loc = "(root)"
 		}
 		msg := e.ErrorKind.LocalizedString(printer)
+		switch k := e.ErrorKind.(type) {
+		case *kind.Pattern:
+			// The library's own message quotes the value it refused, and
+			// the value a pattern most often refuses is a URL with a
+			// password in it. Name the rule, never the value.
+			msg = fmt.Sprintf("does not match pattern %q", k.Want)
+		case *kind.Not:
+			// "'not' failed" says nothing. A `not` in a schema here is a
+			// form a value must not take (a password in a database URL);
+			// the schema's description of it says which and why.
+			msg = notAllowedForm
+		}
 		// What a strict schema says when a key is not in it. Accurate,
 		// and meaningless to anyone who has not read the specification:
 		// this is the most common configuration mistake there is, so its
@@ -170,6 +213,9 @@ func flatten(ve *jsonschema.ValidationError) []string {
 	sort.Strings(out)
 	return dedupe(out)
 }
+
+// notAllowedForm is what a failed `not` reads as, in every loader.
+const notAllowedForm = "is in a form the schema forbids here (its description says why)"
 
 func dedupe(in []string) []string {
 	seen := make(map[string]bool, len(in))
@@ -206,11 +252,16 @@ func Secret(name string) (string, error) {
 	return v, nil
 }
 
-// Error is what Load and Validate return. It names the file and every failing
-// path; it never contains a value from the file, because an error is logged
-// and a configuration file may sit next to a secret's name.
+// Error is what Load, LoadKind, Validate and PathFrom return. It names the
+// file and every failing path; it never contains a value from the file,
+// because an error is logged and a configuration file may sit next to a
+// secret's name.
 type Error struct {
-	File     string
+	File string
+	// As says which version of the document the failures are against, when
+	// the binary reads versions: "as <group>/<kind>/vN", or "upgraded from
+	// vN-1 to <group>/<kind>/vN" when the document was converted first.
+	As       string
 	Failures []string
 	Err      error
 }
@@ -220,6 +271,9 @@ func (e *Error) Error() string {
 	b.WriteString("configuration")
 	if e.File != "" {
 		b.WriteString(" " + e.File)
+	}
+	if e.As != "" {
+		b.WriteString(" (" + e.As + ")")
 	}
 	switch {
 	case len(e.Failures) > 0:
