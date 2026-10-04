@@ -6,6 +6,10 @@ subjects under them are the GitHub Release's own list.
 
 ## Unreleased
 
+### Fixes
+
+- **url-shortener log: a closed NATS connection no longer crashes the archiver on acknowledge.** The broker closing the connection (a rotated credential) between the archive write and the acknowledgement raised `ConnectionClosedError` out of `ack` and restarted the pod, a dozen times a day per cluster. The records are already archived, so the unacknowledged ones are redelivered (at-least-once, a duplicate archive record at worst), the next fetch re-dials with a fresh token, and a connection still closed after the re-dial exits with one log line.
+
 ## v1.42.0 — 2026-10-04
 
 ### Contracts
