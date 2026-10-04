@@ -25,6 +25,7 @@ that look like something else.
 | [source-maps.md](source-maps.md) | keeping a page's source maps out of the image, and pushing them with the release |
 | [testing.md](testing.md) | what the gate proves, and what only a cluster can |
 | [transport-security.md](transport-security.md) | mutual TLS, whose identity, and the three modes |
+| [mtls-workload-prerequisites.md](mtls-workload-prerequisites.md) | what a workload needs per mTLS level (off, identity, enforced), and how to verify each |
 | [twelve-factor.md](twelve-factor.md) | the factors mapped, and the two deviations argued |
 | [conformance.md](conformance.md) | the checklist, and what CI checks for you |
 | [private-consumer.md](private-consumer.md) | what a private repository keeps, what it replaces, and the order to migrate an existing service |
