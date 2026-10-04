@@ -5,7 +5,7 @@
 what, level by level, and how to prove it. What the *platform* must provide
 for each level is the other half, on the platform's side: see "truvity/openbao
 docs: platform prerequisites" in the
-[openbao repository's docs](https://github.com/truvity/openbao/tree/master/docs).
+[openbao repository](https://github.com/truvity/openbao/blob/master/docs/prerequisites.md).
 [transport-security.md](transport-security.md) says why the scheme is shaped
 as it is; [platform.md §8](../contracts/platform.md) is the normative list of
 what a platform must have.
