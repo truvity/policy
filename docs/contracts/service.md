@@ -1,6 +1,6 @@
 # The service contract
 
-Version: 1.0 · Effective: 2026-09-29 · Changes: see [CHANGELOG](../../CHANGELOG.md)
+Version: 1.1 · Effective: 2026-10-05 · Changes: see [CHANGELOG](../../CHANGELOG.md)
 
 **Normative.** A service that satisfies this contract can be configured,
 started, observed, upgraded and stopped by anyone who has met another one,
@@ -19,7 +19,19 @@ with no check is a preference, and does not belong here.
 A service reads **one configuration file**, whose path it takes as an
 argument or a single environment variable, and validates it against a schema
 it ships. Everything structural is in that file. Secrets — and only secrets —
-arrive as environment variables, each one declared.
+arrive outside it, each one declared by name: as an environment variable, a
+mounted file, or a secret source the service resolves at start-up
+([config.md §5](config.md) says when each).
+
+The argument is `--config <path>` (`-config` is the same flag, the spelling
+Go's flag package and the library chart use). The variable is one name the
+service documents, conventionally `<APP>_CONFIG`. The argument wins over the
+variable, so a person can point a binary at another file without unsetting
+what the platform set. The same file is delivered the same way on every
+platform: a ConfigMap mounted into a pod, a file on a server's disk, a layer
+a serverless function mounts. The Go and TypeScript loaders resolve it
+(`config.PathFrom`, `configPath`), so a service does not write the rule
+again.
 
 Why not the environment for everything: a flat namespace cannot express a
 list of things, it has no types, and nothing can validate it before the

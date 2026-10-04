@@ -1,6 +1,6 @@
 # The platform contract
 
-Version: 1.0 · Effective: 2026-09-29 · Changes: see [CHANGELOG](../../CHANGELOG.md)
+Version: 1.1 · Effective: 2026-10-05 · Changes: see [CHANGELOG](../../CHANGELOG.md)
 
 **Normative.** [service.md](service.md) says what a service does at its own
 process boundary. This says what it asks of whatever runs it, and what that
@@ -63,6 +63,14 @@ without credentials for it.
 
 **What the platform owes:** the named Secret, populated, before the workload
 starts, and its rotation.
+
+This is the Kubernetes platform's half of [config.md §5](config.md), and on
+Kubernetes the Secret is delivered as an environment variable or a mounted
+file. A platform with no secret object to deliver through — a serverless
+function, whose environment is capped — is the case §5's *declared secret
+source* exists for: the service reads the store once, at start-up, by an
+identifier its configuration names. That is not a licence to do the same on a
+platform that has Secrets.
 
 ## 4. An object store is an endpoint
 

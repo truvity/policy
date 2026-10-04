@@ -4,6 +4,27 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+### Contracts
+
+- **config.md 1.1: a document may say which version it is, and a binary reads two (new rule 7).** `apiVersion: <group>/<kind>/v<N>` at the root of a configuration; absent means v1, so no existing document changes. The envelope (`schemas/service.json`) now declares the key and its form, so a service's schema that references the envelope accepts it with no change of its own. A binary reads N and N-1 and refuses anything else at start-up, naming `apiVersion`. Rollout order across a version: the binary first, then the file; a rollback is the file first, then the binary.
+- **config.md 1.1, rule 5: a secret is a declared name, delivered by environment variable, a mounted file, or a declared secret source resolved at start-up; never a value in the file.** Was: an environment variable only. The source is for a platform with no secret object (a serverless function, whose environment is capped, and per-client secrets); platform.md 1.1 §3 says that on Kubernetes the secret is still a Secret, as a variable or a file. Nothing that conformed stops conforming.
+- **config.md 1.1, rule 6: the file is read once, at start-up.** A change is new instances; credentials and a service's own state are read live and are not configuration. 0002 had left reloading open.
+- **service.md 1.1, rule 1: the path is `--config <path>` (`-config` is the same flag), else one variable the service names, conventionally `<APP>_CONFIG`; the argument wins.** The library chart's `-config` already is this.
+- **Decision 0011** records the three, and amends 0002.
+
+### Features
+
+- **Go: `config.PathFrom(args, envName)`, `config.Kind` and `config.LoadKind(path, kind, &v)`.** `PathFrom` resolves the file as service.md rule 1 says. `LoadKind` reads a document's `apiVersion`, validates against that version's schema, converts N-1 to N with the service's `Upgrade`, validates the result against N, and decodes it into N's type. `config.Error` gains `As`, naming the version the failures are against.
+- **TypeScript: `configPath(args, envName, env?)`, `Kind` and `loadKind(path, kind)`**, the same behaviour and the same words, against the same shared case tables (`config/testdata/path-from.json`, `config/testdata/versions/cases.json`). `ConfigError` gains `as`.
+
+### Behaviour change
+
+- **The plain loaders (`config.Load`, `load`, in all four languages) refuse a document whose `apiVersion` names a version after v1**, and one whose `apiVersion` is not of the form. A document with no `apiVersion`, or with `…/v1`, loads as before. Python and Kotlin read v1 only; reading two versions there is not implemented yet.
+- **The postgres fragment refuses a password in the database URL**: `user:password@host`, a `password=` or `sslpassword=` parameter, and a percent-encoded parameter name. A file that loaded under v1.43.0 with one of these is refused at start-up, naming `database.url` (or wherever the fragment is referenced); the fix is to move the password to the variable `passwordEnv` names. `passfile=` is still accepted: it names a file.
+- **No refusal quotes the refused value any more.** The Go loader's message for a failed `pattern` quoted it, and the Python loader's for `pattern`, `type`, `const` and `enum` did; a failed `not` now reads `is in a form the schema forbids here (its description says why)` in every loader.
+
 ## v1.43.0 — 2026-10-04
 
 ### Behaviour change

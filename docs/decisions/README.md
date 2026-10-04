@@ -19,7 +19,7 @@ sales pitch.
 | # | Decision |
 |---|---|
 | [0001](0001-no-di-containers.md) | Application graphs are hand-wired; dependency-injection containers are not used |
-| [0002](0002-config-file-plus-env.md) | Configuration is a file; the environment carries secrets |
+| [0002](0002-config-file-plus-env.md) | Configuration is a file; the environment carries secrets (secret delivery and reloading amended by 0011) |
 | [0003](0003-schemas-not-generators.md) | A schema and a hand-written type, not a code generator (superseded for data contracts by 0010) |
 | [0004](0004-policy-is-public.md) | This repository is public |
 | [0005](0005-kind-is-the-gate.md) | A local cluster is the gate; the real one is a consumer's |
@@ -28,3 +28,4 @@ sales pitch.
 | [0008](0008-twelve-factor-is-a-map-not-a-label.md) | The twelve factors are a map to read this by, not a label to claim |
 | [0009](0009-charts-pass-config-through-and-share-a-library.md) | Charts pass configuration through verbatim; the platform pieces come from a library chart |
 | [0010](0010-data-contracts-are-written-in-pkl.md) | Data contracts are written once in Pkl and generated; the program never is (supersedes 0003 for data contracts) |
+| [0011](0011-config-source-versions-and-secret-delivery.md) | Configuration is immutable per instance, versioned (a binary reads N and N-1), and found the same way on every platform; secrets arrive by name as a variable, a file or a source read at start-up (amends 0002) |
