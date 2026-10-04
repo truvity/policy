@@ -53,6 +53,24 @@ name (for example broker permissions for `redirect` and `stat`, which
 connect with a projected token of their own account), bind their new names.
 Set `serviceAccount.create: false` where the platform creates the accounts.
 
+**The identity account is created after its cloud binding.** An account that
+a cloud identity is bound to has an ordering problem: EKS injects the identity's
+credentials only when a pod is created, and Kubernetes admits a pod only when
+its account exists, so an account created BEFORE the binding lets the pod start
+with no rights. So on the primary tier the infrastructure chart, which creates
+the binding, also renders the account (`cloud.serviceAccount`), in sync-wave 2
+after the role (wave 0) and the association (wave 1), and the application chart
+(`tier: primary`, which the platform passes to both) does not render it and only
+names it. There are no switches; `tier: test` renders it from the application
+chart as before. Waves order the objects of ONE Application; the guarantee
+across two is Kubernetes' own refusal of a pod whose account is missing.
+The account carries `argocd.argoproj.io/sync-options: Prune=false,Delete=false`
+permanently: a recreated account is a new object, and the token a running pod
+holds names the old one. It has the name and labels the application chart
+rendered (its `app.kubernetes.io/instance` label is `installName`, which must be
+the application release's name) and `cloud.serviceAccountAnnotations`, which
+should mirror `serviceAccount.app.annotations`.
+
 **The chart's own allow-lists follow its call graph.**
 
 | Component | Admits (in the release) | Accepts an answer from |

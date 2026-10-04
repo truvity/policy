@@ -4,6 +4,16 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+### Behaviour change
+
+- **url-shortener: on the primary tier the identity ServiceAccount moves to url-shortener-infra.** `url-shortener-infra` on a primary install now ALWAYS renders the account `cloud.serviceAccount` (name, labels and `cloud.serviceAccountAnnotations` as the application chart rendered them) in sync-wave 2, after the IAM Role (wave 0) and the PodIdentityAssociation (wave 1), with `argocd.argoproj.io/sync-options: Prune=false,Delete=false`. `url-shortener` with `tier: primary` no longer renders the account `serviceAccount.app.name` names (`log`'s); its Deployment still names it. With `tier: test`, the default, nothing moves. There is no switch. Switching an existing primary install over can mean a short outage while the account changes hands.
+
+### Contracts
+
+- **Delivery interface step 13: the identity ServiceAccount lives in the `-infra` chart.** The three url-shortener charts now declare interface 13. A platform that implements the interface must know step 13 before it promotes a release that declares it (`docs/contracts/delivery-interface.md`); the first release is written there as `next` until it is cut. The one key it adds: the platform passes `tier` to the application chart too, the same value the `-infra` chart gets. Without it the application chart's default (`test`) renders the account in both charts on a primary install.
+
 ## v1.42.1 — 2026-10-04
 
 ### Fixes
