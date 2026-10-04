@@ -106,9 +106,9 @@ allows.
 
 **The shared envelope holds what EVERY component has** — somewhere to report
 health, a log level, a shutdown budget, which version of its document it is
-(rule 7) — and nothing else. A listener is not
-one of those: a job exits, and a consumer answers nothing. Neither is a
-transport identity, for the same reason.
+(rule 7) — and nothing else. A listener is not one of those: a job exits, and
+a consumer answers nothing. Neither is a transport identity, for the same
+reason.
 
 That line is easy to put in the wrong place, and putting it wrong is cheap
 to do and expensive to notice: a field every component carries and only some
