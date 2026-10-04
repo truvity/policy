@@ -1,0 +1,9 @@
+# passfile names a file that holds the password, which is a secret delivered
+# the way the contract allows (a mounted file), not a secret in the file.
+listen:
+  address: ":8080"
+probes:
+  address: ":7070"
+baseURL: https://example.com
+database:
+  url: postgres://shortener@[::1]:5432/shortener?sslmode=verify-full&passfile=/var/run/secrets/db/pgpass

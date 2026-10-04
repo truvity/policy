@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/notifier.v2.json",
+  "description": "Version 2 of example.com/notifier: the retry count moved into a block, beside a back-off. The version is required from v2 on, so a v2 document always says what it is.",
+  "allOf": [
+    {
+      "$ref": "https://github.com/truvity/policy/schemas/service.json"
+    }
+  ],
+  "type": "object",
+  "unevaluatedProperties": false,
+  "required": [
+    "apiVersion",
+    "endpoint",
+    "retry"
+  ],
+  "properties": {
+    "apiVersion": {
+      "const": "example.com/notifier/v2"
+    },
+    "endpoint": {
+      "type": "string"
+    },
+    "retry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attempts"
+      ],
+      "properties": {
+        "attempts": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "backoff": {
+          "type": "string",
+          "pattern": "^[0-9]+(ms|s)$"
+        }
+      }
+    }
+  }
+}

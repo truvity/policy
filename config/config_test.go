@@ -112,6 +112,37 @@ func TestASecretInTheFileIsRefusedAndNotEchoed(t *testing.T) {
 	}
 }
 
+// The database URL is the other place a password hides: in the user
+// information, or as a query parameter the driver reads like any other. The
+// fragment refuses both, and the error names the key and never the value.
+func TestAPasswordInTheDatabaseURLIsRefusedAndNotEchoed(t *testing.T) {
+	for _, fixture := range []string{"password-in-url-query.yaml", "password-in-url-userinfo.yaml"} {
+		t.Run(fixture, func(t *testing.T) {
+			var cfg shortener
+			err := config.Load("testdata/"+fixture, schema(t), &cfg)
+			if err == nil {
+				t.Fatal("a database URL carrying a password was accepted")
+			}
+			if strings.Contains(err.Error(), "hunter2") {
+				t.Fatalf("the error quoted the value it refused:\n%v", err)
+			}
+			if !strings.Contains(err.Error(), "database.url") {
+				t.Errorf("the error does not name the offending key:\n%v", err)
+			}
+		})
+	}
+}
+
+// passfile names a file, which is how the contract says a secret may arrive.
+// Refusing it with the password would push a service back to the
+// environment for no reason.
+func TestAPassfileInTheDatabaseURLIsAccepted(t *testing.T) {
+	var cfg shortener
+	if err := config.Load("testdata/passfile-in-url.yaml", schema(t), &cfg); err != nil {
+		t.Fatalf("a database URL naming a password file was refused: %v", err)
+	}
+}
+
 func TestValidationHappensBeforeDecoding(t *testing.T) {
 	// An invalid document must leave the caller's value untouched: a service
 	// that half-decodes and then fails has a configuration nobody chose.

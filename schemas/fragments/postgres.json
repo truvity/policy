@@ -10,7 +10,21 @@
     "url": {
       "type": "string",
       "pattern": "^postgres(ql)?://",
-      "description": "A connection URL without credentials, for example postgres://user@host:5432/dbname?sslmode=require."
+      "allOf": [
+        {
+          "description": "No password in the user information: postgres://user:password@host is refused, postgres://user@host is not.",
+          "not": { "pattern": "^postgres(ql)?://[^/?#@]*:[^/?#@]*@" }
+        },
+        {
+          "description": "No password as a query parameter: password= and sslpassword= are refused. passfile= is allowed, because it names a file rather than carrying a secret.",
+          "not": { "pattern": "[?&](password|sslpassword)=" }
+        },
+        {
+          "description": "No percent-encoded parameter name: a driver decodes the name before it reads it, so %70assword= is password= by another spelling.",
+          "not": { "pattern": "[?&][^=&#]*%[^=&#]*=" }
+        }
+      ],
+      "description": "A connection URL without credentials, for example postgres://user@host:5432/dbname?sslmode=require. A password in the user information or in a password or sslpassword parameter is refused: the file is rendered into objects people read, and the password belongs to passwordEnv."
     },
     "passwordEnv": {
       "type": "string",

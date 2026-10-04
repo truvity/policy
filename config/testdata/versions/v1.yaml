@@ -1,0 +1,5 @@
+apiVersion: example.com/notifier/v1
+probes:
+  address: ":7070"
+endpoint: https://example.com/hook
+retries: 4

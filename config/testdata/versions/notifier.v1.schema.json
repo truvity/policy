@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/notifier.v1.json",
+  "description": "Version 1 of a small kind of document, example.com/notifier: how many times to retry, as a bare number.",
+  "allOf": [
+    {
+      "$ref": "https://github.com/truvity/policy/schemas/service.json"
+    }
+  ],
+  "type": "object",
+  "unevaluatedProperties": false,
+  "required": [
+    "endpoint"
+  ],
+  "properties": {
+    "apiVersion": {
+      "const": "example.com/notifier/v1"
+    },
+    "endpoint": {
+      "type": "string"
+    },
+    "retries": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}
