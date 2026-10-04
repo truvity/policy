@@ -76,6 +76,7 @@ The key names are [platform.md §10](platform.md#10-what-a-platform-passes-by-na
 | 10 | `web.faro`, `route.faro` | application | Browser telemetry: the page's runtime configuration, and the public rule a browser reports through. |
 | 11 | `route.faro.requestBufferLimit` | application | The gateway's request body limit on the telemetry rule, rendered by the chart as a policy that targets that rule alone, so a platform no longer renders it beside the chart. |
 | 12 | `alerts` | application | The product's own alert rules as a `VMRule` (`alerts.enabled`, off by default): `alerts.remote.enabled`, `.clusterName`, `.namespace` render the rule object alone, for an install evaluated on another cluster (nothing else renders and no other value is required), and `alerts.ruleLabels`, `.alertLabels`, `.interval` and one block of thresholds per rule. A platform no longer writes the product's rules beside the chart. |
+| 13 | `tier` on the application chart | application, infra | The identity ServiceAccount lives in the `-infra` chart: on the primary tier the `-infra` chart renders the workload's AWS identity ServiceAccount after its PodIdentityAssociation (sync-waves: IAM Role 0, PodIdentityAssociation 1, ServiceAccount 2; ArgoCD's ACK health waits for ACK.ResourceSynced), carrying `argocd.argoproj.io/sync-options: Prune=false,Delete=false` permanently; the product chart does not render that ServiceAccount on the primary tier and only references it. Why: EKS injects Pod Identity credentials only at pod creation; Kubernetes' ServiceAccount admission refuses product pods until the ServiceAccount exists, so no pod starts before its identity. The one key this adds: from interface 13 the platform passes `tier` to the application chart as well, the same value (`test` or `primary`) it passes the `-infra` chart (the application chart's default is `test`); the `-infra` chart's optional `cloud.serviceAccountAnnotations` mirrors `serviceAccount.app.annotations` onto the account it renders. Nothing else is passed. |
 
 ## 4. The first release of each step
 
@@ -97,6 +98,7 @@ below it.
 | 10 | 1.35.0 | not yet |
 | 11 | 1.39.0 | not yet |
 | 12 | 1.40.0 | not yet |
+| 13 | next | not yet |
 
 "Not yet" is a step the product's charts do not read: its number stops below
 it, and a platform renders none of that step's keys for it. The numbers are
