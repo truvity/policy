@@ -4,6 +4,18 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+### Contracts
+
+- **config.md 1.2, rule 5: a secret is referenced by NAME in a field ending `Secret` and resolved through ONE declared source per service (`secrets.source: env | file | ssm | openbao`, plus a root); `…Env` is retired as a spelling.** A function's own environment is not an acceptable source (a 4 KB budget, plaintext in the console): a function uses `ssm` or a file in a layer. A source that refreshes may re-read a credential; the configuration is immutable. The fragments' `passwordEnv`, `credentialsEnv` and `pathEnv` are still accepted; replacing them is planned and will carry a **Breaking:** entry. Unchecked by a tool yet.
+- **config.md 1.2, rule 7: a service document's group is `<product>.truvity.github.io`** (`sluis.truvity.github.io/sluis/v3`), absent still means v1, N and N-1 are read, and the schema's `$id` carries the document's version.
+- **config.md 1.2, new rules 8 and 9: a service may read a policy document beside its service document** (own kind, schema and `apiVersion`; both immutable; the service document names the policy file); **a preset** is a bundle of adapter or deployment choices that expands at load time and names only implemented choices, and a compliance bundle is a **profile**. Both defined in the glossary.
+- **release.md 1.1: a product that declares itself `stabilizing` in its README may ship a breaking change in a minor, with a `**Breaking:**` entry and migration steps, and never in a patch**; automation may cut patches only for non-breaking `fix:` changes. The exit criteria for `stable` are listed (N/N-1 reading, one-minor deprecation of renamed chart values, schemas as release assets, three CI gates); after them a breaking change is a major. `sluis` and `audit` are stabilizing.
+- **docs.md 1.0 (new): the documentation contract.** Diataxis layout, generated reference checked for drift, an ADR index with a Status column, one runbook template, estates link instead of restating, link and banned-name checks, upgrade steps in `docs/how-to/upgrade/vX.Y.md` rather than the changelog, pages under about 400 lines. Most rules are review, unchecked, and the table says so.
+- **service.md 1.2, rule 1** follows config.md 1.2 (secret spelling, policy document).
+- **Decision 0012** records these and the roads not taken (majors now, `truvity.github.io` as the one group, keeping `…Env`); it amends 0002 and 0011. The decisions index gains a Status column.
+
 ## v1.44.1 — 2026-10-05
 
 - Dependency updates.

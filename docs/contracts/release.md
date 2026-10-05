@@ -1,6 +1,6 @@
 # The release contract
 
-Version: 1.0 · Effective: 2026-09-29 · Changes: see [CHANGELOG](../../CHANGELOG.md)
+Version: 1.1 · Effective: 2026-10-05 · Changes: see [CHANGELOG](../../CHANGELOG.md)
 
 **Normative.** How a version is cut, what it means, and what a consumer
 must see before adopting it.
@@ -36,6 +36,41 @@ A module whose language requires a major suffix in its path carries it
 **before** the tag is pushed. A tag whose metadata disagrees with its path
 can never be fetched, and a tag that has been fetched once cannot be taken
 back.
+
+### Until a product is stable
+
+A product declares its state in its **README**: `stable` or `stabilizing`.
+Absent means `stable`. A product that is **stabilizing** is still finding the
+shape of its documents, values and schemas, and for it the rules above bend in
+exactly two ways:
+
+- **A breaking change may ship in a MINOR release**, never in a patch. Its
+  changelog entry starts with **Breaking:**, names the step to take, and links
+  the versioned upgrade page ([docs.md rule 7](docs.md)).
+- **Automation cuts a patch only for non-breaking `fix:` changes** (§4). A
+  breaking change that reached the default branch under a `fix:` subject is a
+  mislabelled change, and is released by a person as a minor.
+
+A major is not the tool *yet* because, in a language whose module path
+carries the major (Go's `/v2`), every importer must change its import path at
+once, mid-rollout, for a change a minor can announce just as well.
+
+**Exit criteria.** A product is `stable` when ALL of these hold; its README
+says so in the pull request that makes them true:
+
+1. **Document N/N-1 reading is in place** ([config.md §7](config.md)) for
+   every document the product reads.
+2. **A chart value that is renamed keeps the old key**, with a deprecation
+   warning, for one minor.
+3. **The schemas are published as release assets**, so a consumer validates
+   against the version it runs.
+4. **The CI gates exist**: a preset names only built adapters
+   ([config.md §9](config.md)); a sub-module requires the root module at the
+   tag's version; the catalogue and schema bundles ship with the release.
+5. After that, **a breaking change is a major**, and §2 holds without bend.
+
+The criteria are a checklist a person ticks, not a tool's output; criteria 3
+and 4 are machine-checkable and are checked where the product has the gate.
 
 ### The current line starts at v1.25.0
 
@@ -215,6 +250,8 @@ artifacts, and that install is what a release is measured by.
 | 2. versioning | review |
 | 3. changelog | the component contract's C5 check: a heading for the latest tag except an automatic patch (Z > 0, X.Y of the newest heading), one `Unreleased`; the auto-release workflow writes the heading of a patch that carries entries before it tags |
 | 4. who cuts | automation is armed for patches only |
+| 2. stabilizing: no breaking patch; automatic patches are non-breaking `fix:` only | review — unchecked (the auto-release workflow does not yet read the product's state) |
+| 2. stable: the exit criteria | review — unchecked; criteria 3 and 4 are CI checks where a product has them |
 | 5. built in CI | the release runs only from a tag, in CI; one job builds then packages; the chart publish refuses an unpinned image; a test asserts every image declares every architecture, that no Dockerfile executes while building, and that no registry is hard-coded |
 | 6. adoption | the consumer's pin bump carries the diff |
 | 7. tested as published | a chart test renders with NO values supplied; the kind lane installs the published artifacts |

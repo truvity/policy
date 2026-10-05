@@ -1,6 +1,6 @@
 # The configuration contract
 
-Version: 1.1 · Effective: 2026-10-05 · Changes: see [CHANGELOG](../../CHANGELOG.md)
+Version: 1.2 · Effective: 2026-10-05 · Changes: see [CHANGELOG](../../CHANGELOG.md)
 
 **Normative.** One typed configuration per binary, described by a schema
 that both the binary and whatever deploys it are held to.
@@ -64,21 +64,37 @@ version, and moving to a newer one is a change a reviewer sees.
 
 ## 5. Secrets are not in the file
 
-**A secret is a declared name, delivered by environment variable, a mounted
-file, or a declared secret source resolved at start-up; never a value in the
-configuration file.** The schema declares the *name* the service reads — the
-variable, the file's path, the source's identifier — and never a field that
-takes the value. Configuration files are rendered into config maps, logged
-when someone debugs a deployment, and committed as test fixtures; secrets
-must survive all three being true.
+**A secret is referenced by NAME, in a field whose name ends `Secret`, and
+resolved through ONE declared source per service; never a value in the
+configuration file.** The service declares the source once, beside its other
+configuration:
 
-Why three ways and not one. The environment was the only one, and it does not
+```yaml
+secrets:
+  source: env | file | ssm | openbao
+  root: <where the source looks: a variable prefix, a directory, a path prefix, a mount>
+```
+
+and every `…Secret` field is a name under that root. The schema declares the
+*name* a service reads and never a field that takes the value. A field that
+names a variable, `…Env`, is **retired as a spelling**: it said how the value
+arrived instead of which secret it was, so changing the delivery changed the
+schema. Configuration files are rendered into config maps, logged when
+someone debugs a deployment, and committed as test fixtures; secrets must
+survive all three being true.
+
+Why one source per service and not one per field. A service whose database
+password is a variable, whose signing key is a file and whose per-client
+credentials are in a store has three answers to "where does this secret come
+from", and a reader, a rotation and an incident each have to find all three.
+One source is one thing to grant, one thing to rotate and one thing to read.
+
+Why the sources differ. The environment was the only one, and it does not
 survive every platform:
 
 - **A serverless platform caps the environment.** A function's variables
-  share one small, fixed budget, and a service with a handful of credentials
-  and its telemetry settings runs out of it. There is no larger budget to ask
-  for.
+  share one small, fixed budget (about 4 KB), and a service with a handful of
+  credentials and its telemetry settings runs out of it.
 - **Some secrets are per client.** A credential for each party a service
   deals with is a set that grows with the business, not with the release, and
   a variable per client is a deployment change per client.
@@ -86,11 +102,19 @@ survive every platform:
   file reaches a running process. A variable is fixed for the life of the
   process, so rotating it is a restart.
 
-A *declared secret source* is the service reading a secret store itself,
-once, before it serves anything, from an identifier the configuration names.
-It is for a platform that has no secret object to deliver through; where the
-platform has one, [platform.md §3](platform.md) is the rule and the secret
-arrives as a variable or a file.
+**A serverless function's own environment is not an acceptable `env` source**
+for a secret, however small the secret: it counts against that 4 KB budget
+and is shown in plaintext in the platform's console and in its API to anyone
+who may read the function. A function uses `ssm` (a parameter store the
+function's identity reads) or `file` (a file in a layer it mounts). `env` is
+for a platform whose environment is a Secret object, as
+[platform.md §3](platform.md) describes for Kubernetes.
+
+**Resolved at start, credentials may be re-read.** The source is read before
+the service serves anything (rule 6). A source that refreshes on a timer — a
+rotated parameter, a leased token — may be **re-read** for the *credential*
+it holds; the configuration, which names the secret, is immutable. Rotation
+changes the value behind a name and never the name.
 
 A service never logs a secret's value, and never includes one in an error. An
 error says which key was wrong, not what it contained.
@@ -100,7 +124,10 @@ smuggle a secret in: a database URL that carries a password —
 `user:password@host`, or a `password` or `sslpassword` parameter — is
 refused, and the error names `url` without quoting it. A `passfile`
 parameter is not refused: it names a file, which is a delivery this rule
-allows.
+allows. The fragments' own `…Env` fields (`passwordEnv`, `credentialsEnv`,
+`pathEnv`) predate this rule and are still accepted; replacing them with
+`…Secret` is a breaking change to each fragment, planned, and ships with a
+**Breaking:** entry ([release.md §2](release.md)).
 
 ## 6. Failure is at start-up, and says where
 
@@ -141,8 +168,11 @@ A configuration document **may** carry, at its root,
 apiVersion: <group>/<kind>/v<N>
 ```
 
-— a group (a DNS-like name the kind belongs to), the kind of document, and a
-version. **Absent means v1**, so every document written before this rule is a
+— a group, the kind of document, and a version. **For a service document the
+group is `<product>.truvity.github.io`**: `sluis.truvity.github.io/sluis/v3`,
+`audit.truvity.github.io/audit/v2`. The group names the product that owns the
+kind, not the estate, so two products may both have a `config` kind without
+colliding. **Absent means v1**, so every document written before this rule is a
 v1 document and none has to change. The envelope
 ([`schemas/service.json`](../../schemas/service.json)) declares the key and
 its form; a kind's own schema may narrow it to its own `const`.
@@ -175,11 +205,48 @@ already valid against N-1, and returns an N one. The loader then sets
 conversion that produces something N does not accept is refused at start-up,
 named as the conversion's, rather than decoded.
 
+**The schema's `$id` carries the same version as the document**: the schema
+for `…/audit/v2` is identified as v2, so the document's `apiVersion` and the
+schema it is validated against can be compared without opening either.
+
 A document validated against a schema it was not written for is the failure
 this prevents. Without the version, a v2 file mounted beside a v1 binary is
 checked against v1's schema, and either fails with errors about keys that are
 perfectly good in v2, or — worse — passes, because the keys that changed
 meaning kept their names.
+
+## 8. A service may have more than one document
+
+A service may read a **service document** and a **policy document**: the
+first says how the process runs (listeners, stores, secrets); the second says
+what it decides (rules, limits, mappings an operator authors). Each has **its
+own kind, its own schema and its own `apiVersion`** (rule 7 holds for each),
+and a version change in one does not move the other.
+
+Both are **immutable per instance** (rule 6): changing either means new
+instances. The service document **names the policy file** — a path field, so
+the policy is found the same way on every platform and a deployment can see
+which file a service reads. A policy that is delivered some other way (the
+environment, a store read at run time) is state, not configuration, and does
+not belong under this rule.
+
+## 9. A preset is a named bundle; a compliance bundle is a profile
+
+A **preset** is a named bundle of a service's adapter or deployment choices —
+which store, which queue, which identity provider — that **expands at load
+time** into the keys it stands for, before validation. The expanded document
+is what is validated, so a preset can never carry something the schema
+refuses. It exists so that the common deployments are one word.
+
+**A preset names only choices that are implemented.** A preset that names an
+adapter nobody built is a preset that passes review and fails in production;
+it is checked in CI against the adapters the build contains (planned: no
+shared check exists yet, so a service carries its own).
+
+A bundle that selects a *compliance posture* — the retention, redaction and
+record settings a standard asks for — is a **profile**, not a preset: it is
+chosen by who audits the deployment, not by what the deployment is made of,
+and it is allowed to tighten but not to select adapters.
 
 ## Conformance
 
@@ -190,9 +257,14 @@ meaning kept their names.
 | 3. strictness | a negative fixture per schema: an unknown key must fail |
 | 4. shared shapes | review, and the fragment `$ref`s in the schema |
 | 5. secrets | review; the loader has no way to read a secret from the file; the database fragment's negative fixtures (a password in the URL's user information, and in its query) |
+| 5. one declared source; no `…Env`; no function environment | review — unchecked (a schema lint for `…Env` and for a `secrets.source` is planned) |
+| 5. credentials re-read, configuration immutable | review — unchecked |
 | 6. start-up failure | a test that starts the binary with each invalid fixture |
 | 6. read once | review — unchecked |
 | 7. versions | the shared case table [`config/testdata/versions/cases.json`](../../config/testdata/versions/cases.json): every version path and every refusal |
+| 7. group form; `$id` version equals the document's | the envelope's `apiVersion` pattern checks the form; the group and the `$id` version are review — unchecked |
+| 8. more than one document | review — unchecked |
+| 9. a preset names only built choices | CI check per service — planned, unchecked here |
 
 The [Go loader](../../config) and the [TypeScript loader](../../ts) implement
 rules 1, 5, 6 and 7 so that a service does not have to, and

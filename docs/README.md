@@ -18,6 +18,9 @@ The index, by what you are here to do.
 - [contracts/delivery-interface.md](contracts/delivery-interface.md) — the
   order in which the platform contract's menu grew, and the one number a
   chart declares so that a platform hands it only what it can take.
+- [contracts/docs.md](contracts/docs.md) — how a product's documentation is
+  organised, which of it is generated, and what an estate repository may
+  restate.
 - [guides/](guides/README.md) — how to satisfy the above, one guide per
   aspect, each pointing at the file in the worked example where it is done.
 
@@ -58,7 +61,7 @@ The index, by what you are here to do.
 - [decisions/](decisions/README.md) — the decision records behind the
   contracts.
 - [glossary.md](glossary.md) — the words these documents use narrowly:
-  estate, platform, ring, tier, lane, component, service, consumer, and
+  estate, platform, ring, tier, lane, component, service, preset, consumer, and
   the environment names.
 
 ## How a contract changes

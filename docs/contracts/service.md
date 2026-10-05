@@ -1,6 +1,6 @@
 # The service contract
 
-Version: 1.1 · Effective: 2026-10-05 · Changes: see [CHANGELOG](../../CHANGELOG.md)
+Version: 1.2 · Effective: 2026-10-05 · Changes: see [CHANGELOG](../../CHANGELOG.md)
 
 **Normative.** A service that satisfies this contract can be configured,
 started, observed, upgraded and stopped by anyone who has met another one,
@@ -19,9 +19,11 @@ with no check is a preference, and does not belong here.
 A service reads **one configuration file**, whose path it takes as an
 argument or a single environment variable, and validates it against a schema
 it ships. Everything structural is in that file. Secrets — and only secrets —
-arrive outside it, each one declared by name: as an environment variable, a
-mounted file, or a secret source the service resolves at start-up
-([config.md §5](config.md) says when each).
+arrive outside it, each one referenced by name in a `…Secret` field and
+resolved through the one source the service declares: `env`, `file`, `ssm` or
+`openbao` ([config.md §5](config.md) says when each, and why a function's own
+environment is not one). A service may also read a policy document, which its
+configuration names ([config.md §8](config.md)).
 
 The argument is `--config <path>` (`-config` is the same flag, the spelling
 Go's flag package and the library chart use). The variable is one name the
