@@ -1,6 +1,6 @@
 # The platform contract
 
-Version: 1.1 · Effective: 2026-10-05 · Changes: see [CHANGELOG](../../CHANGELOG.md)
+Version: 1.2 · Effective: 2026-10-06 · Changes: see [CHANGELOG](../../CHANGELOG.md)
 
 **Normative.** [service.md](service.md) says what a service does at its own
 process boundary. This says what it asks of whatever runs it, and what that
@@ -274,7 +274,8 @@ depend on) the same way rule 1 already refuses for a password.
 | Value | The decision it answers | §9 row |
 |---|---|---|
 | `database.host` | where the database the other chart made is | — |
-| `database.owner.passwordSecret`, `database.app.passwordSecret` | where the two credentials are | how secrets arrive |
+| `database.app.role`, `database.app.passwordSecret` | the least-privilege runtime role the service connects as, and where its credential is (always passed) | how secrets arrive |
+| `database.owner.passwordSecret` | where the owner's credential is. Passed only by exception, when the deployment records that the product needs owner access; the default is the runtime role alone ([delivery-interface.md](delivery-interface.md) step 15) | how secrets arrive |
 | `database.tls.rootCA.configMapName`, `.key`, `database.clusterDomain` | the ConfigMap holding the root the server certificate chains to (required: the client always verifies the server), and the cluster's DNS suffix. `database.tls.mode` is accepted only as `verify-full` | whether transport identity is on |
 | `events.url` | which broker | — |
 | `archive.bucket.*` | which store, as an endpoint | which object store |
@@ -284,6 +285,7 @@ depend on) the same way rule 1 already refuses for a password.
 | `identityProviders.<name>.issuer_url`, `.client_id_list` | which issuer a chart that verifies bearer tokens itself trusts, and the audience it accepts | — |
 | `access.issuer`, `.audience`, `.signOutUrl` | which issuer and audience a gateway that signs the browser in and forwards a bearer already used, and where a signed-out browser is sent | — |
 | `tls.*` | whether transport identity is on | whether transport identity is on |
+| `availability` | `single` or `high`, the cluster's redundancy; the chart sizes `replicas` and the disruption budget from it ([delivery-interface.md](delivery-interface.md) step 14) | how many instances |
 | `replicas`, `resources`, `disruption`, `drain` | how much, and how it is replaced | how many instances |
 | `log.level` | how loud | — |
 | `images.<component>` | which build | image tags and digests |

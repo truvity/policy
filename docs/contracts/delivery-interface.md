@@ -1,6 +1,6 @@
 # The delivery interface
 
-Version: 1.0 · Effective: 2026-10-02 · Changes: see [CHANGELOG](../../CHANGELOG.md)
+Version: 1.1 · Effective: 2026-10-06 · Changes: see [CHANGELOG](../../CHANGELOG.md)
 
 **Normative.** [platform.md §10](platform.md#10-what-a-platform-passes-by-name)
 is the menu of what a platform may hand a chart. This is the order in which
@@ -77,6 +77,8 @@ The key names are [platform.md §10](platform.md#10-what-a-platform-passes-by-na
 | 11 | `route.faro.requestBufferLimit` | application | The gateway's request body limit on the telemetry rule, rendered by the chart as a policy that targets that rule alone, so a platform no longer renders it beside the chart. |
 | 12 | `alerts` | application | The product's own alert rules as a `VMRule` (`alerts.enabled`, off by default): `alerts.remote.enabled`, `.clusterName`, `.namespace` render the rule object alone, for an install evaluated on another cluster (nothing else renders and no other value is required), and `alerts.ruleLabels`, `.alertLabels`, `.interval` and one block of thresholds per rule. A platform no longer writes the product's rules beside the chart. |
 | 13 | `tier` on the application chart | application, infra | The identity ServiceAccount lives in the `-infra` chart: on the primary tier the `-infra` chart renders the workload's AWS identity ServiceAccount after its PodIdentityAssociation (sync-waves: IAM Role 0, PodIdentityAssociation 1, ServiceAccount 2; ArgoCD's ACK health waits for ACK.ResourceSynced), carrying `argocd.argoproj.io/sync-options: Prune=false,Delete=false` permanently; the product chart does not render that ServiceAccount on the primary tier and only references it. Why: EKS injects Pod Identity credentials only at pod creation; Kubernetes' ServiceAccount admission refuses product pods until the ServiceAccount exists, so no pod starts before its identity. The one key this adds: from interface 13 the platform passes `tier` to the application chart as well, the same value (`test` or `primary`) it passes the `-infra` chart (the application chart's default is `test`); the `-infra` chart's optional `cloud.serviceAccountAnnotations` mirrors `serviceAccount.app.annotations` onto the account it renders. Nothing else is passed. |
+| 14 | `availability` | application | How much redundancy this cluster wants, as one word the platform passes per cluster: `availability: single` or `availability: high`. The product chart sizes its own replicas and its PodDisruptionBudget from it (`single`: one replica, no budget that blocks a drain; `high`: at least two replicas and a budget that keeps one running), so a platform no longer carries a per-product `replicas` stanza. The key is the platform's statement of the cluster, not of the product: a platform with no opinion (a cluster that runs no product) passes nothing, and a chart's default when the key is absent is `single`. An explicit `replicas` value the chart already accepts still wins over what `availability` would give. |
+| 15 | the database runtime role by default | application, infra | A product connects to its database as a separate **runtime role** with the least privilege that lets it work (DML on its own schema, no DDL, not the owner). The `-infra` chart always renders that role as a `DatabaseRole` (`postgres.runtimeRole`, `.runtimePasswordSecret`, `.runtimePassword.generate`), so from interface 15 the per-product opt-out `postgres.runtimeRole: false` is refused, and the application chart is passed `database.app.role` and `database.app.passwordSecret` only. **Owner access is the exception:** the owner credential (`database.owner.passwordSecret`) is passed to the application chart only when the product's delivery values say `postgres.ownerAccess: true`, which is a recorded decision that the product needs DDL at run time (a schema migration that cannot run from the platform's own migration step). Unset, the application chart is not handed the owner's password and a chart that reads `database.owner.*` at interface 15 has declared an exception it must justify in its README. The end-to-end chart's `database.owner.role` and `database.app.*` (step 3) are unchanged. |
 
 ## 4. The first release of each step
 
@@ -99,6 +101,8 @@ below it.
 | 11 | 1.39.0 | not yet |
 | 12 | 1.40.0 | not yet |
 | 13 | 1.43.0 | not yet |
+| 14 | not yet | not yet |
+| 15 | not yet | not yet |
 
 "Not yet" is a step the product's charts do not read: its number stops below
 it, and a platform renders none of that step's keys for it. The numbers are

@@ -4,6 +4,17 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## v1.46.0 — 2026-10-06
+
+Two delivery-interface steps. No chart or code changes: the url-shortener charts stay at interface 13 and render exactly as before; a product adopts a step later, after the platforms that implement the interface know it.
+
+### Contracts
+
+- **delivery-interface.md 1.1, step 14: `availability`.** The platform passes `availability: single | high` per cluster to the application chart; the product sizes its replicas and PodDisruptionBudget from it, so a platform no longer carries per-product replica stanzas. Absent means `single`.
+- **delivery-interface.md 1.1, step 15: the database runtime role is the default, owner access the exception.** From interface 15 the `-infra` chart always renders the least-privilege runtime role (`DatabaseRole`), the `postgres.runtimeRole: false` opt-out is refused, and the application chart is passed `database.app.*` only; `database.owner.passwordSecret` is passed only when the product's delivery values say `postgres.ownerAccess: true`.
+- **platform.md 1.2, section 10:** the `availability` row, and the owner credential row split from the runtime one.
+- A platform that implements the interface must know steps 14 and 15 before a product declares them (`truvity/cd` `cd-delivery` v0.11.0 does).
+
 ## v1.45.0 — 2026-10-05
 
 **Breaking:** secrets are referenced by NAME and resolved through one declared source; the `…Env` spellings are removed from the shared fragments and from the library chart, which now delivers secrets as files. Upgrade steps: [docs/how-to/upgrade/v1.45.md](docs/how-to/upgrade/v1.45.md). Allowed in a minor because `sluis` and `audit` are `stabilizing` ([release.md 1.1](docs/contracts/release.md)).
