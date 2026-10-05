@@ -199,7 +199,7 @@ writer.
 ## Checklist
 
 - [ ] Service reads one configuration file, validated against a committed
-      schema; secrets are declared environment variables.
+      schema; secrets are names resolved through one `secrets` source.
 - [ ] `main` is hand-written; no DI container remains.
 - [ ] The chart takes every value in
       [platform.md §10](../contracts/platform.md#10-what-a-platform-passes-by-name)

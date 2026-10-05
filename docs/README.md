@@ -24,6 +24,12 @@ The index, by what you are here to do.
 - [guides/](guides/README.md) — how to satisfy the above, one guide per
   aspect, each pointing at the file in the worked example where it is done.
 
+## Upgrading
+
+- [how-to/upgrade/v1.45.md](how-to/upgrade/v1.45.md) — secrets by name through
+  one declared source; `…Env` removed from the fragments and the library chart
+  (**breaking**).
+
 ## Authoring a component
 
 - [contracts/component.md](contracts/component.md) — every public

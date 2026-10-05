@@ -91,9 +91,12 @@ Their own accounts still go in the application chart's `tls.peers.urls` and
 
 ## How a secret arrives
 
-The chart takes the **name** of a Secret and the key inside it, and renders
-an environment variable that reads from it. The configuration file names the
-*variable*. Nothing renders a value.
+The chart takes the **name** of a Secret and the key inside it
+(`platform.secretFiles`), and projects it as a **file** under the directory the
+configuration declares (`secrets: {source: file, root: ...}`), mode 0440. The
+configuration file names the *secret* in a field ending `Secret`
+(`database.passwordSecret: db/password`). Nothing renders a value, and nothing
+renders an environment variable for a secret.
 
 The objects that *fill* that Secret — pulling from a store, or pushing into
 one — belong to the platform or to the infrastructure release. An application

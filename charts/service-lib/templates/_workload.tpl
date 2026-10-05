@@ -128,7 +128,6 @@ spec:
             {{- with $p.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
-            {{- include "service-lib.secretEnv" . | nindent 12 }}
           ports: {{- include "service-lib.containerPorts" . | nindent 12 }}
           livenessProbe: {{- include "service-lib.probe" (dict "probes" $p.probes "kind" "liveness") | nindent 12 }}
           readinessProbe: {{- include "service-lib.probe" (dict "probes" $p.probes "kind" "readiness") | nindent 12 }}
@@ -144,6 +143,7 @@ spec:
               mountPath: {{ include "service-lib.configMountPath" . }}
               readOnly: true
             {{- include "service-lib.identityMount" . | nindent 12 }}
+            {{- include "service-lib.secretsMount" . | nindent 12 }}
             {{- with $p.volumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -153,6 +153,7 @@ spec:
           configMap:
             name: {{ include "service-lib.fullname" . }}-config
         {{- include "service-lib.identityVolume" . | nindent 8 }}
+        {{- include "service-lib.secretsVolume" . | nindent 8 }}
         {{- with $p.volumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

@@ -46,9 +46,6 @@ spec:
           env:
             - name: OTEL_SERVICE_NAME
               value: r-echo
-            - name: TOKEN
-              valueFrom:
-                secretKeyRef: {name: s, key: k}
           ports:
             - name: http
               containerPort: 8080
@@ -58,6 +55,14 @@ spec:
             httpGet: {path: /health/live, port: probes}
           readinessProbe:
             httpGet: {path: /health/ready, port: probes}
+          volumeMounts:
+            - {name: secrets, mountPath: /var/run/secrets/echo, readOnly: true}
+      volumes:
+        - name: secrets
+          projected:
+            defaultMode: 0440
+            sources:
+              - secret: {name: s, items: [{key: k, path: TOKEN}]}
 `
 
 func echoConfig() map[string]any {
@@ -112,19 +117,58 @@ func TestPortsEqualConfigCatchesAPortThatIsNotWhatTheBinaryBinds(t *testing.T) {
 }
 
 func TestEnvIsDeclared(t *testing.T) {
-	conformance.EnvIsDeclared(t, []byte(goodRender), "r-echo", []string{"TOKEN"})
+	conformance.EnvIsDeclared(t, []byte(goodRender), "r-echo")
 
 	r := &recorder{TB: t}
-	conformance.EnvIsDeclared(r, []byte(goodRender), "r-echo", nil)
-	if len(r.errs) == 0 {
-		t.Error("a secret that is not declared was not reported")
-	}
-
-	r = &recorder{TB: t}
-	conformance.EnvIsDeclared(r, []byte(strings.Replace(goodRender, "OTEL_SERVICE_NAME", "GREETING", 1)), "r-echo", []string{"TOKEN"})
+	conformance.EnvIsDeclared(r, []byte(strings.Replace(goodRender, "OTEL_SERVICE_NAME", "GREETING", 1)), "r-echo")
 	if len(r.errs) == 0 {
 		t.Error("an environment variable that carries configuration was not reported")
 	}
+
+	// A secret is never a variable, even one the caller allows by name.
+	asVariable := strings.Replace(goodRender, "            - name: OTEL_SERVICE_NAME\n              value: r-echo\n",
+		"            - name: OTEL_SERVICE_NAME\n              value: r-echo\n            - name: TOKEN\n              valueFrom:\n                secretKeyRef: {name: s, key: k}\n", 1)
+	for _, allowed := range [][]string{nil, {"TOKEN"}} {
+		r = &recorder{TB: t}
+		conformance.EnvIsDeclared(r, []byte(asVariable), "r-echo", allowed...)
+		if len(r.errs) == 0 {
+			t.Errorf("a secret read into the environment was not reported (allowed %v)", allowed)
+		}
+	}
+}
+
+func TestSecretsAreFiles(t *testing.T) {
+	conformance.SecretsAreFiles(t, []byte(goodRender), "r-echo")
+
+	r := &recorder{TB: t}
+	conformance.SecretsAreFiles(r, []byte(strings.Replace(goodRender, "defaultMode: 0440", "defaultMode: 0444", 1)), "r-echo")
+	if len(r.errs) == 0 {
+		t.Error("a secrets volume that is world readable was not reported")
+	}
+
+	r = &recorder{TB: t}
+	conformance.SecretsAreFiles(r, []byte(strings.Replace(goodRender, ", readOnly: true}", "}", 1)), "r-echo")
+	if len(r.errs) == 0 {
+		t.Error("a secrets volume that is not mounted read-only was not reported")
+	}
+}
+
+func TestNoEnvSecretFields(t *testing.T) {
+	conformance.NoEnvSecretFields(t, []byte("secrets: {source: file, root: /run/s}\ndatabase: {url: postgres://u@h/d, passwordSecret: db/password}\n"))
+
+	for name, doc := range map[string]string{
+		"top level": "passwordEnv: X\n",
+		"nested":    "database: {passwordEnv: X}\n",
+		"in a list": "stores: [{tokenEnv: X}]\n",
+	} {
+		r := &recorder{TB: t}
+		conformance.NoEnvSecretFields(r, []byte(doc))
+		if len(r.errs) == 0 {
+			t.Errorf("%s: a field ending Env was not reported", name)
+		}
+	}
+
+	conformance.NoEnvSecretFields(t, []byte("database: {regionEnv: X}\n"), "database.regionEnv")
 }
 
 func TestChartSchemaIsComposed(t *testing.T) {

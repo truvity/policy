@@ -16,7 +16,7 @@ wins, and the disagreement is here rather than resolved quietly.
 |---|---|---|
 | I | Codebase | [repository.md §1](../contracts/repository.md): one product per repository, one tag line. |
 | II | Dependencies | [repository.md §3](../contracts/repository.md): one manifest, a committed lock, one command to materialise it. Nothing fetched in a shell. |
-| III | Config | **Deviates.** [0002](../decisions/0002-config-file-plus-env.md): a file validated against a schema; the environment carries secrets only. See below. |
+| III | Config | **Deviates.** [0002](../decisions/0002-config-file-plus-env.md): a file validated against a schema; secrets are names resolved through one declared source (a file by default on Kubernetes). See below. |
 | IV | Backing services | [platform.md §3, §4, §6](../contracts/platform.md): a store is an endpoint, a stream is found not made, a secret is a name. Swapping one is configuration. |
 | V | Build, release, run | [release.md](../contracts/release.md): one tag stamps every artifact; [service.md §7](../contracts/service.md): a runtime image contains no build step. |
 | VI | Processes | [service.md §2](../contracts/service.md): a hand-written composition root; state lives in the backing services of IV. |

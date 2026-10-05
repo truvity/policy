@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/truvity/policy/schemas/fragments/platform.json",
   "title": "platform",
-  "description": "What the platform provides one component of a service chart: the image, the replicas, the account it runs as, how it is probed, where its identity is mounted, which secrets reach it as environment variables, and how it exports telemetry. The shape of the `platform` block of a chart's values, read by the library chart (decision 0009). Nothing here is the service's own configuration: that is the chart's `config` block, which is the service's schema and nothing else.",
+  "description": "What the platform provides one component of a service chart: the image, the replicas, the account it runs as, how it is probed, where its identity is mounted, which secrets reach it as files, and how it exports telemetry. The shape of the `platform` block of a chart's values, read by the library chart (decision 0009). Nothing here is the service's own configuration: that is the chart's `config` block, which is the service's schema and nothing else.",
   "type": "object",
   "additionalProperties": false,
   "properties": {
@@ -150,10 +150,10 @@
         }
       }
     },
-    "secrets": {
+    "secretFiles": {
       "type": "object",
-      "description": "The environment variables that carry SECRETS, and nothing else (decision 0002): variable name to the Secret and key its value comes from. The configuration file names the VARIABLE; the value never appears in a values file or a render.",
-      "propertyNames": { "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
+      "description": "The secrets the component reads, projected as FILES (decision 0012): secret NAME to the Secret and key its value comes from. The names are the `...Secret` values of the configuration and the files appear under `config.secrets.root`, mode 0440, so the configuration must declare `secrets: {source: file, root: <absolute directory>}`. The value never appears in a values file or a render, and a secret is never an environment variable.",
+      "propertyNames": { "$ref": "https://github.com/truvity/policy/schemas/fragments/secrets.json#/$defs/name" },
       "additionalProperties": {
         "type": "object",
         "additionalProperties": false,
@@ -166,7 +166,7 @@
     },
     "env": {
       "type": "array",
-      "description": "Environment a platform CLIENT LIBRARY reads (a database client's connection variables, for example), never the service's own configuration: a service takes no other structural input than its file (decision 0002). A secret does not belong here; declare it in `secrets`.",
+      "description": "Environment a platform CLIENT LIBRARY reads (a database client's connection variables, for example), never the service's own configuration: a service takes no other structural input than its file (decision 0002). A secret does not belong here; declare it in `secretFiles`.",
       "items": {
         "type": "object",
         "additionalProperties": false,

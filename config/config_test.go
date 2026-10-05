@@ -23,9 +23,10 @@ type shortener struct {
 	BaseURL  string `json:"baseURL"`
 	Database struct {
 		URL            string `json:"url"`
-		PasswordEnv    string `json:"passwordEnv"`
+		PasswordSecret string `json:"passwordSecret"`
 		MaxConnections int    `json:"maxConnections"`
 	} `json:"database"`
+	Secrets config.SecretsSource `json:"secrets"`
 }
 
 func schema(t *testing.T) []byte {
@@ -52,6 +53,9 @@ func TestAValidFileLoadsAndDecodes(t *testing.T) {
 	}
 	if cfg.Database.MaxConnections != 20 {
 		t.Errorf("database.maxConnections = %d, want 20", cfg.Database.MaxConnections)
+	}
+	if cfg.Database.PasswordSecret != "db/password" || cfg.Secrets.Source != "file" {
+		t.Errorf("database.passwordSecret = %q, secrets.source = %q", cfg.Database.PasswordSecret, cfg.Secrets.Source)
 	}
 	if cfg.BaseURL != "https://example.com" {
 		t.Errorf("baseURL = %q", cfg.BaseURL)
@@ -173,38 +177,26 @@ func TestAnEmptyFileIsRefused(t *testing.T) {
 	}
 }
 
-func TestSecret(t *testing.T) {
-	t.Run("set", func(t *testing.T) {
-		t.Setenv("EXAMPLE_PASSWORD", "value")
-		got, err := config.Secret("EXAMPLE_PASSWORD")
-		if err != nil {
-			t.Fatal(err)
-		}
-		if got != "value" {
-			t.Errorf("got %q", got)
-		}
-	})
+// `...Env` is retired as a spelling (config.md rule 5, decision 0012): a
+// document that still carries one is refused, and the error names the key.
+func TestARetiredEnvSpellingIsRefused(t *testing.T) {
+	var cfg shortener
+	err := config.Load("testdata/env-spelling.yaml", schema(t), &cfg)
+	if err == nil {
+		t.Fatal("a database.passwordEnv was accepted")
+	}
+	if !strings.Contains(err.Error(), "passwordEnv") {
+		t.Errorf("the error does not name the retired key:\n%v", err)
+	}
+}
 
-	t.Run("unset names the variable", func(t *testing.T) {
-		_, err := config.Secret("EXAMPLE_PASSWORD_THAT_IS_NOT_SET")
-		if err == nil {
-			t.Fatal("an unset secret was accepted, so the service would start without it")
-		}
-		if !strings.Contains(err.Error(), "EXAMPLE_PASSWORD_THAT_IS_NOT_SET") {
-			t.Errorf("the error does not name the variable:\n%v", err)
-		}
-	})
-
-	t.Run("empty is not set", func(t *testing.T) {
-		t.Setenv("EXAMPLE_EMPTY", "")
-		if _, err := config.Secret("EXAMPLE_EMPTY"); err == nil {
-			t.Fatal("an empty secret was accepted; an empty password is a misconfiguration, not a password")
-		}
-	})
-
-	t.Run("no name at all", func(t *testing.T) {
-		if _, err := config.Secret(""); err == nil {
-			t.Fatal("a secret with no variable named was accepted")
-		}
-	})
+func TestASecretNameThatClimbsIsRefused(t *testing.T) {
+	var cfg shortener
+	err := config.Load("testdata/secret-name-climbs.yaml", schema(t), &cfg)
+	if err == nil {
+		t.Fatal("a secret name that climbs out of its root was accepted")
+	}
+	if strings.Contains(err.Error(), "../") {
+		t.Errorf("the error quotes the name it refused:\n%v", err)
+	}
 }

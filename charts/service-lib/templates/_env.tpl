@@ -52,28 +52,3 @@ exactly when the exporter is the thing that broke.
   value: "none"
 {{- end }}
 {{- end -}}
-
-{{/*
-The environment variables that carry SECRETS, and nothing else (decision
-0002): each one declared in `platform.secrets` as the variable's name and the
-Secret and key it comes from. The value never appears in this chart's values
-or in anything it renders; the configuration file names the VARIABLE (a
-`credentialsEnv` key), and the pod's own environment holds the value.
-
-Refused: a declaration with no Secret or no key, which would render a
-reference to nothing and fail in the pod, not in the render.
-*/}}
-{{- define "service-lib.secretEnv" -}}
-{{- $secrets := (.platform | default dict).secrets | default dict -}}
-{{- range $env := keys $secrets | sortAlpha -}}
-{{- $s := get $secrets $env -}}
-{{- if not (and $s.secretName $s.key) }}
-{{- fail (printf "component %s: platform.secrets.%s needs both secretName and key" $.name $env) }}
-{{- end }}
-- name: {{ $env }}
-  valueFrom:
-    secretKeyRef:
-      name: {{ $s.secretName }}
-      key: {{ $s.key }}
-{{- end -}}
-{{- end -}}

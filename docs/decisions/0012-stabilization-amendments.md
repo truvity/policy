@@ -73,7 +73,7 @@ Documentation follows one shape, [docs.md](../contracts/docs.md).
 - **Keeping `…Env`.** Nothing to migrate, and rejected: the field names how a
   value arrives instead of which secret it is, so moving a service to a file
   or a store changes its schema. The cost is a breaking change to three
-  shared fragment fields, planned.
+  shared fragment fields, done in v1.45 ([upgrade steps](../how-to/upgrade/v1.45.md)).
 - **A function's environment as a source, for small secrets.** Rejected: the
   budget is shared with everything else, and plaintext in a console is the
   failure the rule exists for.
@@ -91,8 +91,9 @@ Documentation follows one shape, [docs.md](../contracts/docs.md).
 - **Semver is bent** for stabilizing products: a consumer pinned to a minor
   range may meet a break. The README state and the **Breaking:** entry are the
   only warning, and both are read by people.
-- **The three shared fragments still carry `…Env`** until each is replaced;
-  the rule and the schemas disagree in the meantime.
+- **The shared fragments carried `…Env`** until v1.45 replaced them
+  (`passwordSecret`, `credentialsSecret`, `platform.secretFiles`); the rule
+  and the schemas disagreed in the meantime.
 - **Several of the new rules are unchecked** and say so in the conformance
   tables; a rule with no check is a preference until one exists.
 - **A product's state is a README claim**, not a tool's output.

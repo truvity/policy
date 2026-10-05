@@ -277,11 +277,14 @@ func sortedPorts(m map[string]int) string {
 
 // EnvIsDeclared fails the test unless every environment variable the
 // Deployment's container has is accounted for: an OpenTelemetry variable
-// (decision 0006), one of the declared secrets (the keys of `platform.secrets`,
-// decision 0002), or one the caller names in allowed (the environment a
-// platform client library reads). A variable that is none of those is a second
-// way to configure the service, which is what 0002 refuses.
-func EnvIsDeclared(t testing.TB, rendered []byte, deployment string, secrets []string, allowed ...string) {
+// (decision 0006) or one the caller names in allowed (the environment a
+// platform client library reads). A variable that is neither is a second way
+// to configure the service, which is what 0002 refuses.
+//
+// A secret is never an environment variable (decision 0012): a variable read
+// from a Secret (`valueFrom.secretKeyRef`) fails whatever its name, and so does
+// one whose name is in allowed. Secrets are files, see [SecretsAreFiles].
+func EnvIsDeclared(t testing.TB, rendered []byte, deployment string, allowed ...string) {
 	t.Helper()
 
 	d := find(t, Manifests(t, rendered), "Deployment", deployment)
@@ -291,40 +294,103 @@ func EnvIsDeclared(t testing.TB, rendered []byte, deployment string, secrets []s
 	}
 	env, _ := containers[0].(map[string]any)["env"].([]any)
 
-	declared := map[string]bool{}
-	for _, s := range secrets {
-		declared[s] = true
-	}
 	ok := map[string]bool{}
 	for _, a := range allowed {
 		ok[a] = true
 	}
 
-	seen := map[string]bool{}
 	for _, e := range env {
 		em, _ := e.(map[string]any)
 		name, _ := em["name"].(string)
-		seen[name] = true
 		_, fromSecret := dig(em, "valueFrom", "secretKeyRef").(map[string]any)
 
 		switch {
-		case strings.HasPrefix(name, "OTEL_"):
-		case declared[name]:
-			if !fromSecret {
-				t.Errorf("Deployment %s: %s is a declared secret and is not read from a Secret", deployment, name)
-			}
 		case fromSecret:
-			t.Errorf("Deployment %s: %s is read from a Secret and is not declared in platform.secrets", deployment, name)
+			t.Errorf("Deployment %s: %s is read from a Secret into the environment: a secret is a file under the configuration's secrets.root, never a variable (decision 0012)", deployment, name)
+		case strings.HasPrefix(name, "OTEL_"):
 		case ok[name]:
 		default:
-			t.Errorf("Deployment %s has an environment variable %s that is neither telemetry, a declared secret nor one the chart allows: the file is the only structural input (decision 0002)", deployment, name)
+			t.Errorf("Deployment %s has an environment variable %s that is neither telemetry nor one the chart allows: the file is the only structural input (decision 0002)", deployment, name)
 		}
 	}
-	for s := range declared {
-		if !seen[s] {
-			t.Errorf("Deployment %s does not carry the declared secret %s", deployment, s)
+}
+
+// SecretsAreFiles fails the test unless a Deployment that projects secrets
+// does it as files: the volume named `secrets` is projected with a
+// `defaultMode` of 0440, and the container mounts it read-only. A Deployment
+// with no `secrets` volume passes: it has none to project.
+func SecretsAreFiles(t testing.TB, rendered []byte, deployment string) {
+	t.Helper()
+
+	d := find(t, Manifests(t, rendered), "Deployment", deployment)
+	volumes, _ := dig(d, "spec", "template", "spec", "volumes").([]any)
+	for _, v := range volumes {
+		vm, _ := v.(map[string]any)
+		if vm["name"] != "secrets" {
+			continue
+		}
+		mode, _ := dig(vm, "projected", "defaultMode").(int)
+		if mode != 0o440 {
+			t.Errorf("Deployment %s: the secrets volume has defaultMode %#o, want 0440", deployment, mode)
+		}
+		containers, _ := dig(d, "spec", "template", "spec", "containers").([]any)
+		mounted := false
+		for _, c := range containers {
+			mounts, _ := c.(map[string]any)["volumeMounts"].([]any)
+			for _, m := range mounts {
+				mm, _ := m.(map[string]any)
+				if mm["name"] == "secrets" && mm["readOnly"] == true {
+					mounted = true
+				}
+			}
+		}
+		if !mounted {
+			t.Errorf("Deployment %s: the secrets volume is not mounted read-only", deployment)
 		}
 	}
+}
+
+// NoEnvSecretFields fails the test when a configuration document has a key
+// ending `Env` at any depth (config.md rule 5, decision 0012). `…Env` said how
+// a secret arrived and not which secret it was; a secret is a `…Secret` field
+// holding a NAME under the service's one `secrets` source.
+//
+// Run it on the document of every version a binary reads from v2 on; a v1
+// document that still has them is the one the binary's upgrade converts. allowed
+// names the dotted paths of a key that ends `Env` and is not a secret, which is
+// rare enough that each is written down.
+func NoEnvSecretFields(t testing.TB, doc []byte, allowed ...string) {
+	t.Helper()
+
+	var root any
+	if err := yaml.Unmarshal(doc, &root); err != nil {
+		t.Fatalf("the document is not valid YAML: %v", err)
+	}
+	ok := map[string]bool{}
+	for _, a := range allowed {
+		ok[a] = true
+	}
+	var walk func(v any, path string)
+	walk = func(v any, path string) {
+		switch x := v.(type) {
+		case map[string]any:
+			for k, c := range x {
+				p := k
+				if path != "" {
+					p = path + "." + k
+				}
+				if strings.HasSuffix(k, "Env") && len(k) > len("Env") && !ok[p] {
+					t.Errorf("%s ends in Env: a secret is a NAME in a field ending Secret, resolved through the one secrets source (config.md rule 5)", p)
+				}
+				walk(c, p)
+			}
+		case []any:
+			for i, c := range x {
+				walk(c, fmt.Sprintf("%s[%d]", path, i))
+			}
+		}
+	}
+	walk(root, "")
 }
 
 // ChartSchemaIsComposed fails the test unless the committed values schema is

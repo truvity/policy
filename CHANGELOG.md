@@ -6,9 +6,24 @@ subjects under them are the GitHub Release's own list.
 
 ## Unreleased
 
+**Breaking:** secrets are referenced by NAME and resolved through one declared source; the `…Env` spellings are removed from the shared fragments and from the library chart, which now delivers secrets as files. Upgrade steps: [docs/how-to/upgrade/v1.45.md](docs/how-to/upgrade/v1.45.md). Allowed in a minor because `sluis` and `audit` are `stabilizing` ([release.md 1.1](docs/contracts/release.md)).
+
+### Breaking
+
+- **`schemas/fragments/postgres.json`: `passwordEnv` is replaced by `passwordSecret`** (a secret name). **`bucket.json`: `credentialsEnv` is replaced by `credentialsSecret`** (two names). A document that still has either is refused, naming the key.
+- **`schemas/fragments/platform.json`: `secrets` (variable name to Secret and key) is replaced by `secretFiles`** (secret name to Secret and key). **service-lib** projects them as one volume, mode 0440, mounted at `config.secrets.root`, and refuses `config.secrets.source: env`, and `secretFiles` without `source: file` and an absolute, clean root. The chart renders no `valueFrom.secretKeyRef` for a secret. `platform.config.pathEnv` is kept: it carries the path of the file, not a secret.
+- **Go `config.Secret(envName)` is removed**; use `config.NewSecrets`. **`conformance.EnvIsDeclared` loses its `secrets` argument** and fails any variable read from a Secret.
+
+### Added
+
+- **`schemas/fragments/secrets.json`**: the shared `secrets` block, `{source: env | file | ssm | openbao, root}`, and `$defs/name`, the pattern of a secret name.
+- **`config.SecretsSource`, `config.NewSecrets`, `(*Secrets).Get`, `config.Store`, `config.WithStore`**: one implementation of the source for every Go service. It checks the root (no empty, `.` or `..` segment; absolute for `file` and `ssm`), refuses `env` when `AWS_LAMBDA_FUNCTION_NAME` is set, and never puts a name or a value in an error. `ssm` and `openbao` read through a `Store` the service supplies, so the module links no cloud client.
+- **`conformance.NoEnvSecretFields`** (a document with a key ending `Env` fails) and **`conformance.SecretsAreFiles`**.
+
 ### Contracts
 
-- **config.md 1.2, rule 5: a secret is referenced by NAME in a field ending `Secret` and resolved through ONE declared source per service (`secrets.source: env | file | ssm | openbao`, plus a root); `…Env` is retired as a spelling.** A function's own environment is not an acceptable source (a 4 KB budget, plaintext in the console): a function uses `ssm` or a file in a layer. A source that refreshes may re-read a credential; the configuration is immutable. The fragments' `passwordEnv`, `credentialsEnv` and `pathEnv` are still accepted; replacing them is planned and will carry a **Breaking:** entry. Unchecked by a tool yet.
+- **config.md 1.2, rule 5: `…Env` is retired in the fragments, not only as a spelling**, and the conformance row for it is now checked.
+- **config.md 1.2, rule 5: a secret is referenced by NAME in a field ending `Secret` and resolved through ONE declared source per service (`secrets.source: env | file | ssm | openbao`, plus a root); `…Env` is retired as a spelling.** A function's own environment is not an acceptable source (a 4 KB budget, plaintext in the console): a function uses `ssm` or a file in a layer. A source that refreshes may re-read a credential; the configuration is immutable.
 - **config.md 1.2, rule 7: a service document's group is `<product>.truvity.github.io`** (`sluis.truvity.github.io/sluis/v3`), absent still means v1, N and N-1 are read, and the schema's `$id` carries the document's version.
 - **config.md 1.2, new rules 8 and 9: a service may read a policy document beside its service document** (own kind, schema and `apiVersion`; both immutable; the service document names the policy file); **a preset** is a bundle of adapter or deployment choices that expands at load time and names only implemented choices, and a compliance bundle is a **profile**. Both defined in the glossary.
 - **release.md 1.1: a product that declares itself `stabilizing` in its README may ship a breaking change in a minor, with a `**Breaking:**` entry and migration steps, and never in a patch**; automation may cut patches only for non-breaking `fix:` changes. The exit criteria for `stable` are listed (N/N-1 reading, one-minor deprecation of renamed chart values, schemas as release assets, three CI gates); after them a breaking change is a major. `sluis` and `audit` are stabilizing.

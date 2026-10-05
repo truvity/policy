@@ -124,10 +124,19 @@ smuggle a secret in: a database URL that carries a password —
 `user:password@host`, or a `password` or `sslpassword` parameter — is
 refused, and the error names `url` without quoting it. A `passfile`
 parameter is not refused: it names a file, which is a delivery this rule
-allows. The fragments' own `…Env` fields (`passwordEnv`, `credentialsEnv`,
-`pathEnv`) predate this rule and are still accepted; replacing them with
-`…Secret` is a breaking change to each fragment, planned, and ships with a
-**Breaking:** entry ([release.md §2](release.md)).
+allows. The fragments carry the name, never the way it arrives: the database
+fragment's `passwordSecret` and the bucket fragment's `credentialsSecret`
+replace `passwordEnv` and `credentialsEnv`, which are **gone** (policy v1.45,
+[upgrade steps](../how-to/upgrade/v1.45.md)). The one `…Env` field the fragments
+keep is the platform block's `config.pathEnv`: it names the variable that
+carries the *path of the configuration file* (service.md rule 1), which is not a
+secret and is not in the configuration the service reads.
+
+The Go package [`config`](../../config) holds the one implementation of the
+source: `config.NewSecrets` reads a name through the declared source, checks the
+root, and refuses `env` on a serverless function. The ssm and openbao sources
+read through a `config.Store` the service supplies, so a service links the client
+of the store it uses and no other.
 
 ## 6. Failure is at start-up, and says where
 
@@ -257,7 +266,7 @@ and it is allowed to tighten but not to select adapters.
 | 3. strictness | a negative fixture per schema: an unknown key must fail |
 | 4. shared shapes | review, and the fragment `$ref`s in the schema |
 | 5. secrets | review; the loader has no way to read a secret from the file; the database fragment's negative fixtures (a password in the URL's user information, and in its query) |
-| 5. one declared source; no `…Env`; no function environment | review — unchecked (a schema lint for `…Env` and for a `secrets.source` is planned) |
+| 5. one declared source; no `…Env`; no function environment | [x] the fragments have no `…Env` field and the `secrets` fragment is closed ([`schemas/fragments/secrets.json`](../../schemas/fragments/secrets.json)); `conformance.NoEnvSecretFields` fails a document with a key ending `Env`; `config.NewSecrets` refuses a bad root and the `env` source on a function; the chart refuses `env` and delivers files (`conformance.EnvIsDeclared`, `conformance.SecretsAreFiles`) |
 | 5. credentials re-read, configuration immutable | review — unchecked |
 | 6. start-up failure | a test that starts the binary with each invalid fixture |
 | 6. read once | review — unchecked |
