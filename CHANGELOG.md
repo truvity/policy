@@ -11,14 +11,14 @@ subjects under them are the GitHub Release's own list.
 ### Breaking
 
 - **`schemas/fragments/postgres.json`: `passwordEnv` is replaced by `passwordSecret`** (a secret name). **`bucket.json`: `credentialsEnv` is replaced by `credentialsSecret`** (two names). A document that still has either is refused, naming the key.
-- **`schemas/fragments/platform.json`: `secrets` (variable name to Secret and key) is replaced by `secretFiles`** (secret name to Secret and key). **service-lib** projects them as one volume, mode 0440, mounted at `config.secrets.root`, and refuses `config.secrets.source: env`, and `secretFiles` without `source: file` and an absolute, clean root. The chart renders no `valueFrom.secretKeyRef` for a secret. `platform.config.pathEnv` is kept: it carries the path of the file, not a secret.
+- **`schemas/fragments/platform.json`: `secrets` (variable name to Secret and key) is replaced by `secretFiles`** (secret name to Secret and key). **service-lib** projects them as one volume, mode 0440, mounted at `config.secrets.root`, and refuses `config.secrets.source: env`, a `…Secret` field with no `config.secrets` block, a `platform.volumes` entry named `secrets`, a root that overlaps another mount, and `secretFiles` without `source: file` and an absolute, clean root. The chart renders no `valueFrom.secretKeyRef` for a secret. `platform.config.pathEnv` is kept: it carries the path of the file, not a secret.
 - **Go `config.Secret(envName)` is removed**; use `config.NewSecrets`. **`conformance.EnvIsDeclared` loses its `secrets` argument** and fails any variable read from a Secret.
 
 ### Added
 
 - **`schemas/fragments/secrets.json`**: the shared `secrets` block, `{source: env | file | ssm | openbao, root}`, and `$defs/name`, the pattern of a secret name.
-- **`config.SecretsSource`, `config.NewSecrets`, `(*Secrets).Get`, `config.Store`, `config.WithStore`**: one implementation of the source for every Go service. It checks the root (no empty, `.` or `..` segment; absolute for `file` and `ssm`), refuses `env` when `AWS_LAMBDA_FUNCTION_NAME` is set, and never puts a name or a value in an error. `ssm` and `openbao` read through a `Store` the service supplies, so the module links no cloud client.
-- **`conformance.NoEnvSecretFields`** (a document with a key ending `Env` fails) and **`conformance.SecretsAreFiles`**.
+- **`config.SecretsSource`, `config.NewSecrets`, `(*Secrets).Get`, `config.Store`, `config.WithStore`**: one implementation of the source for every Go service. It checks the root (no empty, `.` or `..` segment; absolute for `file` and `ssm`), refuses `env` when `AWS_LAMBDA_FUNCTION_NAME` is set, and never puts a name or a value in an error: an error from a `Store` is not printed (the cause stays reachable with `errors.Is`, and `config.ErrNotFound` marks a missing secret), so a store must still not echo paths in what it logs itself. `NewSecrets` also refuses `env` on a function at construction. The `secrets` fragment holds the root to the source (an absolute directory for `file` and `ssm`; no leading slash for `openbao`, whose KV v2 mount includes the `data` segment). `ssm` and `openbao` read through a `Store` the service supplies, so the module links no cloud client.
+- **`conformance.NoEnvSecretFields`** (a document with a key ending `Env` fails) and **`conformance.SecretsAreFiles`**, which holds every Secret-backed volume to mode 0440 or tighter and read-only mounts. `EnvIsDeclared` now walks every container and init container, and rejects `envFrom` of a Secret.
 
 ### Contracts
 
