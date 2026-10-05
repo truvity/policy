@@ -50,6 +50,16 @@ log stream and a drain on SIGTERM, held to
 is held to the same boundary where it applies. A component may ship a
 service; most ship mechanism around someone else's.
 
+**Preset.** A named bundle of a service's adapter or deployment choices that
+expands at load time into the keys it stands for, and names only choices
+that are implemented ([config.md §9](contracts/config.md)). Not a **profile**:
+a bundle that selects a compliance posture (retention, redaction, record
+settings) is a profile, chosen by who audits the deployment.
+
+**Stabilizing / stable.** A product's declared state, in its README. A
+stabilizing product may ship a breaking change in a minor; a stable one
+ships it only in a major ([release.md §2](contracts/release.md)).
+
 **Consumer.** A repository that installs, imports or calls a released
 artifact at a pinned version, and whose pin bump carries the evidence that
 adopting it changes only what the release announced

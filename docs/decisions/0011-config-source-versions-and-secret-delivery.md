@@ -1,6 +1,6 @@
 # 0011 — Configuration is immutable per instance, versioned, and found the same way everywhere; secrets arrive by name three ways
 
-**Status:** accepted
+**Status:** accepted. Secret spelling and sources amended by [0012](0012-stabilization-amendments.md)
 
 Amends [0002](0002-config-file-plus-env.md) in two places — where secrets
 come from, and reloading — and keeps the rest of it.

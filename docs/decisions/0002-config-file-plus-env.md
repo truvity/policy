@@ -1,6 +1,6 @@
 # 0002 — Configuration is a file; the environment carries secrets
 
-**Status:** accepted
+**Status:** accepted. Amended by [0011](0011-config-source-versions-and-secret-delivery.md) and [0012](0012-stabilization-amendments.md)
 
 ## Context
 
