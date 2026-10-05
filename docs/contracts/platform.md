@@ -1,6 +1,6 @@
 # The platform contract
 
-Version: 1.2 · Effective: 2026-10-06 · Changes: see [CHANGELOG](../../CHANGELOG.md)
+Version: 1.3 · Effective: 2026-10-06 · Changes: see [CHANGELOG](../../CHANGELOG.md)
 
 **Normative.** [service.md](service.md) says what a service does at its own
 process boundary. This says what it asks of whatever runs it, and what that
@@ -274,8 +274,8 @@ depend on) the same way rule 1 already refuses for a password.
 | Value | The decision it answers | §9 row |
 |---|---|---|
 | `database.host` | where the database the other chart made is | — |
-| `database.app.role`, `database.app.passwordSecret` | the least-privilege runtime role the service connects as, and where its credential is (always passed) | how secrets arrive |
-| `database.owner.passwordSecret` | where the owner's credential is. Passed only by exception, when the deployment records that the product needs owner access; the default is the runtime role alone ([delivery-interface.md](delivery-interface.md) step 15) | how secrets arrive |
+| `database.app.role`, `database.app.passwordSecret` | the least-privilege runtime role the service connects as, and where its credential is. Always passed; it is the only database credential the long-running workloads of the application chart receive ([delivery-interface.md](delivery-interface.md) step 15) | how secrets arrive |
+| `database.migration.passwordSecret` | where the owner's credential is, for the schema migration alone. From interface 15, passed only to a product that declares `postgres.migrations: true`, replacing `database.owner.passwordSecret`; the chart may mount it only in a Job or a Helm or Argo CD hook Job that runs migrations, never in a long-running workload | how secrets arrive |
 | `database.tls.rootCA.configMapName`, `.key`, `database.clusterDomain` | the ConfigMap holding the root the server certificate chains to (required: the client always verifies the server), and the cluster's DNS suffix. `database.tls.mode` is accepted only as `verify-full` | whether transport identity is on |
 | `events.url` | which broker | — |
 | `archive.bucket.*` | which store, as an endpoint | which object store |
