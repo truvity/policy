@@ -137,19 +137,50 @@ func TestEnvIsDeclared(t *testing.T) {
 	}
 }
 
+func TestEnvIsDeclaredWalksEveryContainer(t *testing.T) {
+	extra := strings.Replace(goodRender, "      containers:\n", "      initContainers:\n        - name: init\n          env:\n            - name: TOKEN\n              valueFrom:\n                secretKeyRef: {name: s, key: k}\n      containers:\n", 1)
+	r := &recorder{TB: t}
+	conformance.EnvIsDeclared(r, []byte(extra), "r-echo")
+	if len(r.errs) == 0 {
+		t.Error("a Secret read into an init container's environment was not reported")
+	}
+
+	second := strings.Replace(goodRender, "          ports:\n", "          envFrom:\n            - secretRef: {name: s}\n          ports:\n", 1)
+	r = &recorder{TB: t}
+	conformance.EnvIsDeclared(r, []byte(second), "r-echo")
+	if len(r.errs) == 0 {
+		t.Error("an envFrom of a Secret was not reported")
+	}
+}
+
 func TestSecretsAreFiles(t *testing.T) {
 	conformance.SecretsAreFiles(t, []byte(goodRender), "r-echo")
 
-	r := &recorder{TB: t}
-	conformance.SecretsAreFiles(r, []byte(strings.Replace(goodRender, "defaultMode: 0440", "defaultMode: 0444", 1)), "r-echo")
-	if len(r.errs) == 0 {
-		t.Error("a secrets volume that is world readable was not reported")
+	for name, mutate := range map[string]func(string) string{
+		"world readable":      func(s string) string { return strings.Replace(s, "defaultMode: 0440", "defaultMode: 0444", 1) },
+		"decimal 292 is 0444": func(s string) string { return strings.Replace(s, "defaultMode: 0440", "defaultMode: 292", 1) },
+		"no defaultMode":      func(s string) string { return strings.Replace(s, "            defaultMode: 0440\n", "", 1) },
+		"loose item mode":     func(s string) string { return strings.Replace(s, "path: TOKEN}", "path: TOKEN, mode: 0644}", 1) },
+		"read-write mount":    func(s string) string { return strings.Replace(s, ", readOnly: true}", "}", 1) },
+	} {
+		doc := mutate(goodRender)
+		r := &recorder{TB: t}
+		conformance.SecretsAreFiles(r, []byte(doc), "r-echo")
+		if len(r.errs) == 0 {
+			t.Errorf("%s: not reported", name)
+		}
 	}
 
-	r = &recorder{TB: t}
-	conformance.SecretsAreFiles(r, []byte(strings.Replace(goodRender, ", readOnly: true}", "}", 1)), "r-echo")
+	// 288 decimal is 0440: the same number, however it is spelled.
+	conformance.SecretsAreFiles(t, []byte(strings.Replace(goodRender, "defaultMode: 0440", "defaultMode: 288", 1)), "r-echo")
+	conformance.SecretsAreFiles(t, []byte(strings.Replace(goodRender, "defaultMode: 0440", "defaultMode: 0400", 1)), "r-echo")
+
+	// A plain `secret` volume is held to the same rule.
+	plain := strings.Replace(goodRender, "projected:\n            defaultMode: 0440\n            sources:\n              - secret: {name: s, items: [{key: k, path: TOKEN}]}", "secret: {secretName: s}", 1)
+	r := &recorder{TB: t}
+	conformance.SecretsAreFiles(r, []byte(plain), "r-echo")
 	if len(r.errs) == 0 {
-		t.Error("a secrets volume that is not mounted read-only was not reported")
+		t.Error("a plain secret volume with no defaultMode was not reported")
 	}
 }
 
@@ -157,14 +188,18 @@ func TestNoEnvSecretFields(t *testing.T) {
 	conformance.NoEnvSecretFields(t, []byte("secrets: {source: file, root: /run/s}\ndatabase: {url: postgres://u@h/d, passwordSecret: db/password}\n"))
 
 	for name, doc := range map[string]string{
-		"top level": "passwordEnv: X\n",
-		"nested":    "database: {passwordEnv: X}\n",
-		"in a list": "stores: [{tokenEnv: X}]\n",
+		"top level":  "passwordEnv: X\n",
+		"nested":     "database: {passwordEnv: X}\n",
+		"in a list":  "stores: [{tokenEnv: X}]\n",
+		"lower case": "passwordenv: X\n",
+		"EnvVar":     "tokenEnvVar: X\n",
+		"FromEnv":    "tokenFromEnv: X\n",
+		"second doc": "a: 1\n---\npasswordEnv: X\n",
 	} {
 		r := &recorder{TB: t}
 		conformance.NoEnvSecretFields(r, []byte(doc))
 		if len(r.errs) == 0 {
-			t.Errorf("%s: a field ending Env was not reported", name)
+			t.Errorf("%s: a field naming a variable was not reported", name)
 		}
 	}
 

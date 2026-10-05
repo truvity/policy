@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"strings"
 )
@@ -72,6 +73,9 @@ func (s *SecretsSource) Check() error {
 		if s.Root != "" {
 			return errors.New("secrets.root is for the sources file, ssm and openbao: an environment variable has no root")
 		}
+		if os.Getenv(lambdaEnv) != "" {
+			return errLambdaEnv
+		}
 	case SourceFile:
 		if !strings.HasPrefix(s.Root, "/") || !filepath.IsAbs(s.Root) || !cleanRoot(s.Root) {
 			return errors.New("secrets.root must be an absolute directory with source file, with no empty, . or .. segment")
@@ -81,8 +85,9 @@ func (s *SecretsSource) Check() error {
 			return errors.New("secrets.root must be an absolute parameter path with source ssm, such as /audit/main/private/config, with no empty, . or .. segment and no trailing slash")
 		}
 	case SourceOpenBao:
-		if !cleanRoot(s.Root) {
-			return errors.New("secrets.root must be the mount path with source openbao, with no empty, . or .. segment")
+		if strings.HasPrefix(s.Root, "/") || !cleanRoot(s.Root) {
+			return errors.New("secrets.root must be the mount path with source openbao, with no leading slash and no empty, . or .. segment " +
+				"(for a KV v2 mount, include the data segment: secret/data/<app>)")
 		}
 	default:
 		return fmt.Errorf("secrets.source is %q and must be env, file, ssm or openbao", s.Source)
@@ -96,16 +101,48 @@ func (s *SecretsSource) Check() error {
 // [WithStore], backed by its own SSM or OpenBao client, with the process's own
 // identity. A store reads the credential live, so a rotated value is seen by the
 // next call; the configuration that names it is not re-read.
+//
+// A Store must not put the path or a value in the errors it returns: Get does
+// not print them, but a log of the wrapped cause would. It may return
+// [ErrNotFound], or wrap it, for a secret that does not exist.
 type Store interface {
 	Get(ctx context.Context, path string) (string, error)
 }
+
+// ErrNotFound is what a [Store] returns, or wraps, when the secret does not
+// exist. [errors.Is] finds it through the error [Secrets.Get] returns.
+var ErrNotFound = errors.New("secret not found")
+
+// storeError is a failed read from a Store. It prints the field's source and
+// root and never the cause, which a store's client may fill with the path it
+// asked for; the cause stays reachable with errors.Is and errors.As.
+type storeError struct {
+	source, root string
+	cause        error
+}
+
+func (e *storeError) Error() string {
+	what := "could not be read"
+	if errors.Is(e.cause, ErrNotFound) {
+		what = "does not exist"
+	}
+	return fmt.Sprintf("the secret it names under secrets.root %s %s (secrets.source is %s)", e.root, what, e.source)
+}
+
+func (e *storeError) Unwrap() error { return e.cause }
 
 // Option configures [NewSecrets].
 type Option func(*Secrets)
 
 // WithStore supplies the store for a remote source (SourceSSM or SourceOpenBao).
+//
+// A nil store, including a nil pointer in a Store, is not registered, so
+// [NewSecrets] refuses the source instead of failing on first use.
 func WithStore(source string, s Store) Option {
 	return func(r *Secrets) {
+		if v := reflect.ValueOf(s); s == nil || (v.Kind() == reflect.Pointer || v.Kind() == reflect.Map || v.Kind() == reflect.Func || v.Kind() == reflect.Interface || v.Kind() == reflect.Slice) && v.IsNil() {
+			return
+		}
 		if r.stores == nil {
 			r.stores = map[string]Store{}
 		}
@@ -160,7 +197,7 @@ func (s *Secrets) get(ctx context.Context, name string) (string, error) {
 	switch s.src.Source {
 	case SourceEnv:
 		if os.Getenv(lambdaEnv) != "" {
-			return "", errors.New("secrets.source is env on AWS Lambda, where a function's environment is not a place for a secret: use secrets.source ssm or file")
+			return "", errLambdaEnv
 		}
 		if !envName.MatchString(name) {
 			return "", errors.New("the name is not that of an environment variable (secrets.source is env)")
@@ -196,7 +233,7 @@ func (s *Secrets) get(ctx context.Context, name string) (string, error) {
 		}
 		v, err := st.Get(ctx, path.Join(s.src.Root, name))
 		if err != nil {
-			return "", fmt.Errorf("the secret it names under secrets.root %s could not be read (secrets.source is %s): %w", s.src.Root, s.src.Source, err)
+			return "", &storeError{source: s.src.Source, root: s.src.Root, cause: err}
 		}
 		if v == "" {
 			return "", fmt.Errorf("the secret it names under secrets.root %s is empty (secrets.source is %s)", s.src.Root, s.src.Source)
@@ -205,6 +242,8 @@ func (s *Secrets) get(ctx context.Context, name string) (string, error) {
 	}
 	return "", fmt.Errorf("secrets.source %q is not env, file, ssm or openbao", s.src.Source)
 }
+
+var errLambdaEnv = errors.New("secrets.source is env on AWS Lambda, where a function's environment is not a place for a secret: use secrets.source ssm or file")
 
 var errNotAName = errors.New("the name is not a secret name: a relative path of letters, digits, dots, underscores and dashes, which does not climb")
 

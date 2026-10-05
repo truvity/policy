@@ -3,6 +3,7 @@ package config_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -53,15 +54,17 @@ func TestSecretsEnvSource(t *testing.T) {
 	}
 }
 
-func TestSecretsEnvIsRefusedOnLambda(t *testing.T) {
+func TestSecretsEnvIsRefusedOnLambdaAtConstruction(t *testing.T) {
 	t.Setenv("AWS_LAMBDA_FUNCTION_NAME", "f")
 	t.Setenv("EXAMPLE_PASSWORD", "value")
-	_, err := resolver(t, config.SecretsSource{Source: "env"}).Get(context.Background(), "k", "EXAMPLE_PASSWORD")
-	if err == nil {
-		t.Fatal("the env source was read on a function")
+	for _, src := range []config.SecretsSource{{}, {Source: "env"}} {
+		if _, err := config.NewSecrets(src); err == nil {
+			t.Fatalf("the env source %+v was accepted on a function", src)
+		}
 	}
-	if strings.Contains(err.Error(), "value") {
-		t.Errorf("the error carries the value: %v", err)
+	src := config.SecretsSource{Source: "env"}
+	if err := src.Check(); err == nil || strings.Contains(err.Error(), "value") {
+		t.Errorf("Check on a function: %v", err)
 	}
 }
 
@@ -136,5 +139,50 @@ func TestSecretsSourceCheck(t *testing.T) {
 		if err := src.Check(); err != nil {
 			t.Errorf("%+v: %v", src, err)
 		}
+	}
+}
+
+type leakyStore struct{ err error }
+
+func (l leakyStore) Get(context.Context, string) (string, error) { return "", l.err }
+
+func TestAStoreErrorIsNotPrintedButIsReachable(t *testing.T) {
+	leak := errors.New("GetParameter /audit/main/db/password: AccessDenied")
+	s := resolver(t, config.SecretsSource{Source: "ssm", Root: "/audit/main"}, config.WithStore("ssm", leakyStore{leak}))
+	_, err := s.Get(context.Background(), "database.passwordSecret", "db/password")
+	if err == nil {
+		t.Fatal("a failing store was accepted")
+	}
+	for _, bad := range []string{"db/password", "AccessDenied", "GetParameter"} {
+		if strings.Contains(err.Error(), bad) {
+			t.Errorf("the error carries %q: %v", bad, err)
+		}
+	}
+	if !strings.Contains(err.Error(), "database.passwordSecret") || !errors.Is(err, leak) {
+		t.Errorf("the error must name the field and keep the cause for errors.Is: %v", err)
+	}
+
+	nf := resolver(t, config.SecretsSource{Source: "ssm", Root: "/audit"}, config.WithStore("ssm", leakyStore{fmt.Errorf("ParameterNotFound /audit/x: %w", config.ErrNotFound)}))
+	_, err = nf.Get(context.Background(), "k", "x")
+	if !errors.Is(err, config.ErrNotFound) || strings.Contains(err.Error(), "ParameterNotFound") {
+		t.Errorf("not found: %v", err)
+	}
+}
+
+func TestATypedNilStoreIsNotRegistered(t *testing.T) {
+	var nilStore *nilPtrStore
+	if _, err := config.NewSecrets(config.SecretsSource{Source: "ssm", Root: "/a"}, config.WithStore("ssm", nilStore)); err == nil {
+		t.Error("a typed nil store was accepted")
+	}
+}
+
+type nilPtrStore struct{}
+
+func (*nilPtrStore) Get(context.Context, string) (string, error) { return "", nil }
+
+func TestAnOpenBaoRootHasNoLeadingSlash(t *testing.T) {
+	src := config.SecretsSource{Source: "openbao", Root: "/secret/data/audit"}
+	if err := src.Check(); err == nil {
+		t.Error("a leading slash was accepted")
 	}
 }

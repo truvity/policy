@@ -2,6 +2,7 @@ package config_test
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -198,5 +199,30 @@ func TestASecretNameThatClimbsIsRefused(t *testing.T) {
 	}
 	if strings.Contains(err.Error(), "../") {
 		t.Errorf("the error quotes the name it refused:\n%v", err)
+	}
+}
+
+// The schema holds the root to what Check holds it to, so a bad root is refused
+// at load and not only when a resolver is made.
+func TestASecretsRootTheSchemaRefuses(t *testing.T) {
+	for name, block := range map[string]string{
+		"file, relative":     "source: file\n  root: run/secrets",
+		"file, climbing":     "source: file\n  root: /run/../etc",
+		"file, no root":      "source: file",
+		"ssm, empty segment": "source: ssm\n  root: /a//b",
+		"openbao, slash":     "source: openbao\n  root: /secret/data/x",
+		"env, with a root":   "source: env\n  root: /x",
+		"an unknown source":  "source: vault\n  root: x",
+	} {
+		dir := t.TempDir()
+		doc := "listen:\n  address: \":8080\"\nprobes:\n  address: \":7070\"\nbaseURL: https://example.com\ndatabase:\n  url: postgres://s@db/s\nsecrets:\n  " + block + "\n"
+		f := filepath.Join(dir, "c.yaml")
+		if err := os.WriteFile(f, []byte(doc), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		var cfg shortener
+		if err := config.Load(f, schema(t), &cfg); err == nil {
+			t.Errorf("%s: accepted", name)
+		}
 	}
 }

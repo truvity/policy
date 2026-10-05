@@ -94,6 +94,9 @@ CONFIGS = [
     ("echo", CHARTS / "testdata" / "service-example" / "echo.schema.json", "schemas/echo.json"),
     ("service", ROOT / "schemas" / "service.json", "schemas/service.json"),
 ]  # fmt: skip
+# Fragments the contract package does not model yet, which may lack a generated
+# twin (a `document-missing` gap in the report). Anything else missing fails.
+NO_PKL_TWIN = {"fragments/secrets"}
 FRAGMENTS = sorted((ROOT / "schemas" / "fragments").glob("*.json"))
 
 # chart name -> (hand-written values.schema.json, its values.yaml)
@@ -667,7 +670,7 @@ def main() -> int:
     for name, hpath, gfile in docs:
         # A fragment the contract package does not model yet has no generated
         # twin: that is a `document-missing` gap in the report, not a failure.
-        optional = name.startswith("fragments/") and not (gen_dir / gfile).exists()
+        optional = name in NO_PKL_TWIN and not (gen_dir / gfile).exists()
         h, g = need(hpath), None if optional else need(gen_dir / gfile)
         if h is not None:
             hand_reg.add(h)
