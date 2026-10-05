@@ -4,7 +4,7 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
-## Unreleased
+## v1.45.0 — 2026-10-05
 
 **Breaking:** secrets are referenced by NAME and resolved through one declared source; the `…Env` spellings are removed from the shared fragments and from the library chart, which now delivers secrets as files. Upgrade steps: [docs/how-to/upgrade/v1.45.md](docs/how-to/upgrade/v1.45.md). Allowed in a minor because `sluis` and `audit` are `stabilizing` ([release.md 1.1](docs/contracts/release.md)).
 
