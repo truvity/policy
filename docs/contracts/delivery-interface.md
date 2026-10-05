@@ -93,8 +93,8 @@ below it.
 | 5 | 1.30.0 | not yet |
 | 6 | 1.31.0 | not yet |
 | 7 | 1.32.0 | not yet |
-| 8 | 1.33.0 | not yet |
-| 9 | 1.34.0 | not yet |
+| 8 | 1.33.0 | 0.46.0 (`database.tls`, verify-full; wins over its legacy `pg.tls`) |
+| 9 | 1.34.0 | 0.46.0 (`postgres.platformOwned: true` with the embedded subchart off by `pgSubchart.enabled: false`; unset, dms-infra renders its own Cluster) |
 | 10 | 1.35.0 | not yet |
 | 11 | 1.39.0 | not yet |
 | 12 | 1.40.0 | not yet |
