@@ -229,29 +229,6 @@ func dedupe(in []string) []string {
 	return out
 }
 
-// Secret reads the environment variable named by the configuration.
-//
-// A configuration file carries the NAME of the variable, never the value:
-// files are rendered into config maps, printed when somebody debugs a
-// deployment, and committed as test fixtures, and a secret has to survive all
-// three being true.
-//
-// An unset or empty variable is an error, and the error names the variable
-// rather than quoting anything.
-func Secret(name string) (string, error) {
-	if name == "" {
-		return "", errors.New("no environment variable was named for this secret")
-	}
-	v, ok := os.LookupEnv(name)
-	if !ok {
-		return "", fmt.Errorf("environment variable %s is not set", name)
-	}
-	if v == "" {
-		return "", fmt.Errorf("environment variable %s is empty", name)
-	}
-	return v, nil
-}
-
 // Error is what Load, LoadKind, Validate and PathFrom return. It names the
 // file and every failing path; it never contains a value from the file,
 // because an error is logged and a configuration file may sit next to a

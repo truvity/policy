@@ -2,13 +2,7 @@ listen:
   address: ":8080"
 probes:
   address: ":7070"
-log:
-  level: info
 baseURL: https://example.com
 database:
   url: postgres://shortener@db:5432/shortener
-  passwordSecret: db/password
-  maxConnections: 20
-secrets:
-  source: file
-  root: /var/run/secrets/shortener
+  passwordEnv: DATABASE_PASSWORD

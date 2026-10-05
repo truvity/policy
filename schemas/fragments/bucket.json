@@ -32,13 +32,13 @@
       "default": false,
       "description": "Address the bucket as a path rather than as a host. Required by most non-cloud implementations."
     },
-    "credentialsEnv": {
+    "credentialsSecret": {
       "type": "object",
       "additionalProperties": false,
-      "description": "The NAMES of the environment variables holding the credentials, never the values. Unset means the SDK's ambient credentials, which is what a workload identity provides.",
+      "description": "The NAMES of the two secrets holding the credentials, never the values, each a name under the service's one `secrets` source (docs/contracts/config.md rule 5). Unset means the SDK's ambient credentials, which is what a workload identity provides.",
       "properties": {
-        "accessKeyID": { "type": "string", "minLength": 1 },
-        "secretAccessKey": { "type": "string", "minLength": 1 }
+        "accessKeyID": { "$ref": "https://github.com/truvity/policy/schemas/fragments/secrets.json#/$defs/name" },
+        "secretAccessKey": { "$ref": "https://github.com/truvity/policy/schemas/fragments/secrets.json#/$defs/name" }
       },
       "required": ["accessKeyID", "secretAccessKey"]
     }

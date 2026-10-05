@@ -51,7 +51,7 @@ says 8080 or 7070 except the file.
 | `config.tls.certFile` and the other two | checked to be under `platform.tls.mountPath`, and refused if not |
 | `config.drain.seconds` | the grace period: that, plus `platform.drain.preStopSeconds`, plus a margin |
 | the file itself | the `checksum/config` annotation, so a changed file restarts the pods |
-| `platform.secrets` | one environment variable per declared secret, from a Secret and key; nothing else is a secret |
+| `platform.secretFiles` | one file per declared secret name, from a Secret and key, in one projected volume mounted at `config.secrets.root` (mode 0440); the configuration must say `secrets: {source: file, root: ...}`. A secret is never an environment variable |
 | `platform.telemetry` | OpenTelemetry's own variables, and no endpoint means do not export |
 
 A component with no `config.probes` is refused, and so is a Service for one
@@ -127,7 +127,9 @@ every value ([`conformance`](../../conformance/chart.go)):
 | `ConfigMapEqualsConfig` | the file in the ConfigMap is not `.Values.config`, parsed |
 | `ChecksumFollowsConfig` | the pods would not restart when the file changes |
 | `PortsEqualConfig` | a container or Service port is not what `config` binds, or a probe is not on the probes port |
-| `EnvIsDeclared` | an environment variable is neither telemetry, a declared secret nor one the chart allows |
+| `EnvIsDeclared` | an environment variable is neither telemetry nor one the chart allows, or is read from a Secret |
+| `SecretsAreFiles` | the secrets volume is not projected with mode 0440 and mounted read-only |
+| `NoEnvSecretFields` | a configuration document has a key ending `Env` |
 | `ChartSchemaIsComposed` | the committed schema is not what its source composes to |
 | `ValidDocument` | the rendered file is refused by the service's own schema |
 

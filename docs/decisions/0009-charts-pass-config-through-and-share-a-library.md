@@ -34,7 +34,7 @@ places, and nothing made them agree.
   what the chart was given.
 - `platform` is everything the platform provides: the image, replicas,
   resources, the account, the probes, where the identity is mounted, which
-  secrets reach the process as environment variables, how it exports
+  secrets reach the process as files, how it exports
   telemetry. Its shape is
   [schemas/fragments/platform.json](../../schemas/fragments/platform.json),
   written by hand.
@@ -50,7 +50,7 @@ the probes' port from the probes listener; the identity mount from
 write a port that disagrees with the file, because there is nowhere to write
 one. Environment variables are the OpenTelemetry ones
 ([0006](0006-telemetry-is-the-sdk-environment.md)) and the **declared secrets**
-(`platform.secrets`), nothing else
+(`platform.secretFiles` since [0012](0012-stabilization-amendments.md)), nothing else
 ([0002](0002-config-file-plus-env.md)).
 
 **The chart's `values.schema.json` is composed, never written:** the platform

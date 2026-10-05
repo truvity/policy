@@ -23,6 +23,9 @@
     },
     "database": {
       "$ref": "https://github.com/truvity/policy/schemas/fragments/postgres.json"
+    },
+    "secrets": {
+      "$ref": "https://github.com/truvity/policy/schemas/fragments/secrets.json"
     }
   }
 }

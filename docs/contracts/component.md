@@ -497,10 +497,11 @@ secret. In particular:
   Service's are `config.listen`, `config.probes` and, under a permissive
   transport, `config.tls.address`, and nothing else, so that they always
   equal what the binary listens on;
-- **the environment is the OpenTelemetry variables and the declared
-  secrets** (`platform.secrets`, each a variable name and the Secret and key it
-  comes from), and nothing else but what a platform client library reads
-  (`platform.env`): the file is the only structural input;
+- **the environment is the OpenTelemetry variables**, and nothing else but what
+  a platform client library reads (`platform.env`): the file is the only
+  structural input. **Secrets are files** (`platform.secretFiles`, each a secret
+  name and the Secret and key it comes from, mounted at `config.secrets.root`),
+  never variables;
 - **every component has its own ServiceAccount**, and `default` is refused
   (C14, which the library enforces for its own pods);
 - the chart **depends on** the library as `service-lib`, version `0.0.0`, by a
@@ -519,7 +520,8 @@ truth, which is why a chart resolves the one library from its lock instead.
 **Conformance.** The chart's own render test: `conformance.PortsEqualConfig`
 (the container ports and the Service's equal what `config` binds, and the
 probes are on the probes port), `conformance.EnvIsDeclared` (no environment
-variable is neither telemetry, a declared secret nor one the chart allows), and
+variable is neither telemetry nor one the chart allows, and none is read from a
+Secret), `conformance.SecretsAreFiles`, `conformance.NoEnvSecretFields`, and
 a test that the chart declares the library by path and commits its lock
 (`examples/url-shortener`: `TestTheApplicationChartResolvesTheLibraryFromItsLock`),
 with `just chart-deps` (and so `drift`) failing on a stale lock. The library

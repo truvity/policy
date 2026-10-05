@@ -29,7 +29,13 @@ The `bucket` fragment, in [`schemas/fragments/bucket.json`](../../schemas/fragme
 | `endpoint` | unset means the SDK's own resolution; set means anything else |
 | `ca` | a bundle the platform mounts, for a store whose endpoint is not signed by a public root — the ordinary case inside somebody's network, not the exotic one |
 | `pathStyle` | required by most non-cloud implementations |
-| `credentialsEnv` | the NAMES of two variables. **Unset is the better answer**: it means the SDK's ambient credentials, which is what a workload identity provides and what leaves nothing to leak |
+| `credentialsSecret` | the NAMES of two secrets (`accessKeyID`, `secretAccessKey`), each a name under the service's one [`secrets`](../../schemas/fragments/secrets.json) source. **Unset is the better answer**: it means the SDK's ambient credentials, which is what a workload identity provides and what leaves nothing to leak |
+
+`credentialsSecret` replaces `credentialsEnv` (policy v1.45; see the
+[upgrade steps](../how-to/upgrade/v1.45.md)). The chart projects the two
+secrets as files with `platform.secretFiles` and the configuration declares
+`secrets: {source: file, root: <the mount>}`; the archiver reads them from there
+(`read_secret` in [`archive.py`](../../examples/url-shortener/log/src/url_shortener_log/archive.py)).
 
 ## Where to look
 

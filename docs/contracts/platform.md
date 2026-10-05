@@ -65,8 +65,9 @@ without credentials for it.
 starts, and its rotation.
 
 This is the Kubernetes platform's half of [config.md §5](config.md), and on
-Kubernetes the Secret is delivered as an environment variable or a mounted
-file. A platform with no secret object to deliver through — a serverless
+Kubernetes the Secret is delivered as a mounted file (the service-lib chart's
+`platform.secretFiles`, read through the `file` source); the shared chart no
+longer renders a secret as an environment variable. A platform with no secret object to deliver through — a serverless
 function, whose environment is capped — is the case §5's *declared secret
 source* exists for: the service reads the store once, at start-up, by an
 identifier its configuration names. That is not a licence to do the same on a
@@ -76,7 +77,7 @@ platform that has Secrets.
 
 A service that reads or writes objects takes a bucket name, a region, an
 optional endpoint, a path-style flag, an optional certificate authority, and
-credentials **either by variable name or not at all** — the last meaning the
+credentials **either by secret name (`credentialsSecret`) or not at all** — the last meaning the
 ambient identity of rule 2.
 
 The vendor is not configuration. An API is; one implementation of it runs in

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/truvity/policy/schemas/fragments/postgres.json",
   "title": "postgres",
-  "description": "A PostgreSQL connection. The URL carries no password: it names the environment variable that does.",
+  "description": "A PostgreSQL connection. The URL carries no password: `passwordSecret` names the secret that does.",
   "type": "object",
   "additionalProperties": false,
   "required": ["url"],
@@ -24,12 +24,11 @@
           "not": { "pattern": "[?&][^=&#]*%[^=&#]*=" }
         }
       ],
-      "description": "A connection URL without credentials, for example postgres://user@host:5432/dbname?sslmode=require. A password in the user information or in a password or sslpassword parameter is refused: the file is rendered into objects people read, and the password belongs to passwordEnv."
+      "description": "A connection URL without credentials, for example postgres://user@host:5432/dbname?sslmode=require. A password in the user information or in a password or sslpassword parameter is refused: the file is rendered into objects people read, and the password belongs to passwordSecret."
     },
-    "passwordEnv": {
-      "type": "string",
-      "minLength": 1,
-      "description": "The NAME of the environment variable holding the password. Unset means the connection needs none."
+    "passwordSecret": {
+      "$ref": "https://github.com/truvity/policy/schemas/fragments/secrets.json#/$defs/name",
+      "description": "The NAME of the secret holding the password, under the service's one `secrets` source (docs/contracts/config.md rule 5). Unset means the connection needs none."
     },
     "maxConnections": {
       "type": "integer",

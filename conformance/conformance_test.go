@@ -14,7 +14,7 @@ type config struct {
 	BaseURL  string `json:"baseURL"`
 	Database struct {
 		URL            string `json:"url"`
-		PasswordEnv    string `json:"passwordEnv"`
+		PasswordSecret string `json:"passwordSecret"`
 		MaxConnections int    `json:"maxConnections"`
 	} `json:"database"`
 }
@@ -68,7 +68,7 @@ func TestTypeMatchesSchemaCatchesARenamedField(t *testing.T) {
 		BaseURL  string `json:"base_url"` // was baseURL
 		Database struct {
 			URL            string `json:"url"`
-			PasswordEnv    string `json:"passwordEnv"`
+			PasswordSecret string `json:"passwordSecret"`
 			MaxConnections int    `json:"maxConnections"`
 		} `json:"database"`
 	}
