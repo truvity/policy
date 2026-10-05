@@ -243,3 +243,43 @@ func collectTypeFields(t reflect.Type, prefix string, out map[string]bool) {
 		collectTypeFields(f.Type, p, out)
 	}
 }
+
+// MigrationSecretOnlyInJobs enforces delivery-interface step 15: the owner's
+// credential, passed under `database.migration.*`, may be referenced only by a
+// Job (a plain Job or a Helm or Argo CD hook Job) that runs the schema
+// migration. rendered is the chart rendered with `database.migration.passwordSecret`
+// set to secretName, a sentinel no other value uses; the check fails for every
+// manifest whose kind is not Job and that names it, so a Deployment, a
+// StatefulSet, a CronJob or a bare Pod cannot receive it.
+func MigrationSecretOnlyInJobs(t testing.TB, rendered []byte, secretName string) {
+	t.Helper()
+	dec := yaml.NewDecoder(strings.NewReader(string(rendered)))
+	for {
+		var doc map[string]any
+		err := dec.Decode(&doc)
+		if errors.Is(err, io.EOF) {
+			return
+		}
+		if err != nil {
+			t.Fatalf("the rendered manifests are not valid YAML: %v", err)
+		}
+		if doc == nil {
+			continue
+		}
+		kind, _ := doc["kind"].(string)
+		if kind == "Job" {
+			continue
+		}
+		raw, err := yaml.Marshal(doc)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if strings.Contains(string(raw), secretName) {
+			name := ""
+			if md, ok := doc["metadata"].(map[string]any); ok {
+				name, _ = md["name"].(string)
+			}
+			t.Errorf("%s %q references the migration secret %q: the owner credential may be mounted only in a Job (or hook Job) that runs migrations (delivery-interface.md step 15)", kind, name, secretName)
+		}
+	}
+}

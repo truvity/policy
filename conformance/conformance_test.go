@@ -103,3 +103,51 @@ data:
       "$ref": "https://github.com/truvity/policy/schemas/service.json"
     }`))
 }
+
+func TestMigrationSecretOnlyInJobsAcceptsAJob(t *testing.T) {
+	conformance.MigrationSecretOnlyInJobs(t, []byte(`apiVersion: batch/v1
+kind: Job
+metadata:
+  name: x-migrate
+  annotations:
+    helm.sh/hook: pre-upgrade
+spec:
+  template:
+    spec:
+      volumes:
+        - name: pw
+          secret:
+            secretName: sentinel-migration
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: x
+spec:
+  template:
+    spec:
+      volumes:
+        - name: pw
+          secret:
+            secretName: app-runtime
+`), "sentinel-migration")
+}
+
+func TestMigrationSecretOnlyInJobsRefusesAWorkload(t *testing.T) {
+	ft := &recorder{TB: t}
+	conformance.MigrationSecretOnlyInJobs(ft, []byte(`apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: x
+spec:
+  template:
+    spec:
+      volumes:
+        - name: pw
+          secret:
+            secretName: sentinel-migration
+`), "sentinel-migration")
+	if len(ft.errs) == 0 {
+		t.Fatal("a Deployment that mounts the migration secret was accepted")
+	}
+}
