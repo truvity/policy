@@ -94,7 +94,7 @@ below it.
 | 6 | 1.31.0 | not yet |
 | 7 | 1.32.0 | not yet |
 | 8 | 1.33.0 | 0.46.0 (`database.tls`, verify-full; wins over its legacy `pg.tls`) |
-| 9 | 1.34.0 | 0.46.0 (`postgres.platformOwned: true` with the embedded subchart off by `pgSubchart.enabled: false`; unset, dms-infra renders its own Cluster) |
+| 9 | 1.34.0 | 0.46.0 (`postgres.platformOwned: true`; unset, dms-infra renders its own Cluster). 0.48.0 is the release where dms-infra has no subchart (0.47.0 was never released) |
 | 10 | 1.35.0 | not yet |
 | 11 | 1.39.0 | not yet |
 | 12 | 1.40.0 | not yet |
