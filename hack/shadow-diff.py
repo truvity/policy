@@ -665,7 +665,10 @@ def main() -> int:
     docs = [(n, h, g) for n, h, g in CONFIGS]
     docs += [(f"fragments/{p.name[:-5]}", p, f"schemas/fragments/{p.name}") for p in FRAGMENTS]
     for name, hpath, gfile in docs:
-        h, g = need(hpath), need(gen_dir / gfile)
+        # A fragment the contract package does not model yet has no generated
+        # twin: that is a `document-missing` gap in the report, not a failure.
+        optional = name.startswith("fragments/") and not (gen_dir / gfile).exists()
+        h, g = need(hpath), None if optional else need(gen_dir / gfile)
         if h is not None:
             hand_reg.add(h)
         if g is not None:
