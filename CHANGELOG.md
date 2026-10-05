@@ -12,7 +12,7 @@ An amendment to delivery-interface step 15, before any product declares it. No c
 
 - **delivery-interface.md 1.2, step 15 amended in place; platform.md 1.3, section 10.** Step 15 as released in v1.46.0 let a product opt in to the owner credential for the application chart (`postgres.ownerAccess: true`). That is withdrawn: the application chart's long-running workloads get `database.app.*` only, always, and `ownerAccess` no longer exists. The owner credential is now exposed under a separate key, `database.migration.passwordSecret` (`.role`, `.passwordKey`), passed from interface 15 only to a product that declares `postgres.migrations: true`, and a chart may mount it only in a Job, or a Helm or Argo CD hook Job, that runs schema migrations. From 15 a platform no longer passes `database.owner.*`. Step 15 is amended rather than followed by a step 16 because no product pin declares it (the url-shortener charts are at 13, dms has not adopted), and the key it removes was introduced by step 15 itself, so rule 1 (a step never renames or removes an earlier step's key) is not touched.
 - **New check, `conformance.MigrationSecretOnlyInJobs`:** renders-in, fails when any non-Job manifest names the migration secret. A product at interface 15 or higher runs it in its chart tests.
-- A platform must know the amended step before a product declares it (`truvity/cd` `cd-delivery` v0.12.0 does).
+- A platform must know the amended step before a product declares it (`truvity/cd` `cd-delivery` v0.13.0 does).
 
 ## v1.46.0 — 2026-10-06
 
