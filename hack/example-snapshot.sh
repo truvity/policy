@@ -94,16 +94,6 @@ helmctl package \
     --manifest dist/goreleaser-manifest.json \
     --require-image-digests \
     --output dist/charts
-# The test chart carries only the e2e image (helmctl narrows the manifest
-# to what each chart actually declares — see RestrictImagesToDeclared),
-# released and packaged the SAME way as the pair above rather than as a
-# second build path.
-helmctl package \
-    --chart examples/url-shortener/charts/url-shortener-e2e \
-    --manifest dist/goreleaser-manifest.json \
-    --require-image-digests \
-    --output dist/charts
-
 # The library chart, published beside them. It carries no image, so the
 # manifest narrows to nothing for it; packaging it here is what proves the
 # release tool accepts a `type: library` chart at all, which no other lane does.

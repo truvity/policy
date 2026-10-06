@@ -102,7 +102,6 @@ FRAGMENTS = sorted((ROOT / "schemas" / "fragments").glob("*.json"))
 # chart name -> (hand-written values.schema.json, its values.yaml)
 CHART_FILES = {
     "url-shortener": (CHARTS / "url-shortener" / "values.schema.json", CHARTS / "url-shortener" / "values.yaml"),
-    "url-shortener-e2e": (CHARTS / "url-shortener-e2e" / "values.schema.json", CHARTS / "url-shortener-e2e" / "values.yaml"),
     "url-shortener-infra": (CHARTS / "url-shortener-infra" / "values.schema.json", CHARTS / "url-shortener-infra" / "values.yaml"),
     "service-example": (CHARTS / "testdata" / "service-example" / "values.schema.json", CHARTS / "testdata" / "service-example" / "values.yaml"),
 }  # fmt: skip
@@ -111,7 +110,6 @@ CHART_FILES = {
 TD = CHARTS / "testdata"
 CHART_FIXTURES = {
     "url-shortener": [TD / "minimal.yaml", TD / "everything.yaml", TD / "per-component.yaml", *sorted((TD / "invalid").glob("*.yaml"))],
-    "url-shortener-e2e": [TD / "e2e-minimal.yaml", TD / "e2e-everything.yaml"],
     "url-shortener-infra": [TD / "infra-minimal.yaml", TD / "infra-everything.yaml", TD / "infra-platform-owned.yaml"],
     "service-example": [TD / "service-example-everything.yaml"],
 }  # fmt: skip
@@ -764,12 +762,9 @@ def main() -> int:
         if V2 is not None:
             web = {"probes": {"address": ":7070"}, "listen": {"address": ":8080"}, "urls": {"address": "urls:80"}, "assets": {"directory": "/a"}}
             prober = {"probes": {"address": ":7070"}, "interval": "10s", "urls": {"address": "u"}, "redirect": {"address": "r"}}
-            e2e_base = deep_merge(load_yaml(CHART_FILES["url-shortener-e2e"][1]) or {}, load_yaml(TD / "e2e-minimal.yaml") or {})
             for rule, label, doc_name, instance, differ in [
                 ("a field with a default is optional", "web: `faro: {}` (no `enabled`)", "web", {**web, "faro": {}}, True),
                 ("a pattern refuses a newline", "prober: `interval: \"10s\\n\"`", "prober", {**prober, "interval": "10s\n"}, True),
-                ("`null` is not a value for an optional field", "e2e chart: `job.ttlSecondsAfterFinished: null`", "chart url-shortener-e2e",
-                 deep_merge(e2e_base, {"job": {"ttlSecondsAfterFinished": 600}}) | {"job": {**e2e_base["job"], "ttlSecondsAfterFinished": None}}, True),
             ]:  # fmt: skip
                 hs = hand_by_name.get(doc_name) if doc_name in hand_by_name else chart_docs[doc_name[len("chart "):]][0]
                 gs = gen_by_name.get(doc_name) if doc_name in gen_by_name else chart_docs[doc_name[len("chart "):]][1]

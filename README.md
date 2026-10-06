@@ -22,7 +22,7 @@ assertion.
 | the shared lint configuration | [`lint/`](lint/README.md) | the tagged source, copied into a repository |
 | the local cluster the example is tested on | [`hack/kind/`](hack/kind/README.md) | the tagged source, fetched at a pinned tag |
 | the library chart service charts render with | [`charts/service-lib`](charts/service-lib/Chart.yaml) | chart `service-lib` under `oci://ghcr.io/truvity/charts`; embedded for tests by the Go package `charts/` |
-| the worked example, a URL shortener | [`examples/url-shortener/`](examples/url-shortener/README.md) | charts `url-shortener`, `url-shortener-infra` and `url-shortener-e2e` under `oci://ghcr.io/truvity/charts`; images under `ghcr.io/truvity/policy/url-shortener/` |
+| the worked example, a URL shortener | [`examples/url-shortener/`](examples/url-shortener/README.md) | charts `url-shortener` and `url-shortener-infra` under `oci://ghcr.io/truvity/charts`; images under `ghcr.io/truvity/policy/url-shortener/` |
 
 One tag stamps all of them: `vX.Y.Z` releases the documents, the schemas, the
 Go module, the TypeScript package, the Python wheel and the example's charts

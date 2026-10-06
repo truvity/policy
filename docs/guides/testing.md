@@ -206,8 +206,8 @@ that covers `stat` and `log`, since neither carries a Service at all.
 
 Before any of that: `TestMain` itself will not run a single test until
 `e2e/rollout` (`WaitForPromoted`) says the release has finished rolling
-out — closing a race found on a real cluster, where the test chart's own
-Job (below) is a separate Application a GitOps controller can sync while
+out — closing a race found on a real cluster, where a suite Job
+(a product's own CI creates it) can start while
 the application release's own Deployments are still catching up. A plain
 `kubectl rollout status` wait, called at that moment, sees the OLD
 generation already fully rolled out and returns immediately — the suite
@@ -275,221 +275,94 @@ A caller that wants either to run sets the matching env and grants the
 matching permission — nothing here decides that for every caller by
 running unconditionally.
 
-## The suite, as a released test chart
+## The suite, in the product's own CI
 
-The suite runs two ways, both against a real install, and both the exact
-same binary described above — only how it reaches its names differs:
+The suite is not a chart. It runs two ways, both against a real install, and
+both the exact same binary described above:
 
-- **outside-in**, from this box's own devbox environment or a laptop
-  (`just example-smoke`, or `go test` directly): the suite resolves its
-  names by rendering `charts/url-shortener-infra` with `helm`
+- **outside-in**, from this box's own devbox environment, a laptop or the
+  product's own CI (`just example-smoke`, or `go test` directly): the suite
+  resolves its names by rendering `charts/url-shortener-infra` with `helm`
   (`e2e/fixture.Resolve`), since `helm` is on PATH there and this box's own
   fixture stands in for a real infra chart (see "The box installs no infra
   chart" above);
-- **as a Job**, rendered by `charts/url-shortener-e2e` — a THIRD chart,
-  released and packaged alongside the other two by the exact same
-  `.goreleaser.yaml` + `helmctl` flow, carrying the SAME `e2e` image the
-  outside-in loop runs directly. Installed into the SAME namespace as an
-  application release already there, it runs the suite against that
-  release from inside the cluster.
+- **as a Job**, from the published `e2e` image above, for a caller that
+  wants the suite to run inside the cluster. No chart of this repository
+  renders that Job any more: a product's CI creates the Job (and the
+  ServiceAccount and read-only grants it needs) in its own ephemeral
+  environment, from the environment variables listed above.
 
-The Job cannot render the infra chart either — no `helm` in the `e2e`
-image, no copy of the charts' embedded source there — so it does not try
-to. `charts/url-shortener-e2e/values.yaml` takes every name the suite
-needs directly: the database's host, name, and its owner and runtime
-roles; the runtime role's password Secret (read into the suite as
-`E2E_APP_PASSWORD`, via `secretKeyRef` — no RBAC on Secrets, because the
-kubelet resolves it, never this Job's own ServiceAccount token); the
-stream, its two subjects and the two durable consumer names; the archive
-bucket, its region and endpoint; and, optionally, a traces URL and how to
-authenticate to it (`traces.tokenExchange.*`, `traces.caConfigMap` — see
-"The suite, as an image" above for what each becomes). Setting
-the suite to build its names from THOSE environment variables instead of
-rendering a chart. Every case the suite carries runs; nothing here is
-missing on purpose.
-
-It also sets `E2E_APP_VERSION` to its OWN `.Chart.AppVersion` — which is
-the application chart's too, since the two (plus `url-shortener-infra`)
-release under one version together (`.github/workflows/release.yaml`).
-That is what lets `WaitForPromoted` (above) prove a run is judging the
-version THIS release actually promoted rather than whatever generation
-happened to be live when the Job started; `rolloutTimeout` (a Go
-duration, e.g. `3m`, empty by default) overrides how long it waits per
-Deployment.
-
-`mode` picks which cases run:
-
-| `mode` | Runs |
-|---|---|
-| `full` (the default) | every case the suite carries |
-| `tenant` | every case EXCEPT `TestMigrationRanAndRolesAreSeparate`, which issues DDL directly at the database (`CREATE TABLE`, then `DROP TABLE`, to prove the runtime role cannot) — a probing write that assumes this install owns its database outright, which a tenant sharing one under a prefix (`url-shortener-infra`'s `tier: test`) should not be handed rights to make true |
-
-The Job carries no `helm.sh/hook` annotations at all — it is a PLAIN Job,
-applied the same way by `helm upgrade --install` and by a GitOps
-controller's `helm template` + apply (see "Two install paths" above). Its
-own name folds in THIS CHART'S version
-(`charts/url-shortener-e2e/templates/_helpers.tpl`'s
-`"url-shortener-e2e.jobName"`), because a Job's spec is immutable: without
-that, re-applying an upgraded chart under the same name would be refused
-rather than converge. Each release of this chart is therefore a Job
-nothing before it ever created; the one before it is left for the NEXT
-version's apply to prune, or for `helm uninstall` — not for
-`job.ttlSecondsAfterFinished`, which is UNSET by default (see
-[conformance.md](conformance.md)) precisely so a GitOps controller's
-self-heal cannot recreate a Job that deleted itself. The name alone does
-not cover a platform changing only the chart's VALUES at a version
-already deployed (Kubernetes still refuses that patch as immutable), so
-`job.annotations` — empty by default, rendered on the Job's own metadata
-only — lets a platform put its own force/replace annotation there for a
-controller that reads one to decide it may delete and recreate the Job
-rather than apply in place.
-
-`just example-e2e-chart` runs it on the kind box, after
-`just example-install`: installing the packaged `.tgz` under the release
-under test's own names (read the same way `hack/install.sh` reads them —
-`e2e/fixture/cmd/resolve`, never repeated by hand), waiting for the Job it
-renders to reach `Complete`, and printing the Job's own log either way. It
-is part of `just cluster-all` and the CI `cluster` job's test step,
-alongside `example-smoke` — proving the suite runs as the chart's own Job,
-through that Job's scoped RBAC, and not only outside-in.
+A product's chart therefore carries what runs for the life of the release (the
+components, the migration and the optional prober below) and nothing that
+exists only to test it. `just example-smoke` runs on the kind box, in `just
+cluster-all` and in the CI `cluster` job.
 
 ## The prober
 
-The e2e Job proves a release **IS** healthy, once, and exits. Nothing here
-proves it **STAYS** healthy — and a fresh install with no traffic always
-looks green, which is exactly the gap a monitoring gate (a bake window a
-promotion tool reads before calling a rollout safe) cannot tolerate: it
-needs signal before, during and after the rollout, not a single Job's exit
-code from before it began.
+The suite proves a release **IS** healthy, once, and exits. Nothing there
+proves it **STAYS** healthy, and a fresh install with no traffic always looks
+green, which is exactly the gap a monitoring gate (a bake window a promotion
+tool reads before calling a rollout safe) cannot tolerate: it needs signal
+before, during and after the rollout.
 
-`charts/url-shortener-e2e/templates/prober.yaml` is that signal: a
-Deployment, off by default (`prober.enabled`), that walks the SAME three
-journeys the suite proves once — create a short link (`urls`), resolve it
-(`redirect`, expecting a 302 back to the long URL), read its click count
-back and see it move (`stat`, which carries no Service of its own — this is
-its effect, exactly as the suite's own `TestStatMovesTheCounter` reads it)
-— in a loop, forever, against the release named by `.Values.appRelease`.
+`charts/url-shortener/templates/prober.yaml` is that signal: a Deployment of
+one replica, off by default (`prober.enabled`), that walks the SAME three
+journeys the suite proves once (create a short link through `urls`, resolve
+it through `redirect` expecting a 302 back to the long URL, read its click
+count back and see it move) in a loop, against this release's own `urls` and
+`redirect` Services. It follows the release's `tls`, `otel`, `podSecurity` and
+`pullPolicy`, takes no Kubernetes API access, and carries its image under
+`images.prober` like every component.
 
-**A separate workload from the suite's Job, deliberately.** They answer two
-different questions and belong to two different lifetimes: the Job runs
-once and its result is a Job condition; the prober runs for as long as the
-release does and its result is a stream of outcomes over time. Folding the
-loop into the Job would make "prove it once" and "watch it forever" one
-component with two settings fighting over what `mode` even means.
-
-**The request-making code is not duplicated.** Before this existed, the
-suite held its own copy of "how to ask `urls` to create a link, how to read
-a redirect's status and Location, how to read a click count back" — and the
-prober would have needed a second copy, which is exactly the drift a
-shared library exists to rule out. `examples/url-shortener/e2e/journey` is
-that library: three functions, no `*testing.T`, imported by
-`examples/url-shortener/e2e/suite` (which wraps each call with `t.Fatalf`
-and the harness's pod-aware error wrapping) and by
+**The request-making code is not duplicated.** `examples/url-shortener/e2e/journey`
+is the one library: three functions, no `*testing.T`, imported by
+`examples/url-shortener/e2e/suite` (which wraps each call with `t.Fatalf` and
+the harness's pod-aware error wrapping) and by
 `examples/url-shortener/e2e/cmd/prober` (which wraps each call with an
 OpenTelemetry metric and a structured log line instead). A protocol change
 either would need to follow now has exactly one place to make it.
 
 **Metrics, on the same terms as every other component here (decision
-0006).** The prober starts the OpenTelemetry SDK
-(`telemetry.Start`, decision 0006 again — see "Telemetry" in
-[logging-and-telemetry.md](logging-and-telemetry.md)) and reports a counter
-and a histogram: a Prometheus reader sees them as
+0006).** The prober starts the OpenTelemetry SDK (`telemetry.Start`; see
+"Telemetry" in [logging-and-telemetry.md](logging-and-telemetry.md)) and
+reports a counter and a histogram: a Prometheus reader sees them as
 `probe_journey_total{journey,result}` (`journey` is `urls`, `redirect` or
 `stat`; `result` is `success` or `failure`) and
-`probe_journey_duration_seconds{journey}`. No endpoint configured — the
-chart's default — means no export, exactly like every other exporter here;
-nothing about the prober itself decides whether metrics leave the process.
+`probe_journey_duration_seconds{journey}`. No endpoint configured, the
+default, means no export. The chart's `alerts.journeyFailing` and
+`alerts.proberAbsent` read these series.
 
 **On kind, read the log, not the metrics.** The local cluster carries no
-OpenTelemetry collector (0005's amendment), so a metric this prober
-computes is never exported anywhere off the box. What IS always there is
-the structured log line `record` in `examples/url-shortener/e2e/cmd/prober`
-writes for every pass — `"probe journey succeeded"` or `"probe journey
-failed"`, with `journey`, `result` and `duration_seconds` fields — which
-`just example-prober` (`examples/url-shortener/hack/install-prober.sh`)
-reads back with `kubectl logs` to prove the loop is actually running,
-within a bounded time, rather than asking a collector this box does not
-have for a series it would never receive.
+OpenTelemetry collector (0005's amendment), so a metric this prober computes
+is never exported anywhere off the box. What IS always there is the
+structured log line `"probe journey succeeded"` (or `"probe journey
+failed"`), with `journey`, `result` and `duration_seconds` fields, which
+`just example-prober` (`examples/url-shortener/hack/install-prober.sh`) reads
+back with `kubectl logs`. It enables the prober on the release `example-install`
+installed with `helm upgrade --reuse-values`, waits for its Deployment, and
+fails unless a successful pass shows up within 60 seconds. It is part of
+`just cluster-all` and the CI kind test step.
 
-`just example-prober` runs after `just example-e2e-chart`, on the SAME
-release that installed: it enables the prober with `helm upgrade
---reuse-values`, waits for its Deployment to become ready, and fails unless
-a successful pass shows up in its log within 60 seconds. It is part of
-`just cluster-all` and the CI kind test step, alongside `example-e2e-chart`.
+**The prober presents a workload identity when the release does.** With the
+transport on at all (`tls.mode`, or a component's own `tls.components.<name>.mode`,
+other than `off`) the prober mounts a CSI identity at `tls.mountPath`, runs
+as its own ServiceAccount (`<release>-prober`, or `prober.serviceAccount.name`),
+and calls `urls` and `redirect` presenting that identity, verifying the
+ANSWERING peer's in return, which is what a component serving `strict`
+demands of every caller. Because it is the same release, it cannot disagree
+with the components: it reads the same two modes, dials each target on its
+own port (the ordinary one, over TLS, under `strict`; the alternate one named
+by `tls.port`, under `permissive`), and accepts answers only from the two
+accounts the chart itself renders for `urls` and `redirect`. The request-identity
+Role binds the prober's account too (unless `tls.grantRequest` is false).
 
-**The prober can present a workload identity too, and it is a SEPARATE
-switch from the application chart's.** `charts/url-shortener-e2e`'s own
-top-level `tls` block (values.yaml) is the same shape
-`charts/url-shortener` uses for a client-only component (`stat`, `web`):
-`off` by default, and once turned on the prober mounts a CSI identity at
-`tls.mountPath` and calls `urls` and `redirect` presenting it, verifying
-the ANSWERING peer's identity in return — precisely what a component
-serving `tls.mode: strict` demands of every caller.
-
-This exists so `urls` can move to `strict` without leaving the prober
-behind: **the two charts are different Helm releases**, and neither one can
-read the other's values. A platform enabling transport identity on the
-application release has to turn this chart's `tls` on too, set to match, not
-merely "on" — because it also decides which of a target's two ports is
-dialled: the ordinary one, over TLS, under `strict`; the alternate one named
-by `tls.port`, under `permissive`, where the ordinary port is still
-cleartext.
-
-**The two targets do not have to match, and are not allowed to.** The
-application chart runs `urls` and `redirect` in modes of their own
-(`tls.components.<name>.mode`, defaulting to `tls.mode`), because only `urls`
-may be `strict`: `redirect` is fronted by a gateway that terminates TLS and
-forwards cleartext. This chart states the same thing the same way — its own
-`tls.components.urls.mode` / `tls.components.redirect.mode`, defaulting to
-its `tls.mode` — so the usual pair reads:
-
-```yaml
-tls:
-  mode: permissive          # redirect: the second port, over TLS
-  components:
-    urls:
-      mode: strict          # urls: the ordinary port, over TLS
-```
-
-`redirect` set to `strict`, written down or inherited from a release-wide
-`tls.mode: strict`, is refused at render with a message that says what to set
-instead.
-
-The prober is not granted by the application chart the way `urls` grants
-its own counter (`charts/url-shortener/templates/_components.tpl`'s own
-comment on that rule): that wiring is for callers a chart RENDERS itself,
-and the prober is a workload the application chart never sees. Once the
-e2e chart's transport is on, add the prober's own ServiceAccount
-name (`templates/_helpers.tpl`'s `"url-shortener-e2e.proberServiceAccountName"`,
-or whatever `prober.serviceAccount.name` names explicitly) to the
-application chart's OWN `tls.peers.urls` and `tls.peers.redirect` — the
-same way any other external caller is granted. Its `tls.peers` (whose
-answer it accepts) must name `urls`' and `redirect`'s accounts; with the
-application chart every component has its own account, so those are
-`<release>-urls` and `<release>-redirect` unless renamed (see
+The one grant the chart cannot make itself is the other direction: the prober
+is a caller `urls` and `redirect` do not render. Add its account to the
+application chart's `tls.peers.urls` and `tls.peers.redirect` before making
+`urls` strict, the way any external caller is granted (see
 [identity-and-secrets.md](identity-and-secrets.md)). Skipped, `strict` refuses
-the prober at the handshake with a certificate error, not anything that
-names the missing grant.
-
-**The suite Job presents an identity the same way, behind its own switch.**
-`job.tls.enabled` (off by default, and byte-identical when off) makes the
-Job mount the same CSI identity and hand the suite what it needs (the
-`E2E_URLS_TLS`, `E2E_REDIRECT_TLS`, `E2E_TLS_*` variables, read by
-`examples/url-shortener/e2e/tlsenv`), so every call it makes to `urls` and
-`redirect` presents the certificate and dials the target's port for its mode.
-It reads the same top-level `tls` block as the prober — one description of the
-application release — and adds only the switch, so turning the transport on
-for a platform already running the prober does not silently change what the
-Job asks of the application's allow-lists. It needs the transport on
-(`job.tls.enabled` with everything `off` is refused at render).
-
-Its identity is requested AS the Job's own ServiceAccount (`<release>-e2e`
-unless `serviceAccount.name` says otherwise), which is not the prober's. The
-grant model is the prober's: add that account to the application chart's
-`tls.peers.urls` and `tls.peers.redirect` (the latter wherever `redirect` is
-not `off`) BEFORE making `urls` strict. `tls.peers` on THIS chart is the other
-direction, whose answers the Job and the prober accept — it is normally the
-application's own account. An empty list admits nobody.
+the prober at the handshake with a certificate error, not anything that names
+the missing grant.
 
 ## Traps
 

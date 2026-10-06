@@ -52,11 +52,11 @@ exactly the same things a public one is:
   cannot take the block as written — a fork carrying a dependency the
   canon does not — is a **documented exemption**, not a silent skip; the
   parity job's own configuration is where that exemption is named.
-- **The test chart and prober shape.** A service that owns a database or a
-  stream ships a third, released chart carrying the suite as a plain Job
-  (["the suite, as a released test chart"](testing.md#the-suite-as-a-released-test-chart)),
-  and the same chart's prober Deployment if the service wants a continuous
-  signal
+- **The suite and prober shape.** A service that owns a database or a
+  stream runs its suite from its own CI
+  (["the suite, in the product's own CI"](testing.md#the-suite-in-the-products-own-ci)),
+  and its application chart carries an optional prober Deployment if the
+  service wants a continuous signal
   (["The prober"](testing.md#the-prober)). Both run against a private
   install exactly as they run against the example's — the suite reads every
   name it needs from an environment variable with a fixture fallback, never
@@ -161,10 +161,10 @@ already argues for on general grounds. Each step is its own pull request.
    `golangci-lint config verify` before `run` — a misplaced block is
    accepted silently otherwise — and resolve every finding as a migration or
    a named exception ([lint/README.md](../../lint/README.md)).
-6. **The test chart.** Add the third, released chart carrying the suite as a
-   plain Job, and wire the prober if the service should be watched
-   continuously rather than proved once
-   (["The suite, as a released test chart"](testing.md#the-suite-as-a-released-test-chart),
+6. **The suite and the prober.** Run the suite from the service's own CI, and
+   add the optional prober to the application chart if the service should be
+   watched continuously rather than proved once
+   (["The suite, in the product's own CI"](testing.md#the-suite-in-the-products-own-ci),
    ["The prober"](testing.md#the-prober)).
 7. **The promotion gate.** Point that same suite at the shared development
    cluster through the consumer's own tenant harness, per
