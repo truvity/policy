@@ -83,11 +83,11 @@ should mirror `serviceAccount.app.annotations`.
 
 Callers from outside the release stay in `tls.peers.<component>`.
 
-**Grant the e2e chart the right names.** The prober's and the suite Job's
-`tls.peers` (who may ANSWER them) must name `<release>-urls` and
-`<release>-redirect` (or the names given under `serviceAccount.components`).
-Their own accounts still go in the application chart's `tls.peers.urls` and
-`tls.peers.redirect`.
+**Grant the prober its name.** The prober's own allow-list of answers is
+rendered by the chart (`<release>-urls` and `<release>-redirect`, or the names
+given under `serviceAccount.components`). Its account, `<release>-prober` or
+`prober.serviceAccount.name`, still goes in the application chart's
+`tls.peers.urls` and `tls.peers.redirect`.
 
 ## How a secret arrives
 

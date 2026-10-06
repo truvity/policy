@@ -44,7 +44,7 @@ jobs:
       # And a chart whose images.* entries are not all digest-pinned is
       # refused outright.
       require-image-digests: true
-      # FOUR charts, released under ONE version. The last is the library
+      # THREE charts, released under ONE version. The last is the library
       # chart, `service-lib`, which renders nothing of its own: it is what
       # url-shortener renders its components with (docs/guides/charts.md), and
       # it is published beside it so that another repository's service chart
@@ -55,7 +55,7 @@ jobs:
       # `file://` and its committed Chart.lock; `helmctl package` resolves it
       # (`helm dependency build`) when it is missing from charts/.
       #
-      # The other three are the product. url-shortener and
+      # The first two are the product. url-shortener and
       # url-shortener-infra are a pair rather than a chart and an extra —
       # the split is an ordering requirement: Helm runs every hook before
       # anything else in the same release, so the chart that migrates a
@@ -63,15 +63,14 @@ jobs:
       # only the application would get a migration hook waiting on a
       # database nobody made.
       #
-      # url-shortener-e2e is the third: a Job that runs this SAME release's
-      # e2e image against an application release already installed, in the
-      # same namespace — see docs/guides/testing.md. It carries the e2e
-      # image's digest, the same way the pair above carries theirs, which
-      # is why it releases alongside them rather than separately.
+      # The always-on prober is a workload of the application chart
+      # (`prober.enabled`), carrying its own image's digest the same way the
+      # components do. The end-to-end suite is not a chart: it runs from the
+      # product's own CI, against an ephemeral environment.
       #
       # They live with the components they deploy rather than at this
       # repository's root — `chart-root` exists so that they can.
-      charts: '["url-shortener", "url-shortener-infra", "url-shortener-e2e", "charts/service-lib"]'
+      charts: '["url-shortener", "url-shortener-infra", "charts/service-lib"]'
       chart-root: examples/url-shortener/charts
       # The page's source maps, pushed right after GoReleaser in the same job
       # to ghcr.io/<owner>/sourcemaps/url-shortener:<release version>. OFF

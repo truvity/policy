@@ -4,6 +4,28 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## v1.48.0 — 2026-10-06
+
+The url-shortener charts adopt delivery-interface steps 14 and 15 and declare interface 15, and the end-to-end chart is folded into the application chart. This is the template a product repository copies.
+
+**Breaking:** the `url-shortener-e2e` chart is no longer published, and `database.owner.*` is deprecated for `database.migration.*`. Both are allowed here because the only installer of the e2e chart is the platform that pins this repository, and it stops installing it at the same pin it declares interface 15 for. The steps to take are below.
+
+### Added
+
+- **`availability: single | high` (interface step 14).** The application chart sizes its replicas and PodDisruptionBudget from it: `single` (the default when the key is absent) runs one replica of every component and renders no budget; `high` runs two and renders a budget with `maxUnavailable: 1`. An explicit `replicas.<component>` and an explicit `disruption.enabled` still win. **A default moved:** `replicas.*` no longer defaults to 2 and `disruption.enabled` no longer defaults to true; a consumer that passed neither now gets one replica and no budget until it passes `availability: high`.
+- **`database.migration.*` (interface step 15).** The owner's credential has one route into the chart: `database.migration.passwordSecret` (with `.role`, default `url_shortener_owner`, and `.passwordKey`, default `password`), mounted by the migration hook Job and nothing else. The long-running workloads get `database.app.*` only, as before. `conformance.MigrationSecretOnlyInJobs` now runs in the chart tests, with a prober and `availability: high` switched on.
+- **The prober is a workload of the application chart** (`prober.enabled`, off by default; `images.prober`). It takes the release's own `tls`, `otel`, `podSecurity` and `pullPolicy`, runs as `<release>-prober` (or `prober.serviceAccount.name`) and accepts answers from exactly the accounts the chart renders for `urls` and `redirect`. The request-identity Role binds its account too. The release stamps `images.prober` with its digest.
+
+### Changed
+
+- All charts of the product declare delivery interface 15.
+- **`database.owner.*` is the deprecated spelling of `database.migration.*`** and is read only when `migration` leaves a key unset. Neither is required by the schema; the render refuses a release that sets neither `database.migration.passwordSecret` nor `database.owner.passwordSecret`. Rename the key when you next touch your values; the old one is removed in a later minor.
+
+### Removed
+
+- **The `url-shortener-e2e` chart (breaking).** It carried the end-to-end suite as a Job and the prober. The prober moved into the application chart (above); the suite is not a chart: it runs from the product's own CI against an ephemeral environment, from the published `e2e` image or `go test`. A platform that installed the chart sets `e2e.enabled: false` from this pin; its prober settings move to `prober.*` on the application release, and the prober's account is now `<release>-prober` (grant that name in `tls.peers`, not `<release>-e2e-prober`). `just example-e2e-chart` and `hack/install-e2e-chart.sh` are removed; `just example-prober` enables the prober on the application release.
+- The platform-owned objects are not in the product charts: the application chart renders no NetworkPolicy and the infra chart keeps only the app-specific egress rule to its store; the standalone database Cluster stays only behind `postgres.platformOwned: false`.
+
 ## v1.47.0 — 2026-10-06
 
 An amendment to delivery-interface step 15, before any product declares it. No chart changes.

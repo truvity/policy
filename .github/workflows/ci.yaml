@@ -79,12 +79,9 @@ jobs:
   # was broken here at some point while the example was built, and not one
   # of them is visible to a renderer.
   #
-  # The `test` step also installs the url-shortener-e2e TEST CHART and
-  # proves ITS Job completes — the same e2e image, but run by that chart's
-  # own scoped ServiceAccount, inside the cluster, with no fixture and no
-  # `helm` in its image. `example-smoke` running the identical suite
-  # directly from this box's own devbox environment (helm on PATH there)
-  # does not exercise that path at all.
+  # The `test` step also turns on the application chart's PROBER and proves
+  # its journeys succeed from inside the cluster. The end-to-end suite itself
+  # runs here, from the product's own CI, through `example-smoke`.
   #
   # Through the shared integration workflow now, on its kind tier (this
   # repository is public — see truvity/ci-workflows' docs/tiers.md): the
@@ -113,7 +110,7 @@ jobs:
             "name": "example",
             "build": "devbox run -- just example-snapshot",
             "install": "devbox run -- just example-fixture && devbox run -- just example-install",
-            "test": "devbox run -- just example-smoke && devbox run -- just example-e2e-chart && devbox run -- just example-prober"
+            "test": "devbox run -- just example-smoke && devbox run -- just example-prober"
           }
         ]
 

@@ -152,9 +152,8 @@ port is served, and cleartext callers are refused.
    presents its identity, and already dials the authenticated port. Making
    the callee strict first turns every caller still on cleartext into an
    outage, and the error names a handshake, not a list nobody filled in.
-   The e2e chart's Job and prober are callers too, and need granting
-   before the flip, and their own `tls.peers` must name the accounts they
-   call.
+   The prober (`prober.enabled`) is a caller too, and needs granting before
+   the flip. Its own allow-list of answers is rendered by the chart.
 3. **A gateway-fronted component is never strict.** A gateway that
    terminates TLS at the edge and forwards cleartext has a strict callee
    refusing its only caller. The chart refuses it written down in

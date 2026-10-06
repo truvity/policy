@@ -158,27 +158,13 @@ example-smoke:
     cd examples/url-shortener && E2E_NAMESPACE="${NS:-shortener}" E2E_APP_RELEASE="${APP:-example}" \
         E2E_BUCKET="${BUCKET:-url-shortener-archive}" go test ./e2e/suite/... -count=1 -v
 
-# Prove the url-shortener-e2e TEST CHART: install its packaged .tgz after
-# the application (`example-install`), wait for the Job it renders to
-# reach Complete, and dump the Job's own log either way. This is the
-# SECOND way the suite runs (docs/guides/testing.md) — a plain Job this
-# chart's own release owns, through its own scoped RBAC, reading every
-# name from values rather than from this box's fixture directly.
-# `example-smoke` alone cannot catch a suite that only breaks running AS
-# this Job: the fixture rendering the infra chart with `helm` (present on
-# this box, absent from the Job's image) is exactly such a bug.
-[doc("Prove the url-shortener-e2e test chart's Job completes against a real install")]
-example-e2e-chart:
-    bash examples/url-shortener/hack/install-e2e-chart.sh
-
-# Prove the url-shortener-e2e chart's OTHER workload: enable the prober
-# (charts/url-shortener-e2e/templates/prober.yaml) on the SAME release
-# `example-e2e-chart` just installed, and assert its journeys succeed
-# within a bounded time. Deliberately AFTER `example-e2e-chart`, not
-# instead of it: the two workloads make two different claims
-# (docs/guides/testing.md), and this one needs the release the Job proved
-# healthy to already be up.
-[doc("Prove the url-shortener-e2e chart's prober runs and succeeds against a real install")]
+# Prove the application chart's PROBER: enable it (templates/prober.yaml) on
+# the release `example-install` just installed, and assert its journeys
+# succeed within a bounded time. The end-to-end SUITE is not a chart: it runs
+# from the product's own CI (`example-smoke`), against an ephemeral
+# environment, so this recipe makes the one claim a direct run cannot, that
+# the prober Deployment itself comes up and works in the cluster.
+[doc("Prove the application chart's prober runs and succeeds against a real install")]
 example-prober:
     bash examples/url-shortener/hack/install-prober.sh
 
@@ -188,7 +174,7 @@ example-prober:
 # (0005) and examples/url-shortener/hack/identity-smoke.sh is not yet
 # ported to wherever it lands — a later task, not this one.
 [doc("The whole cluster tier, from nothing")]
-cluster-all: cluster cluster-verify example-snapshot example-fixture example-install example-smoke example-e2e-chart example-prober
+cluster-all: cluster cluster-verify example-snapshot example-fixture example-install example-smoke example-prober
 
 # Remove it, and the registry container and the snapshot builder beside it —
 # disk is a shared resource on the machine this usually runs on, and a
@@ -219,17 +205,16 @@ charts:
 # Regenerate the chart goldens. Read the diff BEFORE running this: a golden
 # updated without being read is a golden that records whatever happened.
 #
-# The pattern matches all FOUR chart render tests. `TestWhatTheChartRenders`
+# The pattern matches all THREE chart render tests. `TestWhatTheChartRenders`
 # alone does not: the infrastructure chart's is
-# `TestWhatTheInfraChartRenders`, the test chart's is
-# `TestWhatTheE2EChartRenders` and the library's example chart's is
+# `TestWhatTheInfraChartRenders` and the library's example chart's is
 # `TestWhatTheServiceExampleChartRenders`, none of which that narrower
 # pattern contains, so this recipe would regenerate one chart's goldens and
 # silently leave the others' stale. The only symptom was a CI failure on a
 # change the author had already run `just golden` for.
 [doc("Regenerate the chart goldens")]
 golden:
-    cd examples/url-shortener && UPDATE_GOLDEN=1 go test ./charts/... -run 'TestWhatThe(Infra|E2E|ServiceExample)?ChartRenders' -count=1
+    cd examples/url-shortener && UPDATE_GOLDEN=1 go test ./charts/... -run 'TestWhatThe(Infra|ServiceExample)?ChartRenders' -count=1
 
 # Regenerate the RPC code from the schema.
 [doc("Regenerate the RPC code from the schema")]

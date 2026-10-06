@@ -39,7 +39,7 @@ frag="projectpackage://github.com/truvity/pkl-contracts/releases/download/v$vers
 configs=(config/Archiver.pkl config/Echo.pkl config/Migrate.pkl config/Prober.pkl
   config/Redirect.pkl config/Stat.pkl config/Urls.pkl config/Web.pkl
   "$frag#/Fragments.pkl" "$frag#/Platform.pkl")
-charts=(charts/ServiceExample.pkl charts/UrlShortener.pkl charts/UrlShortenerE2e.pkl
+charts=(charts/ServiceExample.pkl charts/UrlShortener.pkl
   charts/UrlShortenerInfra.pkl)
 
 # A relative --dir is relative to the working directory; make it absolute so
@@ -70,6 +70,5 @@ run docs --dir "$out/docs" "${configs[@]}" "${charts[@]}"
 # as well, and a default that breaks a rule fails here.
 run helm --dir "$out/charts/service-example" charts/ServiceExampleValues.pkl
 run helm --dir "$out/charts/url-shortener" charts/UrlShortener.pkl
-run helm --dir "$out/charts/url-shortener-e2e" charts/UrlShortenerE2e.pkl
 run helm --dir "$out/charts/url-shortener-infra" charts/UrlShortenerInfra.pkl
 echo "shadow-generate: wrote ${out#"$here"/}"
