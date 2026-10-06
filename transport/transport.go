@@ -59,6 +59,29 @@ type Config struct {
 	CAFile      string `json:"caFile"`
 	TrustDomain string `json:"trustDomain"`
 	Peers       []Peer `json:"peers"`
+	// GatewayFronted says an edge terminates TLS and forwards cleartext to this
+	// workload, so it can never run strict: see CheckMode.
+	GatewayFronted bool `json:"gatewayFronted"`
+}
+
+// SpiffeID is the identity string a workload's certificate carries for the
+// account it runs as: spiffe://<trust domain>/ns/<namespace>/sa/<account>. It
+// is the shape this package reads a peer's certificate by (see identityOf), so
+// what a platform grants and what a service admits cannot be spelled two ways.
+// The trust domain is the caller's: this package knows no organisation.
+func SpiffeID(trustDomain, namespace, serviceAccount string) string {
+	return fmt.Sprintf("spiffe://%s/ns/%s/sa/%s", trustDomain, namespace, serviceAccount)
+}
+
+// CheckMode refuses a mode a workload cannot run: strict on a workload an edge
+// fronts. The edge terminates TLS and forwards cleartext, so a strict workload
+// refuses its only caller. The `tls` fragment's schema says the same.
+func CheckMode(mode Mode, gatewayFronted bool) error {
+	if mode == Strict && gatewayFronted {
+		return fmt.Errorf("strict on a gateway-fronted workload: the edge terminates TLS and forwards cleartext, so a strict workload refuses its only caller")
+	}
+
+	return nil
 }
 
 // Identity is a loaded workload identity.
@@ -96,6 +119,10 @@ func Load(cfg Config, log *slog.Logger) (*Identity, error) {
 	case Permissive, Strict:
 	default:
 		return nil, fmt.Errorf("transport mode %q is not off, permissive or strict", cfg.Mode)
+	}
+
+	if err := CheckMode(cfg.Mode, cfg.GatewayFronted); err != nil {
+		return nil, err
 	}
 
 	if cfg.Mode == Permissive && cfg.Address == "" {
