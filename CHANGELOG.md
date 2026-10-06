@@ -4,6 +4,13 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+### Added
+
+- **`transport.SpiffeID(trustDomain, namespace, serviceAccount)`** builds the identity string a workload's certificate carries, in the shape `transport` reads a peer by. The trust domain is the caller's.
+- **`tls.gatewayFronted` and `transport.CheckMode`.** A workload an edge fronts (the edge terminates TLS and forwards cleartext) can say so, and the `tls` fragment's schema and `transport.Load` then refuse `mode: strict` on it: a strict listener would refuse its only caller. Absent means false, so nothing existing changes.
+
 ## v1.48.0 — 2026-10-06
 
 The url-shortener charts adopt delivery-interface steps 14 and 15 and declare interface 15, and the end-to-end chart is folded into the application chart. This is the template a product repository copies.

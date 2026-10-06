@@ -61,3 +61,29 @@ func idOf(t *testing.T, schema []byte) string {
 	id, _ := m["$id"].(string)
 	return id
 }
+
+// A gateway-fronted workload cannot run strict, in the schema as in
+// transport.CheckMode.
+func TestTLSFragmentRefusesStrictOnAGatewayFrontedWorkload(t *testing.T) {
+	b, err := policy.Schemas.ReadFile("schemas/fragments/tls.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	base := func(mode string, fronted bool) map[string]any {
+		return map[string]any{
+			"mode": mode, "certFile": "c", "keyFile": "k", "caFile": "a", "trustDomain": "d",
+			"gatewayFronted": fronted,
+		}
+	}
+
+	if err := config.Validate(base("strict", true), b); err == nil {
+		t.Error("strict on a gateway-fronted workload was accepted")
+	}
+
+	for _, doc := range []map[string]any{base("strict", false), base("permissive", true)} {
+		if err := config.Validate(doc, b); err != nil {
+			t.Errorf("%v: %v", doc, err)
+		}
+	}
+}

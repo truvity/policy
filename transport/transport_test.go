@@ -687,3 +687,34 @@ func TestAPeerLeafWithMoreOrFewerThanOneURIIsRefused(t *testing.T) {
 		})
 	}
 }
+
+func TestSpiffeIDIsTheShapeAPeerIsReadBy(t *testing.T) {
+	id := transport.SpiffeID("env.example.internal", "ns1", "sa1")
+	if id != "spiffe://env.example.internal/ns/ns1/sa/sa1" {
+		t.Fatalf("id %q", id)
+	}
+
+	if _, err := url.Parse(id); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestStrictOnAGatewayFrontedWorkloadIsRefused(t *testing.T) {
+	if err := transport.CheckMode(transport.Strict, true); err == nil {
+		t.Fatal("strict on a gateway-fronted workload must be refused")
+	}
+
+	for _, m := range []transport.Mode{transport.Off, transport.Permissive} {
+		if err := transport.CheckMode(m, true); err != nil {
+			t.Errorf("%s: %v", m, err)
+		}
+	}
+
+	if err := transport.CheckMode(transport.Strict, false); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := transport.Load(transport.Config{Mode: transport.Strict, GatewayFronted: true}, nil); err == nil {
+		t.Fatal("Load must refuse it too")
+	}
+}
