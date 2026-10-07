@@ -19,6 +19,7 @@ Self-contained detail, shipped with this skill in `references/`:
 - `references/chart-patterns.md` — chart design patterns and derivation
 - `references/cluster-resources.md` — target-cluster resource inventory
 - `references/delivery-interface.md` — the interface number, its rules, all 13 steps
+- `references/install-paths.md` — the two install paths (`helm upgrade --install` vs a controller's `helm template` + apply), every GitOps-facing rule with its check, plain-Job and hook behaviour under a controller
 - `references/platform-values.md` — the `platform` block key table, the platform menu by chart, a complete composed `values.schema.src.json`
 
 External source of truth (needs network): [github.com/truvity/policy](https://github.com/truvity/policy) — worked example [`examples/url-shortener/charts/`](https://github.com/truvity/policy/tree/master/examples/url-shortener/charts) and library [`charts/service-lib`](https://github.com/truvity/policy/tree/master/charts/service-lib); normative docs: [delivery-interface](https://github.com/truvity/policy/blob/master/docs/contracts/delivery-interface.md), [platform §10](https://github.com/truvity/policy/blob/master/docs/contracts/platform.md), [charts guide](https://github.com/truvity/policy/blob/master/docs/guides/charts.md). Consumer repositories may vendor the example under a different root; adjust paths accordingly.
@@ -37,6 +38,7 @@ External source of truth (needs network): [github.com/truvity/policy](https://gi
 - **Guards**: `required` for conditional-mandatory values (`route.parentRef.name`), render-time `fail` on name/validation violations.
 - **Migrate hook Job**: `pre-install,pre-upgrade`, weight 0, `hook-delete-policy: before-hook-creation,hook-succeeded`; `database.tls` is `verify-full` ONLY (root CA required).
 - **Chart tests** (Go): render + golden testdata + assert SEMANTIC contracts — tier boundaries, delivery-interface key acceptance, tenant scope, restricted fields. "Every wrong combination still renders valid YAML."
+- **A chart cannot tell which installer it is in**: no `lookup`, nothing reading `.Release.Is*`/`.Revision`, every hook idempotent on every sync, plain Jobs carrying no `ttlSecondsAfterFinished` (a self-healing controller recreates a self-deleting Job, forever) — `references/install-paths.md`
 
 ## Writing a Product Chart
 
@@ -64,7 +66,7 @@ Decisions to resolve before writing templates:
 Validation gates:
 - `helm lint` + `helm template | kubectl apply --dry-run=server -f -`
 - Go chart tests for boundary contracts (tier, interface keys, tenant scope)
-- Delivery: ArgoCD renders + syncs (valueFiles layering); CI builds/pushes + writes back image coordinates
+- Delivery: the platform (a separate GitOps control plane) renders and syncs; this repository publishes once, digest-pinned — the github-ci skill's half. A plain Job's name folds in the chart's version (spec immutable under re-apply); `job.annotations` is the force/replace escape
 
 ## Best Practices
 
@@ -92,4 +94,4 @@ Validation gates:
 - [ ] `_components.tpl` derivation + migrate hook Job; guards in place
 - [ ] `helm lint` + Go chart tests pass (boundaries: tier, interface keys, tenant scope)
 - [ ] Server dry-run renders clean against the target cluster
-- [ ] ArgoCD Applications in the repo's GitOps layout (staging first, then prod)
+- [ ] Delivery read-back: the chart holds the two-install-paths rules (`references/install-paths.md`); Applications are the platform's, never this repository's
