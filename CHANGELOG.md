@@ -4,6 +4,12 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+### Added
+
+- **The tenancy contract** ([contracts/tenancy.md](docs/contracts/tenancy.md)): what a tenant namespace on a shared cluster must be (labels, Pod Security with a recorded reason for any departure, a default-deny baseline NetworkPolicy, quota, the role spine, an identity service account per component) and what the platform owes it. It is the replacement for a single chart that rendered a tenant's whole kit.
+
 ## v1.49.0 — 2026-10-06
 
 ### Added
