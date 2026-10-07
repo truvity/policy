@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
   "resolvedDependencies": {
-    "package://github.com/truvity/pkl-contracts/releases/download/v0.4.1/contracts.templates@0": {
+    "package://github.com/truvity/pkl-contracts/releases/download/v0.6.0/contracts.templates@0": {
       "type": "remote",
-      "uri": "projectpackage://github.com/truvity/pkl-contracts/releases/download/v0.4.1/contracts.templates@0.4.1",
+      "uri": "projectpackage://github.com/truvity/pkl-contracts/releases/download/v0.6.0/contracts.templates@0.6.0",
       "checksums": {
-        "sha256": "508c762c719e6d967502e0012c5b010f3d01bfe32f15d25c963a375dc7a0c996"
+        "sha256": "3c8edf61afc9830c80b3895dfd2abf14f077db8ca332ed6a138d95737ae3dad6"
       }
     },
-    "package://github.com/truvity/pkl-contracts/releases/download/v0.4.1/contracts.vocab@0": {
+    "package://github.com/truvity/pkl-contracts/releases/download/v0.6.0/contracts.vocab@0": {
       "type": "remote",
-      "uri": "projectpackage://github.com/truvity/pkl-contracts/releases/download/v0.4.1/contracts.vocab@0.4.1",
+      "uri": "projectpackage://github.com/truvity/pkl-contracts/releases/download/v0.6.0/contracts.vocab@0.6.0",
       "checksums": {
-        "sha256": "89461b59624df02cd04be40e46978185398a5d0957274398678605be275881c4"
+        "sha256": "6c80143ec0ec3675f46e64dbd2782a51898be5c92fad4ef2f41b329dace95c6e"
       }
     },
-    "package://github.com/truvity/pkl-contracts/releases/download/v0.4.1/contracts.fragments@0": {
+    "package://github.com/truvity/pkl-contracts/releases/download/v0.6.0/contracts.fragments@0": {
       "type": "remote",
-      "uri": "projectpackage://github.com/truvity/pkl-contracts/releases/download/v0.4.1/contracts.fragments@0.4.1",
+      "uri": "projectpackage://github.com/truvity/pkl-contracts/releases/download/v0.6.0/contracts.fragments@0.6.0",
       "checksums": {
-        "sha256": "21ab4d02de93bf8417dffe82c47f74cf63d2edb99fd9fdcde5886397e24b31c3"
+        "sha256": "4372fccbe3421b51788dae536901b5ab4a9de227688d27f72a0584d2a8939bdb"
       }
     }
   }
