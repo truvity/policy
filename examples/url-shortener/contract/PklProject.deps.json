@@ -1,25 +1,25 @@
 {
   "schemaVersion": 1,
   "resolvedDependencies": {
-    "package://github.com/truvity/pkl-contracts/releases/download/v0.4.1/contracts.templates@0": {
+    "package://github.com/truvity/pkl-contracts/releases/download/v0.5.0/contracts.templates@0": {
       "type": "remote",
-      "uri": "projectpackage://github.com/truvity/pkl-contracts/releases/download/v0.4.1/contracts.templates@0.4.1",
+      "uri": "projectpackage://github.com/truvity/pkl-contracts/releases/download/v0.5.0/contracts.templates@0.5.0",
       "checksums": {
-        "sha256": "508c762c719e6d967502e0012c5b010f3d01bfe32f15d25c963a375dc7a0c996"
+        "sha256": "e245614096ddfaea64662892770228d22fd43c602451ad6469976ba444be6501"
       }
     },
-    "package://github.com/truvity/pkl-contracts/releases/download/v0.4.1/contracts.vocab@0": {
+    "package://github.com/truvity/pkl-contracts/releases/download/v0.5.0/contracts.vocab@0": {
       "type": "remote",
-      "uri": "projectpackage://github.com/truvity/pkl-contracts/releases/download/v0.4.1/contracts.vocab@0.4.1",
+      "uri": "projectpackage://github.com/truvity/pkl-contracts/releases/download/v0.5.0/contracts.vocab@0.5.0",
       "checksums": {
-        "sha256": "89461b59624df02cd04be40e46978185398a5d0957274398678605be275881c4"
+        "sha256": "5ccfed9e80dd5ea5a4a551a27f16e895b7fad152aca37e6d366b32522ad2a66e"
       }
     },
-    "package://github.com/truvity/pkl-contracts/releases/download/v0.4.1/contracts.fragments@0": {
+    "package://github.com/truvity/pkl-contracts/releases/download/v0.5.0/contracts.fragments@0": {
       "type": "remote",
-      "uri": "projectpackage://github.com/truvity/pkl-contracts/releases/download/v0.4.1/contracts.fragments@0.4.1",
+      "uri": "projectpackage://github.com/truvity/pkl-contracts/releases/download/v0.5.0/contracts.fragments@0.5.0",
       "checksums": {
-        "sha256": "21ab4d02de93bf8417dffe82c47f74cf63d2edb99fd9fdcde5886397e24b31c3"
+        "sha256": "1a8a2fe7c17d0572a37f6a738c914be94365409e1d16e54bd78dee851d8e279e"
       }
     }
   }
