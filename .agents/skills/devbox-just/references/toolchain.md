@@ -12,6 +12,15 @@ A pin is not conservatism. Three things go wrong without one, and all three are 
 
 ## Go: one triad, moved together
 
+The following versions are the reviewed manifest snapshot, not permanent minimums.
+When updating a skill copy, consult `devbox.json` and `devbox.lock` together.
+
+Reviewed on 2026-10-21 after policy v1.54.2. The current manifest declarations
+still match the excerpt below, but the rebased parity update moved lock
+resolutions: `nodejs@26` now resolves to **26.12.0**, and gopls retains its
+declared version on a different locked nixpkgs revision. A lock-only change is
+still a toolchain change; the major-line declaration is not the resolved patch.
+
 | Tool | Version (the reference repository) |
 |---|---|
 | Go | 1.27.0 |
@@ -19,6 +28,14 @@ A pin is not conservatism. Three things go wrong without one, and all three are 
 | govulncheck | 1.7.0 |
 
 These three move as one. The linter and the vulnerability scanner each compile the code with a Go of their own, and a mismatch shows up as a failure that names the wrong thing: syntax the linter cannot parse, or a scanner that cannot resolve the standard library. The language line is capped by whatever the linter can build; the patch is the newest of that line; the `go` directive in `go.mod` moves with them.
+
+The root module now declares **`go 1.27.0`** and requests
+**`toolchain go1.27.3`**, while devbox still declares Go 1.27.0. These are
+different declarations: with automatic toolchain selection Go can select or
+download the requested toolchain; `GOTOOLCHAIN=local` prevents that selection.
+Check `go version` under the actual command's environment when diagnosing
+parity. The manifest check does not establish which compiler ran, and the
+module's `toolchain` directive is not a reason to silently rewrite a devbox pin.
 
 ## Node and TypeScript
 
@@ -54,6 +71,33 @@ Disabling the plugin (`"nodejs": {"version": "26", "disable_plugin": true}`) mak
 
 Every repository declares its toolchain in a manifest that a single command materialises — the same versions on a laptop and in CI, with a lock file committed. Nothing is installed by hand, nothing is on a PATH somebody exported, and a missing tool is a line in the manifest rather than an instruction in a README. When a tool is missing, add it to the manifest. Never fetch it into a shell.
 
+## The manifest's shape (excerpt)
+
+The reference's `devbox.json`, cut down to the shape — the manifest and its
+committed lock are the authority, not this excerpt:
+
+```jsonc
+{
+  "packages": {
+    "go": "1.27.0",
+    "golangci-lint": "2.13.1",
+    "just": "1.58.0",
+    "lefthook": "2.1.10",
+    "kubectl": "1.36.3",
+    "nodejs": { "version": "26", "disable_plugin": true },
+    "yarn-berry": "4.14.1",
+    "python": "3.14.4",
+    "uv": "0.12.5"
+  },
+  "env": { "PATH": "$DEVBOX_PROJECT_ROOT/bin:$PATH" },
+  "shell": { "init_hook": ["lefthook install >/dev/null 2>&1 || true"] }
+}
+```
+
+The reference pins more than this shows — `govulncheck`, `kind`,
+`kubernetes-helm`, `ko`, `goreleaser`, the protoc plugins and others; C6
+checks them all. `devbox.lock` is committed; `.devbox/` is gitignored.
+
 ## Moving a pin
 
 A dependency bot proposes every bump and the whole gate runs against it. Bumps that are grouped, because they cannot move separately:
@@ -65,8 +109,28 @@ A dependency bot proposes every bump and the whole gate runs against it. Bumps t
 
 A group that is wrong is discovered the same way every time: two pull requests that each cannot pass until the other merges.
 
+The reference's Renovate configuration leaves `devbox.json`, `devbox.lock`, the
+Go directive and Yarn's `packageManager` to the fleet's devbox parity updater.
+Confirm that updater is enrolled before disabling an existing update path in a
+migrating repository. Its job is to move the manifest, resolved lock and
+followers together, not to give two bots competing ownership.
+
 ## What checks it
+
+Run version and executable-resolution checks inside devbox when diagnosing
+parity: `go version`, `golangci-lint version`, `yarn --version` and
+`command -v yarn`. Keep `GOTOOLCHAIN=local` on the reference's golangci-lint
+invocations. An installed but shadowed binary is not the tool that ran.
+
+The reference also omits a Gradle wrapper: the environment manifest supplies
+Gradle, and a wrapper downloading a second copy would reopen the same
+"which version actually runs" problem. Keep the manifest as its authority.
 
 - **C6** (`policy-conformance`, mechanical): every entry of `packages` in `devbox.json` names a version — `name@X…` in the list form, a non-empty version other than `latest` in the map form.
 - **The reference repository's own `hack/toolchain-check.py`**, run by `just lint`: `nodejs` has `disable_plugin` set; `ts/package.json`'s `packageManager` agrees with the `yarn-berry` pin.
+- **Runtime parity is a separate observation.** That Python check reads manifests;
+  it does not run Go, golangci-lint or Yarn. The current lint recipe invokes
+  golangci-lint with `GOTOOLCHAIN=local`. Check versions and executable paths in
+  devbox against the resolved lock when diagnosing a mismatch; do not call the
+  manifest check proof of the compiler or package manager that actually ran.
 - **C10**: `vuln` is never reachable from `check` — not a dependency, not through a recipe `check` depends on, and no body line of either running `just vuln`. It runs in `security.yaml`, on push, on pull requests and on a daily schedule.

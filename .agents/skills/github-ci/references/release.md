@@ -20,6 +20,20 @@ The ordering is made impossible to get wrong rather than merely written down: **
 
 Committed chart versions are placeholders (`0.0.0`, the component contract's C1) and package manifests carry one that never moves; the release stamps the tag's version over them. A version committed to a manifest is a second place to forget, and two people can disagree about it. The stamping edit ASSERTS it matched — a substitution that matches nothing succeeds silently, and a package published at the placeholder version cannot be taken back.
 
+This applies to artifacts the repository **owns**. An external dependency
+keeps its upstream version and lock: the reviewed checkout after v1.54.1
+depends on cnpg-database **2.31.0** and pins the `truvity/k8s` identity-check
+image at **v0.34.0** by tag and digest. Do not
+stamp the product's version onto either, rebuild that image, or republish
+service-lib merely because the product depends on it. Mirror charts have the
+explicit upstream-version exception described by C1/release §1.
+
+Changing how a pinned binary is invoked must respect that binary's release:
+the optional `-expect-account` flag needs checker v0.34.0 or later. Update the
+verified image pin before enabling `identityCheck.expectAccount`; otherwise
+the hook fails every retry on an unknown flag. A product release version or
+unchanged delivery-interface number is not proof of external binary support.
+
 ## Adoption is proved, not asserted
 
 A consumer adopts a release only when the output it produces is **byte-identical to what runs**, or differs exactly by the change the release announced. That render, or that plan, is the evidence attached to the pull request that moves the pin — in the CONSUMER's repository (the platform control plane's), which is where pins live and where its golden renders are reviewed. What that demands of the product repository is a release whose render CAN be byte-identical: complete values, digest-pinned images, no values a consumer must guess.
@@ -34,4 +48,18 @@ So, for every artifact a repository publishes: there is a test for the as-publis
 
 ## What the tag publishes, and who moves it next
 
-One tag ships everything the product releases — the Go module needs only the tag, images and charts go to the registry, packages to their own destinations — and the platform consumes from there, moving its pins in its own repository with the render as evidence. The product repository's CI never applies anything to a cluster.
+One tag ships everything the product releases — the Go module needs only the tag, images and charts go to the registry, packages to their own destinations — and the platform consumes from there, moving its pins in its own repository with the render as evidence. Product CI can apply/install ephemeral copies to test that artifact; it does not manage persistent production Applications or deployment values.
+
+## Automatic patches and honest gaps
+
+First/minor/major tags are hand-cut after their headings merge. For automatic
+patches, nonempty `Unreleased` entries are headed by a PR before tagging;
+dependency-only patches follow C5's exception, and an existing heading is not
+rewritten. A pending hand-cut heading takes precedence. With mandatory
+approving review use `changelog-heading: never`, as release §3 requires.
+
+The contract limits automatic patches to non-breaking fixes for a stabilizing
+product, but its conformance table says the workflow does not yet inspect the
+product's state. Review this; a scheduled run can otherwise include a feature
+merged after the last tag. The template is not proof that every commit in the
+release range qualifies for a patch.

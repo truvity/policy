@@ -1,22 +1,23 @@
-# Chart Design Patterns (Truvity policy contract, interface 13)
+# Chart Design Patterns (Truvity policy contract, interface 15)
 
-Reference: [github.com/truvity/policy](https://github.com/truvity/policy) [`examples/url-shortener/charts/`](https://github.com/truvity/policy/tree/master/examples/url-shortener/charts) — the current contract (delivery interface 13, first released at example 1.43.0): service-lib library, two-block values, composed schemas, delivery interface, tier, digest pinning, chart tests.
+Reference: [github.com/truvity/policy](https://github.com/truvity/policy) [`examples/url-shortener/charts/`](https://github.com/truvity/policy/tree/master/examples/url-shortener/charts), reviewed on 2026-10-20 after v1.54.1. Interface 15 was adopted in **v1.48.0**; v1.49.0 added `tls.gatewayFronted`. Current behavior includes cloud-identity admission with an optional account assertion, dashboards, and unconditional cnpg-database 2.31.0 dependency resolution.
 
-## Product shape: three charts, one number
+## Observed example shape: two charts, one number
 
 | Chart | Contents | Lifetime |
 |---|---|---|
-| `{product}` (application) | components via service-lib, migrate hook Job, HTTPRoute, alerts, PDB | per deployment |
-| `{product}-infra` | CNPG Cluster + DatabaseRole, NATS Stream, Bucket/Policy/Role/PIA, ExternalSecret, identity SA | data outlives every deployment |
-| `{product}-e2e` | in-cluster e2e Job + prober | per test run |
+| `{product}` (application) | service-lib components and cloud-identity check, migrate Job, optional prober, routes, alerts, dashboards, PDB | per deployment |
+| `{product}-infra` | owned stores/stream/identity and install-specific policies; cnpg-database runtime role for a platform-owned Cluster, or password-only resources for its own Cluster | data outlives every deployment |
 
-All three carry the same `delivery.truvity.io/interface` number and release under one tag. Why infra is separate: the migrate hook runs `pre-install` and Helm runs hooks BEFORE release resources — a chart that created its own database could never migrate it.
+Both carry the same `delivery.truvity.io/interface` number and release under one tag. Why infra is separate: the migrate hook runs `pre-install` and Helm runs hooks BEFORE release resources — a chart that created its own database could never migrate it.
+
+The registry still requires the end-to-end chart at step 3, but the example stopped publishing it in v1.48.0 while retaining annotation 15. Its prober is an application workload and the suite runs from CI. This inventory describes the code, not an approved exception: report the [contract gap](delivery-interface.md#current-implementation-and-contract-gaps) and correct the contract separately before adopting the discrepant chart set.
 
 ## service-lib: the library renders the platform pieces
 
 A one-service chart is a single include:
 
-```yaml
+```gotemplate
 {{ include "service-lib.component" (dict "context" $ "name" "echo" "platform" .Values.platform "config" .Values.config) }}
 ```
 
@@ -32,31 +33,40 @@ That renders the ConfigMap (`config` verbatim), ServiceAccount `<release>-echo`,
 | `platform.secretFiles` | projected files (mode 0440, read-only) at `config.secrets.root` |
 | `platform.telemetry` | OTel env vars; no endpoint = no export |
 
-Dependency mechanics: declared in Chart.yaml (`file://` in the policy repo, `oci://ghcr.io/truvity/charts` for consumers), `Chart.lock` committed, archive under `charts/` gitignored, resolved at package time. A chart with no `config.probes` is refused; so is a Service for a component with no `config.listen`.
+Dependency mechanics: declared in Chart.yaml (`file://` to the one library in this checkout, a pinned OCI dependency for external consumers), `Chart.lock` committed, archives ignored. Use the library, not standalone templates that imitate it. A chart with no `config.probes` is refused; so is a Service for a component with no `config.listen`.
 
 ## Two-block values
 
+These are complete, nonsecret **render-test values** for the reference
+`service-example` chart, matching component `echo` above and the composed
+schema in [Platform values](platform-values.md).
+The neutral registry is a fixture, not a published installable image; a real
+release supplies verified image coordinates and a digest.
+
 ```yaml
-platform:            # everything the platform provides — key table in references/platform-values.md
+platform:
   replicas: 2
-config:              # exactly the service's own config schema — rendered verbatim
+config:
   listen: {address: ":8080"}
   probes: {address: ":7070"}
-images:              # stamped by the release, digest-pinned, no defaults
-  web: {registry: "", repository: "", tag: "", digest: ""}
+  log: {level: info}
+  drain: {seconds: 20}
+  greeting: hello
+images:
+  echo: {registry: registry.example, repository: example/echo, tag: dev, digest: ""}
 ```
 
 No `env`/`extraEnv` hatches: a template writing the config file is a second schema, a port beside it a second number — both removed by passing `config` through and deriving.
 
 ## Composed schema
 
-Commit `values.schema.src.json` naming the blocks (`platform` → platform fragment `$ref`, `config` → the service's own schema, `images`), generate `values.schema.json` by bundling every `$ref` under `$defs` (any JSON-Schema bundler resolving the `$ids` works offline; the policy repo's recipe is `just chart-schemas`; complete example in `references/platform-values.md`). Helm then validates offline against the very schema the binary loads at start-up. The source is `.helmignore`d. Helm injects a key per sub-chart, so an empty `service-lib:` object is allowed.
+For a service chart, commit `values.schema.src.json` naming `platform`, the service's `config` schema and `images`; generate the self-contained `values.schema.json` with `just chart-schemas`. Helm validates offline against the same service schema. Ignore the source in the packaged chart; allow Helm's subchart key. **C16/C17 distinguish product charts**: a multi-component delivery schema may be hand-written and strict; `_components.tpl` derives component inputs in one place and every resulting file is validated against its binary's schema. Do not invent a nonexistent composed source file for that exception.
 
 ## Product-chart derivation (`_components.tpl`)
 
 THE ONE PLACE release-wide values map onto components. Multi-component products derive agreement by formula — stream/subject names from namespace + installName, each caller's account from the release name — because a literal in a values file cannot derive from the install. Returns JSON; nothing below it reads a value:
 
-```yaml
+```gotemplate
 {{- define "url-shortener.components" -}}
 {{- $out := dict -}}
 {{- range $name := list "redirect" "urls" "web" "stat" "log" -}}
@@ -71,11 +81,23 @@ THE ONE PLACE release-wide values map onto components. Multi-component products 
 ## installName + tier (platform-passed keys)
 
 - `installName` (interface step 2): empty = this release's own name (standalone default); set only when the infra release has a different name — then it must be that release's `installName` exactly. Folds into NATS subjects/durables; DNS-1123-validated at render with `fail`.
-- `tier: test|primary` (step 13 passes it to BOTH charts): `test` provisions nothing, runs as the namespace's standing identity; `primary` provisions the store, identity and policies. The identity ServiceAccount is rendered by `-infra` AFTER its PodIdentityAssociation — sync-waves IAM Role 0 → PIA 1 → SA 2, carrying `argocd.argoproj.io/sync-options: Prune=false,Delete=false` permanently. Rationale: EKS injects Pod Identity only at pod creation and SA admission refuses product pods until the SA exists — no pod starts before its identity. The app chart never renders that SA on primary, only names it.
+- `tier: test|primary` (step 13 passes it to BOTH charts): `test` uses standing resources, while `primary` provisions its owned resources. Infra orders role → binding → ServiceAccount with permanent `Prune=false,Delete=false`; the application only names that account. **This orders objects, not admission**: install infra healthy first, then require the application's `service-lib.identityCheck` for a cloud-identity component. See [identity admission](identity-admission.md); a `Synced` association alone is insufficient.
+- `availability: single|high` (step 14): the platform's statement of the CLUSTER, not of the product — `single` (default when the key is absent) runs one replica of every component and renders no budget; `high` runs two and renders a `maxUnavailable: 1` budget. Explicit `replicas.<component>` and `disruption.enabled` still win; a platform with no opinion passes nothing.
+- Step 15 requires a runtime `DatabaseRole` without an opt-out. The standalone example's Cluster-managed role is observed behavior that differs from that wording; report the [conformance gap](delivery-interface.md#current-implementation-and-contract-gaps) before adopting it. Long-running workloads get `database.app.*` only; owner credentials stay in migration Jobs, checked by `conformance.MigrationSecretOnlyInJobs`.
+
+## Database-role dependency (example since v1.53.0)
+
+The infra chart always depends on locked **cnpg-database 2.31.0**; there is no
+`condition: postgres.platformOwned` and no parent `credential.yaml` template.
+`roles: []` renders no subchart resources. A platform-owned Cluster needs an
+explicit role entry; a chart-owned Cluster with generated password needs one
+with `databaseRole: false`, so two controllers do not own the same role.
+With its own Cluster and an external Secret, leave the roles list empty.
+See the full input matrix and guard rules in [platform resources](cluster-resources.md).
 
 ## Delivery interface (full step table: references/delivery-interface.md)
 
-`annotations: {delivery.truvity.io/interface: "13"}` — the highest step the charts read. Steps only ADD keys (a rename/remove is a breaking change); a platform renders every key of steps 1..N, refuses N+1's, and never compares versions. A platform handed a number higher than it implements refuses to render rather than render short. Steps of note: 2 installName · 3 e2e chart · 5 per-component tls.mode · 6 SA per component (`<release>-<component>`) · 7 events.tls · 8 database.tls verify-full required · 9 postgres.platformOwned · 11 route.faro buffer limit · 12 alerts (VMRule, off by default) · 13 tier on the app chart.
+`annotations: {delivery.truvity.io/interface: "15"}` — the highest step the charts read. Steps only ADD keys (a rename/remove is a breaking change); a platform renders every key of steps 1..N, refuses N+1's, and never compares versions. A platform handed a number higher than it implements refuses to render rather than render short. Steps of note: 2 installName · 3 e2e chart (registry requirement; the example's divergence is recorded above) · 5 per-component tls.mode · 6 SA per component (`<release>-<component>`) · 7 events.tls · 8 database.tls verify-full required · 9 postgres.platformOwned · 11 route.faro buffer limit · 12 alerts (VMRule, off by default) · 13 tier on the app chart · 14 availability · 15 runtime role, migration credential Job-only.
 
 ## Labels
 
@@ -83,7 +105,7 @@ Selector labels STABLE (instance + component) — Deployment selector immutabili
 
 ## Feature gates + render-time guards
 
-- Optional resources behind `enabled` gates + tier gates (`alerts.enabled`, `route.enabled`, `networkPolicies.enabled`)
+- Optional resources behind explicit gates (`alerts.enabled`, `route.enabled`, `prober.enabled`, `observability.dashboards.enabled`) and owned cloud resources behind the tier gate. The current app chart renders no NetworkPolicy; the infra chart owns only its install-specific store/check egress, not the namespace baseline.
 - `required` for conditional-mandatory values: `{{ required "route.parentRef.name is required when route.enabled is true: a route that names no parent attaches nowhere" .Values.route.parentRef.name }}`
 - Strict schemas everywhere the chart defines something: a typo fails the render (`additionalProperties: false`), including conditional `if/then/else` requirements (e.g. alerts remote rendering)
 
@@ -97,7 +119,7 @@ annotations:
 backoffLimit: 3
 ```
 
-`before-hook-creation` (not `hook-succeeded` alone): a prior stuck Job must not block the next release. Client TLS to the database is `verify-full` ONLY — the client proves who answered; no weaker mode exists to choose. Migration runs DDL as the owner credential, runtime roles are DDL-incapable.
+`before-hook-creation` (not `hook-succeeded` alone): a prior stuck Job must not block the next release. Client TLS to the database is `verify-full` ONLY — the client proves who answered; no weaker mode exists to choose. Migration runs DDL as the owner credential (`database.migration.passwordSecret` from interface 15 — mounted in this Job and nowhere else); the runtime roles are DDL-incapable.
 
 ## Explicit-field discipline (ArgoCD diff hygiene)
 
@@ -105,10 +127,12 @@ Gateway API servers default omitted fields — `route.yaml` sets `parentRef.{gro
 
 ## Chart tests (Go)
 
-- `chart_test.go`, `conformance_test.go`, `delivery_interface_test.go`, `tenant_scope_test.go`, `restricted_test.go`, `library_test.go`, `infra_chart_test.go`, `e2e_chart_test.go`
-- Shell out to `helm template`, parse YAML, compare golden renders (`testdata/golden/{everything,minimal}.yaml`), assert SEMANTIC contracts: tier boundaries (test tier renders ZERO cloud objects — a security boundary, tenants cannot apply CRDs), interface key acceptance (every step ≤ N accepted, N+1 refused), tenant scope, restricted fields
+- `chart_test.go`, `conformance_test.go`, `delivery_interface_test.go`, `tenant_scope_test.go`, `restricted_test.go`, `library_test.go`, `infra_chart_test.go`, `prober_test.go`
+- `identity_check_test.go`: hook/account/labels, wave ordering, expected-account forwarding and malformed-value refusals. Dashboard UID/wave assertions are in `chart_test.go`; cnpg-database lock, password-only mode and parent/subchart disagreement checks are in the library/infra tests.
+- Shell out to `helm template`, parse YAML, compare golden renders (`testdata/golden/{everything,minimal}.yaml`), assert SEMANTIC contracts: cloud-tier boundaries (the tests enumerate cloud kinds, not every operator CR), interface key acceptance (every step ≤ N accepted, N+1 refused), tenant scope, restricted fields
 - Rationale: "every wrong combination still renders valid YAML" — assert semantics, not schemas
 - Vendoring: `helm dependency build` resolves service-lib from the lock (archive under `charts/`, gitignored)
+- Resolve the infra chart's cnpg-database archive from its own committed lock too. Cold tests and `chart-deps` can download that public OCI dependency; this is allowed locked dependency resolution, not a requirement for cluster credentials.
 
 ## Ring split rationale (superseded vocabulary, same scope idea)
 
