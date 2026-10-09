@@ -2,6 +2,8 @@ module github.com/truvity/policy/examples/url-shortener
 
 go 1.27.0
 
+toolchain go1.27.2
+
 // The example always builds against the contracts in this checkout, not
 // against a published version of them. A change to a schema or a loader that
 // would break a service breaks this one in the pull request that made it,
@@ -104,7 +106,7 @@ require (
 	go.opentelemetry.io/otel/sdk/log v0.22.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.11.0 // indirect
 	golang.org/x/crypto v0.57.0 // indirect
-	golang.org/x/net v0.59.0 // indirect
+	golang.org/x/net v0.60.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260825221802-da73d73af1c5 // indirect
