@@ -81,9 +81,9 @@ ci-plane is where the work actually executes: the runner and nix-worker
 images, and the `arc-runners` and `ci-builders` charts.
 
 **Developer machine credentials: workstation, sluis.** `sluisctl`
-(from sluis, formerly access-roster's `accessctl`) and `awsctl` (from workstation) both mint AWS
+(from sluis) and `awsctl` (from workstation) both mint AWS
 credentials on a developer machine; `sluisctl` is the estate path, and
-`awsctl` is the SSO fallback for when access-roster is unreachable. Both
+`awsctl` is the SSO fallback for when sluis is unreachable. Both
 tools live on the same machine and are called as alternatives, not layers.
 
 **Chart packaging: ocictl, gemaal.** gemaal's release pipeline shells out to
