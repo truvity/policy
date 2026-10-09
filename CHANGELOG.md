@@ -6,6 +6,10 @@ subjects under them are the GitHub Release's own list.
 
 ## Unreleased
 
+### Fixed
+
+- **The url-shortener example survives a slow first database connection.** It moves to `cnpg` client v2.18.3, where the first connection's health-check timeout is retried instead of ending the process, so the service's own 3-minute start-up retry now runs. Every failed attempt is logged at warn level with its number, the error and the delay.
+
 ### Added
 
 - **The tenancy contract** ([contracts/tenancy.md](docs/contracts/tenancy.md)): what a tenant namespace on a shared cluster must be (labels, Pod Security with a recorded reason for any departure, a default-deny baseline NetworkPolicy, quota, the role spine, an identity service account per component) and what the platform owes it. It is the replacement for a single chart that rendered a tenant's whole kit.
