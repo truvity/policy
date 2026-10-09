@@ -382,7 +382,7 @@ lint:
     # silently by `run` and rejected only here, so without this a lint
     # setting can spend releases doing nothing.
     golangci-lint config verify || fail=1
-    golangci-lint run ./... || fail=1
+    GOTOOLCHAIN=local golangci-lint run ./... || fail=1
     # The Python loader: one tool for lint and formatting, so formatting is
     # never a second opinion, and a type checker, because an annotation
     # nothing checks is a comment that rots.
@@ -401,7 +401,7 @@ lint:
     done
     # The example carries the import ban too. A reference implementation
     # exempt from the rules it demonstrates is a reference to nothing.
-    ( cd examples/url-shortener && golangci-lint run ./... ) || fail=1
+    ( cd examples/url-shortener && GOTOOLCHAIN=local golangci-lint run ./... ) || fail=1
 
     # The TypeScript in this repository: one tool for lint AND formatting
     # (docs/canon/node.md), so a style disagreement is never a second

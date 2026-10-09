@@ -2,7 +2,7 @@ module github.com/truvity/policy
 
 go 1.27.0
 
-toolchain go1.27.1
+toolchain go1.27.2
 
 require (
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3
@@ -52,7 +52,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.47.0 // indirect
 	go.opentelemetry.io/otel/sdk/log v0.22.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.11.0 // indirect
-	golang.org/x/net v0.58.0 // indirect
+	golang.org/x/net v0.60.0 // indirect
 	golang.org/x/sync v0.23.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260825221802-da73d73af1c5 // indirect
