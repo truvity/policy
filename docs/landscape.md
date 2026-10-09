@@ -80,9 +80,9 @@ both repositories describe that migration as tracked separately, not done.
 ci-plane is where the work actually executes: the runner and nix-worker
 images, and the `arc-runners` and `ci-builders` charts.
 
-**Developer machine credentials: workstation, access-roster.** `accessctl`
-(from access-roster) and `awsctl` (from workstation) both mint AWS
-credentials on a developer machine; `accessctl` is the estate path, and
+**Developer machine credentials: workstation, sluis.** `sluisctl`
+(from sluis, formerly access-roster's `accessctl`) and `awsctl` (from workstation) both mint AWS
+credentials on a developer machine; `sluisctl` is the estate path, and
 `awsctl` is the SSO fallback for when access-roster is unreachable. Both
 tools live on the same machine and are called as alternatives, not layers.
 
