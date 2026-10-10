@@ -4,6 +4,12 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+### Fixed
+
+- **Every other component of the url-shortener example now has a memory limit.** `redirect`, `urls`, `migrate` and `verify` are limited to 128Mi, `log` and `web` to 256Mi, and the prober (`prober.resources`) to 128Mi, each 2-3x the peak working set seen over seven days on every environment (never below 128Mi). The requests are unchanged. They are values: `resources.<component>.limits` and `prober.resources.limits`.
+
 ## v1.49.2 — 2026-10-10
 
 ### Fixed
