@@ -4,6 +4,12 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+### Fixed
+
+- **The url-shortener example's counter (`stat`, the JVM component) is limited in memory and sizes its heap from that limit.** It requests 256Mi and is limited to 384Mi, and `JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=60 -XX:+ExitOnOutOfMemoryError` makes the heap a share of the container's limit instead of a quarter of the node, and a process that runs out of memory exit at once. Both are values: `resources.stat` and the new `jvmOptions.stat`.
+
 ## v1.49.1 — 2026-10-09
 
 ### Fixed
