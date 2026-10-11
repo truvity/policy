@@ -4,6 +4,12 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+### Added
+
+- **The url-shortener example ships its own Grafana dashboards.** `observability.dashboards` (off by default, because a cluster without the grafana-operator has no `GrafanaFolder` or `GrafanaDashboard` kind) renders a `GrafanaFolder` (the subfolder `url-shortener`) and a `GrafanaDashboard` from `dashboards/overview.json` (HTTP and RPC rate, errors and latency, replicas, restarts, CPU, memory, error logs). The cluster's grafana-operator places them in the shared Grafana under that cluster's folder. Enabling it needs `clusterFolderUID` and both datasource uids (`datasources.metrics`, `datasources.logs`); `instanceSelector` overrides the shared-Grafana label. It renders nothing with `alerts.remote`. This is the template a product repository copies for its own dashboards.
+
 ## v1.49.3 — 2026-10-10
 
 ### Fixed
