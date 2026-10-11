@@ -4,6 +4,12 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+### Fixed
+
+- **The url-shortener example's dashboards folder can be imported across namespaces.** The `GrafanaFolder` now sets `allowCrossNamespaceImport: true`, as the `GrafanaDashboard` already did. The shared `Grafana` lives in the observability namespace, so without the flag the operator skipped the folder, the `url-shortener` subfolder was never created, and the dashboard failed with 403. A product repository that copied the template needs the same line.
+
 ## v1.50.0 — 2026-10-11
 
 ### Added
