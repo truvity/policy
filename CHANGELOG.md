@@ -4,6 +4,12 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+### Fixed
+
+- **The url-shortener example's dashboard has a per-cluster uid, and its folder is applied first.** Dashboard uids are global in the shared Grafana, and the fixed `product-url-shortener` collided: the first cluster to apply it owned it, and another cluster's operator got `[POST /dashboards/db][403] postDashboardForbidden`. The uid is now `<clusterFolderUID>-url-shortener-overview` (the JSON's `uid` is injected, `spec.uid` stays unset), so `clusterFolderUID` is capped at 17 characters (was 26) to keep the uid within Grafana's 40. The `GrafanaFolder` is Argo CD sync wave `0` and the `GrafanaDashboard` wave `1`; before, a first install applied the dashboard before its folder existed, it failed, and the operator does not retry by itself. Migration: when the uid changes, grafana-operator (v5.25, `controllers/dashboard_controller.go`, `content.IsUpdatedUID`) sees `status.UID` differ from the JSON's uid, deletes the dashboard under the old uid and re-creates it under the new one, so the old `product-url-shortener` goes away by itself on the cluster that had created it; verify in Grafana once after the rollout. A product repository that copied the template needs the same three changes.
+
 ## v1.50.1 — 2026-10-11
 
 ### Fixed
