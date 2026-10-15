@@ -1,6 +1,6 @@
 # The platform contract
 
-Version: 1.3 · Effective: 2026-10-06 · Changes: see [CHANGELOG](../../CHANGELOG.md)
+Version: 1.4 · Effective: 2026-10-16 · Changes: see [CHANGELOG](../../CHANGELOG.md)
 
 **Normative.** [service.md](service.md) says what a service does at its own
 process boundary. This says what it asks of whatever runs it, and what that
@@ -383,6 +383,33 @@ That is not one caller. A platform installs the deployment; a test harness
 installs a copy per engineer and per CI run, in their own namespaces. Both
 pass the same values, and neither is special.
 
+### A component with a cloud identity: the account in one chart, the check in the other
+
+A component whose ServiceAccount carries a cloud identity (a role the
+platform binds to the account, by whatever mechanism) **MUST** be split in
+two, and the split is not optional for it:
+
+- the **infrastructure chart** renders the role, its policy and the binding
+  (for Pod Identity, the association), then the **ServiceAccount in a later
+  sync wave**: role, then binding, then account. The account carries
+  `argocd.argoproj.io/sync-options: Prune=false,Delete=false`, because a
+  deleted account is a new uid and invalidates the token a running pod holds,
+  and because the two charts are applied by one field manager, so an apply
+  from either that left the guard out would remove it from the live object;
+- the **application chart** only references the account by name and renders the
+  library's identity check (`service-lib.identityCheck`), a `pre-install,pre-upgrade`
+  hook Job that runs as that account and fails until a pod admitted now has
+  the identity. It does not render the account.
+
+The infrastructure release is installed, and healthy, before the application
+release. A hook runs before anything else in its release, so an account the
+same release creates does not exist when the check needs it; and a binding
+is `Synced` before the cluster's admission webhook can see it, so only a pod
+that is really admitted can say whether it is effective.
+[Decision 0013](../decisions/0013-pods-are-admitted-with-their-identity.md)
+has the cause (credentials are injected at admission, and a restart in the same
+pod never repeats it), the check and the roads not taken.
+
 ### What this means for anything that provisions
 
 Something that runs **per cluster** — a provisioning stack, a
@@ -546,6 +573,7 @@ for it to be missing.
 | 7. exposure | chart golden; a negative fixture for an unattached policy |
 | 8. transport | the default render is byte-identical without it |
 | 11. two charts, two scopes | a chart test renders each tier, and asserts a `test` install mints none of the cloud kinds a `primary` does; the example installs from a test harness as well as a deployment |
+| 11. identity account in the infrastructure chart, check in the application chart | chart tests: the infrastructure chart orders the role, the binding and the account in strictly increasing sync waves, with the prune/delete guard on the account; the application chart does not render the account the binding names, renders the identity check as it, as a `pre-install,pre-upgrade` hook Job with `restartPolicy: Never`, and renders none on a tier that has no binding; the check itself is unit-tested for identity detection and role parsing, and the binding's effect on a live cluster is not checked here |
 | 10. what a platform passes | the `everything` chart goldens: a value nothing reads shows as a diff |
 
 Rule 6 is checked mechanically now: the example's chart tests render both

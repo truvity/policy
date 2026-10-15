@@ -4,6 +4,17 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## v1.51.0 — 2026-10-16
+
+### Added
+
+- **A pod is checked to be admitted with its cloud identity before a release's workloads exist** ([decision 0013](docs/decisions/0013-pods-are-admitted-with-their-identity.md)). On EKS a Pod Identity association is `Synced` seconds before the admission webhook can see it, and credentials are injected only when a pod is created, so a pod created in the gap runs without them for its whole life and a container restart never repairs it. `service-lib.identityCheck` renders a `pre-install,pre-upgrade` hook Job (`restartPolicy: Never`, so every retry is a new pod; `backoffLimit: 6`, `activeDeadlineSeconds: 300`) that runs `ghcr.io/truvity/policy/url-shortener/identity-check` as the component's account and fails until STS answers for an injected identity. A chart passes the component spec plus `cloudIdentity` (true renders the Job, anything else renders nothing), optionally `expectRole` (a role name) and `image`; absent `image`, the chart's own `images.identity-check` entry, which a release stamps like the others. The command is new (`cmd/identity-check`) and is built and signed with the other images.
+- **The url-shortener example renders the check on a primary install**, for `log`, the one component whose account carries a cloud identity. Its values and schema gain `images.identity-check`.
+
+### Changed
+
+- **platform.md 1.4, rule 11: a component with a cloud identity must be split.** The infrastructure chart renders the role, the binding, then the ServiceAccount in a later wave (with the `Prune=false,Delete=false` guard); the application chart only names the account and renders the identity check; the infrastructure release is installed and healthy first. Adoption for a chart that renders the account itself: move the account to the infrastructure chart, add `images.identity-check` to the application chart, and include `service-lib.identityCheck` for that component. A chart with no cloud identity changes nothing.
+
 ## v1.50.3 — 2026-10-12
 
 - Dependency updates.
