@@ -46,14 +46,17 @@ the webhook.
 **A release whose component runs as a cloud-identity account starts with a
 check that a pod admitted now has the identity.**
 
-- `cmd/identity-check` is a small command that works out which workload
-  identity its own pod was admitted with (Pod Identity, or IRSA), asks STS who
-  it is (`GetCallerIdentity`, which needs no permission), and exits non-zero if
-  it has none, if STS refuses it, or if the role is not the one named by
+- `identity-check` is a small command, **owned by
+  [truvity/k8s](https://github.com/truvity/k8s) (`cmd/identity-check`)**, with
+  its image. This repository holds the rule, the template and the example, and
+  releases no binary for it. The command works out which workload identity its
+  own pod was admitted with (Pod Identity, or IRSA), asks STS who it is
+  (`GetCallerIdentity`, which needs no permission), and exits non-zero if it
+  has none, if STS refuses it, or if the role is not the one named by
   `-expect-role`. With no injected identity it fails **before** the SDK is
   built, and it never reads the instance metadata service: a node's role would
   answer, and a pod with no identity of its own would look as though it had
-  one. It is released as an image like the repository's other commands.
+  one. A chart names the image in its own `images.identity-check`.
 - The library chart renders it as a Job, `service-lib.identityCheck`, running
   as the component's ServiceAccount. It is a Helm hook (`pre-install,pre-upgrade`,
   deleted `before-hook-creation`, weight `-20`), which Argo CD runs as PreSync
@@ -95,12 +98,18 @@ check that a pod admitted now has the identity.**
 - **It proves the past, not the future.** A pod admitted at 12:00:00 shows the
   webhook can see the association at 12:00:00. An association that is later
   changed or deleted is a different event, and this does not cover it.
-- **One more image to release, and one more Job in a hook phase.** Under Argo
-  CD the PreSync phase runs on every sync, and a failed hook blocks it.
-- **The check pod carries the component's labels,** on purpose, so that a
-  network policy that lets the component reach the cloud API lets the check
-  reach it. The cost is that a selector aimed at the component matches a pod
-  that is not one for as long as the hook runs.
+- **One more image to depend on, and one more Job in a hook phase.** The image
+  is another repository's release, so a chart pins it by tag and digest like
+  any other. Under Argo CD the PreSync phase runs on every sync, and a failed
+  hook blocks it.
+- **The check pod needs a network policy of its own.** Its labels are distinct
+  on purpose: `app.kubernetes.io/component` is `<component>-identity-check` and
+  it carries `service-lib.io/identity-check`. With the component's own labels,
+  its Service would select it, and a Job pod with no readiness probe is Ready
+  while it runs, so real traffic would reach a pod that serves nothing; a
+  disruption budget would count it too. A policy aimed at the component does
+  not match it either, so the infrastructure chart renders egress for the check
+  (name resolution, the Pod Identity agent, the cloud API).
 - Only Pod Identity has this gap in the form described here. An account
   annotated for IRSA is read from the account itself at admission and has no
   association to wait for; the command accepts it because a check that fails on

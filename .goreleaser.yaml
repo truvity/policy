@@ -77,16 +77,6 @@ builds:
     env: [CGO_ENABLED=0]
     goos: [linux]
     goarch: [amd64, arm64]
-  # The identity check (docs/decisions/0013-pods-are-admitted-with-their-identity.md):
-  # a Job that service-lib's `identityCheck` runs before a release's
-  # workloads. It is a command of THIS module, not of the example's, so it
-  # builds from the repository root.
-  - id: identity-check
-    main: ./cmd/identity-check
-    binary: identity-check
-    env: [CGO_ENABLED=0]
-    goos: [linux]
-    goarch: [amd64, arm64]
 
 # The Go components need no Dockerfile at all: ko builds the image from the
 # package, cross-compiling rather than emulating.
@@ -124,12 +114,6 @@ kos:
     base_image: cgr.dev/chainguard/static:latest@sha256:41e17ed83c594a64a9396b6ab96dd26d5ddc290dacf4c177464712ff21ad534f
   - id: prober
     build: prober
-    platforms: [linux/amd64, linux/arm64]
-    tags: ["{{ .Env.IMAGE_TAG }}"]
-    base_import_paths: true
-    base_image: cgr.dev/chainguard/static:latest@sha256:41e17ed83c594a64a9396b6ab96dd26d5ddc290dacf4c177464712ff21ad534f
-  - id: identity-check
-    build: identity-check
     platforms: [linux/amd64, linux/arm64]
     tags: ["{{ .Env.IMAGE_TAG }}"]
     base_import_paths: true
