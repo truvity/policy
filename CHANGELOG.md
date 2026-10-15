@@ -14,6 +14,7 @@ subjects under them are the GitHub Release's own list.
 ### Changed
 
 - **platform.md 1.4, rule 11: a component with a cloud identity must be split.** The infrastructure chart renders the role, the binding, then the ServiceAccount in a later wave (with the `Prune=false,Delete=false` guard); the application chart only names the account and renders the identity check; the infrastructure release is installed and healthy first. Adoption for a chart that renders the account itself: move the account to the infrastructure chart, add `images.identity-check` to the application chart, and include `service-lib.identityCheck` for that component. A chart with no cloud identity changes nothing.
+- **The url-shortener example uses the current database client (cnpg v2.29.0), for readiness and for its writes.** Readiness is the client's `Health` (a `SELECT 1` through the real Service, TLS and password, bounded to two seconds). The store's writes that are safe to run twice (`PutURL`, `UpdateURL`, `DeleteURL`, `RestoreURL`) run inside the client's retry, so a switchover or a crash costs a retry and not a failed request; a call in flight gets the client's default patience (5 tries, 30 s), not the minutes the process waits at start-up. The click counter is not retried: it adds one, and a run that committed before the connection broke would count twice. `CNPG_CLIENT_RETRY_*` still tunes it.
 
 ## v1.50.3 — 2026-10-12
 
