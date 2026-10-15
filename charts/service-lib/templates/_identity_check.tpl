@@ -27,19 +27,26 @@ Takes the component spec, plus:
     image          optional {registry, repository, tag, digest}; absent, the
                    chart's own top-level `images.identity-check`.
 
-The pod carries the component's own labels, deliberately: a network policy
-that lets the component reach the cloud API lets this check reach it too, and
-a check the policy blocks would fail for a reason the component never has.
+The pod carries labels that NO selector of the chart matches:
+`app.kubernetes.io/component` is `<component>-identity-check`, plus
+`service-lib.io/identity-check`. A pod with the component's own labels would
+be picked up by its Service, and a Job pod with no readiness probe is Ready
+while it runs, so real traffic would reach it; a PodDisruptionBudget would
+count it too. Every selector here includes the component, so a distinct value
+is enough. The network policy that lets the check reach the cloud API is
+therefore its own (the infrastructure chart renders it beside the component's).
 */}}
 {{- define "service-lib.identityCheck" -}}
 {{- if .cloudIdentity -}}
 {{- $p := .platform | default dict -}}
+{{- $labels := dict "context" .context "name" (printf "%s-identity-check" .name) -}}
 {{- $image := dict "context" .context "name" "identity-check" "platform" (dict "image" (.image | default dict)) -}}
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: {{ include "service-lib.fullname" . }}-identity-check
-  labels: {{- include "service-lib.componentLabels" . | nindent 4 }}
+  labels: {{- include "service-lib.componentLabels" $labels | nindent 4 }}
+    service-lib.io/identity-check: "true"
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade
     "helm.sh/hook-weight": "-20"
@@ -49,7 +56,8 @@ spec:
   activeDeadlineSeconds: 300
   template:
     metadata:
-      labels: {{- include "service-lib.componentLabels" . | nindent 8 }}
+      labels: {{- include "service-lib.componentLabels" $labels | nindent 8 }}
+        service-lib.io/identity-check: "true"
     spec:
       restartPolicy: Never
       serviceAccountName: {{ include "service-lib.serviceAccountName" . }}
