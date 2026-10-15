@@ -4,6 +4,12 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## v1.51.0 — unreleased
+
+### Changed
+
+- **The url-shortener example uses the current database client (cnpg v2.29.0), for readiness and for its writes.** Readiness is the client's `Health` (a `SELECT 1` through the real Service, TLS and password, bounded to two seconds). The store's writes that are safe to run twice (`PutURL`, `UpdateURL`, `DeleteURL`, `RestoreURL`) run inside the client's retry, so a switchover or a crash costs a retry and not a failed request; a call in flight gets the client's default patience (5 tries, 30 s), not the minutes the process waits at start-up. The click counter is not retried: it adds one, and a run that committed before the connection broke would count twice. `CNPG_CLIENT_RETRY_*` still tunes it.
+
 ## v1.50.3 — 2026-10-12
 
 - Dependency updates.
