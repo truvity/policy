@@ -585,9 +585,12 @@ func TestThePlatformOwnedInfraChartRefusesTwoAccountsOfTheRole(t *testing.T) {
 		args []string
 		want string
 	}{
-		{"no cnpg-database at all",
+		{"a release the defaults do not describe",
 			infraDefaults("--set", "postgres.platformOwned=true"),
-			"clusterName"},
+			"cnpg-database.clusterName must be"},
+		{"other postgres labels",
+			[]string{"-f", good, "--set", "postgres.labels.extra=one"},
+			"cnpg-database.roles[0].labels must be"},
 		{"another cluster",
 			[]string{"-f", good, "--set", "cnpg-database.clusterName=other-pg"},
 			"cnpg-database.clusterName must be"},
@@ -614,6 +617,27 @@ func TestThePlatformOwnedInfraChartRefusesTwoAccountsOfTheRole(t *testing.T) {
 				t.Errorf("the refusal does not say %q:\n%s", c.want, out)
 			}
 		})
+	}
+}
+
+// The defaults ARE the live install: a platform that sets nothing under
+// `cnpg-database` and installs under the release name it always has gets the
+// role, the generator and the ExternalSecret, named as they have always been.
+func TestThePlatformOwnedInfraChartNeedsNothingFromThePlatformForTheLiveInstall(t *testing.T) {
+	cmd := exec.Command("helm", "template", "url-shortener-infra", chartDir(t, "url-shortener-infra"),
+		"--set", "postgres.platformOwned=true",
+		"--set", "postgres.runtimePasswordSecret=url-shortener-pg-runtime",
+		"--set", "postgres.runtimePassword.generate=true",
+		"--set", "postgres.labels.tenancy\\.truvity\\.io/project=url-shortener",
+		"--set", "postgres.labels.tenancy\\.truvity\\.io/tier=primary")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("the chart does not render with the live install's values: %v\n%s", err, out)
+	}
+	for _, want := range []string{"name: url-shortener-infra-pg-role-url-shortener-app", "name: url-shortener-pg-runtime"} {
+		if !strings.Contains(string(out), want) {
+			t.Errorf("the render lacks %q:\n%s", want, out)
+		}
 	}
 }
 

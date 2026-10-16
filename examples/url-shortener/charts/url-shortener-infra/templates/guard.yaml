@@ -3,7 +3,9 @@ The one place the two halves of a platform-owned database are held to each
 other.
 
 The runtime role of a platform-owned database is rendered by the
-cnpg-database chart, from values the platform hands it under `cnpg-database` (the subchart is on exactly when `postgres.platformOwned` is).
+cnpg-database chart (on exactly when `postgres.platformOwned` is), from the
+values under `cnpg-database`: the defaults in values.yaml, which are the live
+install's, or the platform's own.
 A subchart's values cannot be computed from this chart's (Helm resolves them
 before a template runs), so the role's name, its Secret and the cluster it
 belongs to are stated TWICE: here under `postgres`, which everything else in
@@ -27,6 +29,11 @@ nothing mounts. So the render refuses unless they agree. It renders nothing.
 {{- $r := index $roles 0 }}
 {{- if ne ($r.name | default "") $role }}
 {{- fail (printf "cnpg-database.roles[0].name must be the runtime role %q (got %q)" $role ($r.name | default "")) }}
+{{- end }}
+{{- $want := merge (dict "app.kubernetes.io/name" "url-shortener-infra" "app.kubernetes.io/instance" .Release.Name) ($pg.labels | default dict) }}
+{{- $have := $r.labels | default dict }}
+{{- if ne (toJson $want) (toJson $have) }}
+{{- fail (printf "cnpg-database.roles[0].labels must be exactly %s, the chart's own two labels and postgres.labels (got %s)" (toJson $want) (toJson $have)) }}
 {{- end }}
 {{- $secret := required "postgres.runtimePasswordSecret is the NAME of a basic-auth secret; the chart does not invent one, though it can be asked to fill it -- see postgres.runtimePassword.generate" $pg.runtimePasswordSecret }}
 {{- if $pg.runtimePassword.generate }}

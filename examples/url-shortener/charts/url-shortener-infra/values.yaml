@@ -236,34 +236,44 @@ postgres:
 # read when the platform does not own the database: the Cluster this chart
 # renders then declares the role itself.
 #
-# The values are the platform's to hand over and are NOT derived here: a
-# subchart's values are resolved before any template runs, so they cannot be
-# computed from this release's name, the role `postgres.tenantScopedNames`
-# resolves, or `postgres.labels`. They restate facts `postgres` already
-# holds, and templates/guard.yaml fails the render when they disagree:
+# These are the values of the install the platform runs today, as DEFAULTS:
+# release `url-shortener-infra`, the role `url_shortener_app`, the Secret
+# `url-shortener-pg-runtime`, and the labels `postgres.labels` carries there.
+# A platform that installs under another release name, resolves another role
+# (`postgres.tenantScopedNames`, `postgres.runtimeRole`), names another Secret
+# or sets other `postgres.labels` states the block itself: a subchart's values
+# are resolved before any template runs, so they cannot be computed from this
+# chart's, and a list is replaced as a whole, not merged. templates/guard.yaml
+# fails the render, naming the value to set, when this block and `postgres`
+# disagree, so a mismatch is an error and never a second role or Secret.
 #
 #   clusterName   `<release>-pg`, the Cluster the platform's chart creates.
-#   roles         exactly one entry, the runtime role: `name` is the
-#                 resolved `postgres.runtimeRole`; `labels` go on the
-#                 DatabaseRole (and the generated-password objects); with
-#                 `postgres.runtimePassword.generate`, `generatedPassword`
-#                 names the Secret (`postgres.runtimePasswordSecret`),
-#                 otherwise `passwordSecret` does.
-#
-#   cnpg-database:
-#     clusterName: example-pg
-#     roles:
-#       - name: url_shortener_app
-#         connectionLimit: -1
-#         inherit: true
-#         databaseRoleReclaimPolicy: retain   # the role owns grants the
-#                                             # migration made: never dropped
-#         labels: {app.kubernetes.io/name: url-shortener-infra, ...}
-#         generatedPassword: {secretName: example-pg-runtime, length: 32}
+#   roles         exactly one entry, the runtime role: `name` the resolved
+#                 `postgres.runtimeRole`; `labels` exactly the chart's own two
+#                 plus `postgres.labels` (they go on the DatabaseRole and on
+#                 the generated-password objects); `generatedPassword` names
+#                 the Secret (`postgres.runtimePasswordSecret`) when
+#                 `postgres.runtimePassword.generate`, otherwise
+#                 `passwordSecret` does.
 #
 # The password is generated ONCE (the ExternalSecret's refresh interval is
 # "0"), so moving a live install to this chart changes no Secret.
-cnpg-database: {}
+cnpg-database:
+  clusterName: url-shortener-infra-pg
+  roles:
+    - name: url_shortener_app
+      connectionLimit: -1
+      inherit: true
+      # The role owns grants the migration made: never dropped.
+      databaseRoleReclaimPolicy: retain
+      labels:
+        app.kubernetes.io/name: url-shortener-infra
+        app.kubernetes.io/instance: url-shortener-infra
+        tenancy.truvity.io/project: url-shortener
+        tenancy.truvity.io/tier: primary
+      generatedPassword:
+        secretName: url-shortener-pg-runtime
+        length: 32
 
 events:
   # The stream's name and its two subjects are NOT here. Both are
