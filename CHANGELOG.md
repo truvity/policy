@@ -4,6 +4,12 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+### Fixed
+
+- **The url-shortener example no longer fails requests during a database switchover.** A failover drill (continuous Create then Delete over HTTP while the primary pod was deleted) failed 9 of 587 requests in an 18 s window. Two causes, both in the example. First, every read on the request path (`GetURL`, `GetURLByLongURL`, `FindURLByLongURL`, `ListURLs`, the click-count lookup) ran outside the retry, so the Create handler's look-up failed on the first refused connection or `57P01` (admin shutdown); reads are idempotent and now run inside the store's `Database.Do`, as the writes already did. The click counter's increment stays unretried. Second, the request retry was the client's default of 5 tries, which is spent in about 1.5 s of back-off, while a switchover lasts 10 to 30 s: `PutURL` was retried four times and then returned the connection error. A call in flight now retries every 0.2 to 2 s until its 30 s budget is spent (`requestRetry`; the count is a safety net, the budget ends the wait), and `CNPG_CLIENT_RETRY_*` still overrides. The warning line is now `database call interrupted, retrying` (was `database write interrupted, retrying`) since reads log it too. The error type survives pgx, `database/sql` and gorm (tested against a real pgx pool for refused, hung-up, `57P01` and `57P03`), so the client's `IsRetryable` needed no change.
+
 ## v1.51.0 — 2026-10-16
 
 ### Added
