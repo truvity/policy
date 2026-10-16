@@ -30,7 +30,7 @@ type shortener struct {
 	Secrets config.SecretsSource `json:"secrets"`
 }
 
-func schema(t *testing.T) []byte {
+func schema(t testing.TB) []byte {
 	t.Helper()
 	b, err := os.ReadFile("testdata/shortener.schema.json")
 	if err != nil {
