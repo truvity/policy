@@ -238,10 +238,10 @@ postgres:
 #
 # These are the values of the install the platform runs today, as DEFAULTS:
 # release `url-shortener-infra`, the role `url_shortener_app`, the Secret
-# `url-shortener-pg-runtime`, and the labels `postgres.labels` carries there.
+# `url-shortener-pg-runtime`.
 # A platform that installs under another release name, resolves another role
 # (`postgres.tenantScopedNames`, `postgres.runtimeRole`), names another Secret
-# or sets other `postgres.labels` states the block itself: a subchart's values
+# or wants more labels on the role states the block itself: a subchart's values
 # are resolved before any template runs, so they cannot be computed from this
 # chart's, and a list is replaced as a whole, not merged. templates/guard.yaml
 # fails the render, naming the value to set, when this block and `postgres`
@@ -249,9 +249,12 @@ postgres:
 #
 #   clusterName   `<release>-pg`, the Cluster the platform's chart creates.
 #   roles         exactly one entry, the runtime role: `name` the resolved
-#                 `postgres.runtimeRole`; `labels` exactly the chart's own two
-#                 plus `postgres.labels` (they go on the DatabaseRole and on
-#                 the generated-password objects); `generatedPassword` names
+#                 `postgres.runtimeRole`; `labels` carry the chart's own two
+#                 (`app.kubernetes.io/name`, and `/instance` = the release) and
+#                 whatever else the platform wants on the DatabaseRole and the
+#                 generated-password objects (`postgres.labels` does NOT reach
+#                 them: a default cannot hold a platform's label keys, and a
+#                 subchart's values cannot read `postgres`); `generatedPassword` names
 #                 the Secret (`postgres.runtimePasswordSecret`) when
 #                 `postgres.runtimePassword.generate`, otherwise
 #                 `passwordSecret` does.
@@ -269,8 +272,6 @@ cnpg-database:
       labels:
         app.kubernetes.io/name: url-shortener-infra
         app.kubernetes.io/instance: url-shortener-infra
-        tenancy.truvity.io/project: url-shortener
-        tenancy.truvity.io/tier: primary
       generatedPassword:
         secretName: url-shortener-pg-runtime
         length: 32

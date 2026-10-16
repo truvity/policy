@@ -588,9 +588,9 @@ func TestThePlatformOwnedInfraChartRefusesTwoAccountsOfTheRole(t *testing.T) {
 		{"a release the defaults do not describe",
 			infraDefaults("--set", "postgres.platformOwned=true"),
 			"cnpg-database.clusterName must be"},
-		{"other postgres labels",
-			[]string{"-f", good, "--set", "postgres.labels.extra=one"},
-			"cnpg-database.roles[0].labels must be"},
+		{"another release in the instance label",
+			[]string{"-f", good, "--set", "cnpg-database.roles[0].labels.app\\.kubernetes\\.io/instance=other"},
+			"app.kubernetes.io/instance"},
 		{"another cluster",
 			[]string{"-f", good, "--set", "cnpg-database.clusterName=other-pg"},
 			"cnpg-database.clusterName must be"},
@@ -628,8 +628,7 @@ func TestThePlatformOwnedInfraChartNeedsNothingFromThePlatformForTheLiveInstall(
 		"--set", "postgres.platformOwned=true",
 		"--set", "postgres.runtimePasswordSecret=url-shortener-pg-runtime",
 		"--set", "postgres.runtimePassword.generate=true",
-		"--set", "postgres.labels.tenancy\\.truvity\\.io/project=url-shortener",
-		"--set", "postgres.labels.tenancy\\.truvity\\.io/tier=primary")
+		"--set", "postgres.labels.extra=one")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("the chart does not render with the live install's values: %v\n%s", err, out)
