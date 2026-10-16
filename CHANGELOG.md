@@ -4,6 +4,12 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+### Changed
+
+- **`examples/url-shortener` uses `truvity/cnpg` client v2.30.0 and drops its own request retry.** v2.30.0's `DefaultRetryPolicy` is bound by time, not by a try count (no cap on tries, 0.2 s to 2 s back-off, a 45 s budget), which is what the example's `requestRetry` (1000 tries, 0.2 s to 2 s, 30 s) was a copy of after the old five-try default ran out in about 1.5 s. A call in flight now uses the library default, so it waits up to 45 s for a CloudNativePG switchover (10 to 30 s) instead of 30 s; a caller's own deadline still ends the wait sooner. The start-up policy stays separate, and `CNPG_CLIENT_RETRY_*` still overrides both.
+
 ## v1.52.1 — 2026-10-16
 
 ### Fixed
