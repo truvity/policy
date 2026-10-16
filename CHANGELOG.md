@@ -4,6 +4,12 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+### Fixed
+
+- **`config.Load`, `config.LoadKind` and `config.Validate` compile each JSON schema once per process, not on every call.** Each call used to compile the caller's schema and parse and compile every shared schema this repository embeds, about 3 ms and 10,000 allocations for a small schema, which a service with a reload loop or a test that validates in a loop paid again and again. The compiled schema is now kept per schema text and shared by concurrent callers (the compiled form is immutable; a `-race` test covers it). Results and error text are unchanged, including for a schema that does not compile, which fails with the same message every time. Measured on the config package benchmarks: `Validate` 3.4 ms to 0.03 ms per call, `Load` 9 ms to 0.12 ms. Nothing to do to adopt it.
+
 ## v1.52.0 — 2026-10-16
 
 ### Changed
