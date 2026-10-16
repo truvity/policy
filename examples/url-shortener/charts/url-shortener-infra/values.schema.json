@@ -178,6 +178,10 @@
         }
       }
     },
+    "cnpg-database": {
+      "type": "object",
+      "description": "The values of the cnpg-database chart, which renders the runtime role of a platform-owned database. Validated by that chart's own schema; templates/guard.yaml holds clusterName, the role and its Secret to `postgres`."
+    },
     "events": {
       "type": "object",
       "additionalProperties": false,

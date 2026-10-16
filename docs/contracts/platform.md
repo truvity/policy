@@ -248,6 +248,7 @@ a token or sits behind that kind of proxy.
 | `postgres.labels` | what reads labels here | — |
 | `postgres.annotations` | what reads annotations here, such as whether a controller may prune the database | — |
 | `postgres.platformOwned` | whether the platform renders the database itself, leaving this chart only the runtime role | — |
+| `cnpg-database.clusterName`, `.roles` | with `postgres.platformOwned`, the values of the cnpg-database chart that renders the runtime role: the cluster (`<release>-pg`) and exactly one role, the runtime role, with its labels and its generated-password Secret. A subchart's values cannot be computed from the parent's, so they restate `postgres` and the render refuses a disagreement | — |
 | `postgres.scheduling` | which pool a database is allowed on | how many instances |
 | `postgres.backup.objectStoreName`, `.serverName` | which archive, and who this is inside it | which object store |
 | `postgres.serverTLS.secretName`, `.caSecretName` | what the server presents | whether transport identity is on |

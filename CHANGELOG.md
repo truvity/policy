@@ -4,6 +4,12 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+### Changed
+
+- **Breaking: the url-shortener example's infrastructure chart renders the runtime role of a platform-owned database through the cnpg-database chart (2.29.0, `oci://ghcr.io/truvity/charts`).** With `postgres.platformOwned` the `DatabaseRole`, the Password generator and the once-only ExternalSecret are the subchart's, not this chart's; the objects render as before (same names, spec and password Secret, so the password does not rotate and the role is not recreated), except that the generator and the ExternalSecret now carry the role's labels (`postgres.labels` and the chart's own) where they carried only the chart's own. A subchart's values cannot be computed from the parent's, so the platform hands over `cnpg-database.clusterName` (`<release>-pg`) and `cnpg-database.roles` (the one runtime role: its name, `connectionLimit: -1`, `inherit: true`, `databaseRoleReclaimPolicy: retain`, `labels`, and `generatedPassword.secretName` / `.length` or `passwordSecret`); the render fails, naming the value, when they disagree with `postgres`, or when `postgres.platformOwned` has no `cnpg-database` values. Step to take: add that block to the platform's values for the infrastructure chart BEFORE pinning this version (platform.md, "To the infrastructure chart"). Without `postgres.platformOwned` nothing changes. `examples/url-shortener/hack/prove-infra-render.sh` renders the chart at any ref beside this tree with the real values and compares the two object by object.
+
 ## v1.51.0 — 2026-10-16
 
 ### Added
