@@ -4,6 +4,12 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+### Changed
+
+- **`docs/landscape.md` lists `truvity/edge` instead of `truvity/gateway` and `truvity/cloudflare`.** Both were folded into `truvity/edge` (Go module `github.com/truvity/edge/v3`, all charts at 3.x); `gateway` is archived and `cloudflare` is the old name of `edge`. The Edge rows and the "How they fit" paragraph name `edge`, and `hack/landscape.sh` generates its row instead of the two old ones. Documentation only.
+
 ## v1.53.1 — 2026-10-16
 
 - Dependency updates.

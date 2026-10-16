@@ -24,8 +24,7 @@ installs them — the repository still ships mechanism, not a deployment).
 | Identity and secrets | [`access-roster`](https://github.com/truvity/access-roster) | The policy is the product. One file in git turns the groups your people already have in the corporate directory, and the identities your machines already hold — a GitHub Actions job, a Kubernetes ServiceAccount — into one vocabulary of internal groups, gated per audience at one small OpenID provider. | charts:1; Go module (importable); images; CLI: acceptance, sluisctl, access-issuer, github-roster, resource-proxy; action | v1.40.0 |
 | Identity and secrets | [`openbao`](https://github.com/truvity/openbao) | OpenBAO for Kubernetes estates, as reusable mechanism: the two halves the upstream server chart leaves out, the desired state of OpenBAO's own configuration and its apply, and the KMS-rooted CA ceremony its PKI hangs from. | charts:2; Go module (importable); CLI: approvercheck, openbaoctl, openbao-hostcert | v0.25.0 |
 | Identity and secrets | [`audit`](https://github.com/truvity/audit) | An audit trail an application owns: one record format, one write path, an immutable archive, and projections for security, billing and history. | charts:1; Go module (importable); images; CLI: audit, audit-query, audit-writer, protoc-gen-audit-jsonschema | v0.5.0 |
-| Edge | [`gateway`](https://github.com/truvity/gateway) | Envoy Gateway for Kubernetes estates, as reusable mechanism: the plane the controller manages, split into the half that is vendor-specific and the half that is not. | charts:4 | v1.6.0 |
-| Edge | [`cloudflare`](https://github.com/truvity/cloudflare) | Cloudflare for Kubernetes estates, as reusable mechanism: accounts, zone settings, tunnels and R2 buckets as Pulumi Go components; the in-cluster end of a tunnel and an R2 temporary-credentials broker as Helm charts. | charts:2; Go module (importable); images; CLI: r2broker | v2.7.2 |
+| Edge | [`edge`](https://github.com/truvity/edge) | The edge of a Kubernetes estate, as reusable mechanism: one catalog of what is exposed, and the two halves that realise it. | charts:8; Go module (importable); images; CLI: edge-insights, edge-securitytxt, internal, static-site | v3.12.3 |
 | Edge | [`tailscale`](https://github.com/truvity/tailscale) | Tailscale for Kubernetes estates, as reusable mechanism: the subnet router that puts a cluster on a tailnet, and the tailnet's policy, keys and split DNS as code. | charts:1; Go module (importable) | v1.19.0 |
 | Data | [`cnpg`](https://github.com/truvity/cnpg) | Helm charts for running PostgreSQL on CloudNativePG, split by who installs them. | charts:3; Go module (not importable) | v2.1.1 |
 | Observability | [`observability`](https://github.com/truvity/observability) | A self-hosted observability stack for Kubernetes estates, as reusable mechanism: the VictoriaMetrics family as the store, every query scoped at the door to the clusters and namespaces the caller's own token allows, the collectors that stamp those under OpenTelemetry's names, and the alerting rules that catch a backup, a store or a volume failing while everything still looks green. | charts:8; Go module (importable); images; CLI: alert-ingress, dashboardlint, rulecheck | v0.16.0 |
@@ -61,12 +60,13 @@ audit is the record every one of them writes: every decision, sign-in,
 refusal, exchange and console action is one record in the audit trail that
 both the issuer and its relying parties read from and write to.
 
-**Edge: gateway, cloudflare, tailscale.** These three are layers of one
-exposure path, not alternatives. cloudflare's tunnel carries public traffic
-to the estate's origin; that origin is a gateway exposure (a ClusterIP
-behind the tunnel); tailscale routes whole CIDRs for private access.
-gateway's private exposure and tailscale's Service-CIDR route are the two
-ways to reach a private service.
+**Edge: edge, tailscale.** These are layers of one exposure path, not
+alternatives. edge was formed from the former cloudflare and gateway
+repositories and holds both halves in one module: its Cloudflare tunnel
+carries public traffic to the estate's origin, and that origin is an Envoy
+Gateway exposure (a ClusterIP behind the tunnel); tailscale routes whole
+CIDRs for private access. edge's private exposure and tailscale's
+Service-CIDR route are the two ways to reach a private service.
 
 **CI: ci-workflows, ci-actions, ci-cache, ci-plane.** ci-workflows is the
 only thing a caller pins — every other public repository's `check`,
