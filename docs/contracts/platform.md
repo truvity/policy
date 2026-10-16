@@ -248,6 +248,7 @@ a token or sits behind that kind of proxy.
 | `postgres.labels` | what reads labels here | — |
 | `postgres.annotations` | what reads annotations here, such as whether a controller may prune the database | — |
 | `postgres.platformOwned` | whether the platform renders the database itself, leaving this chart only the runtime role | — |
+| `cnpg-database.clusterName`, `.roles` | with `postgres.platformOwned`, the values of the cnpg-database chart that renders the runtime role. They default to the live install's (release `url-shortener-infra`); a platform with another release name, role or Secret states them (`postgres.labels` does not reach the role in this mode; labels for it go in `roles[0].labels`), and the render refuses a disagreement with `postgres` | — |
 | `postgres.scheduling` | which pool a database is allowed on | how many instances |
 | `postgres.backup.objectStoreName`, `.serverName` | which archive, and who this is inside it | which object store |
 | `postgres.serverTLS.secretName`, `.caSecretName` | what the server presents | whether transport identity is on |

@@ -229,14 +229,17 @@ protos:
 chart-schemas:
     go run ./hack/compose-chart-schema examples/url-shortener/charts
 
-# Refresh the Chart.lock of every chart that depends on the library chart
-# (charts/service-lib). The lock is committed and the archive it resolves is
-# not: `helmctl package` runs `helm dependency build` itself when the
+# Refresh the Chart.lock of every chart that has a dependency: the application
+# chart's library (charts/service-lib) and the infrastructure chart's
+# cnpg-database, which is fetched from the registry (anonymously). The lock
+# is committed and the archive it resolves is not: `helmctl package` runs `helm dependency build` itself when the
 # dependency is missing, from this lock, and refuses a lock that disagrees with
-# Chart.yaml. Needs no network: the dependency is a path in this checkout.
+# Chart.yaml. Only the library is a path in this checkout; the infrastructure
+# chart's dependency needs the network.
 [doc("Refresh the Chart.lock of the charts that depend on the library chart")]
 chart-locks:
     helm dependency update examples/url-shortener/charts/url-shortener
+    helm dependency update examples/url-shortener/charts/url-shortener-infra
 
 # Resolve what every chart that depends on the library declares, from its
 # committed lock, and fail if the lock no longer says what Chart.yaml does.
@@ -245,6 +248,7 @@ chart-locks:
 [doc("Resolve the library chart dependency from the committed lock")]
 chart-deps:
     helm dependency build --skip-refresh examples/url-shortener/charts/url-shortener
+    helm dependency build --skip-refresh examples/url-shortener/charts/url-shortener-infra
 
 # Regenerate what every loader carries from `schemas/`.
 [doc("Regenerate the schemas the loaders carry")]
