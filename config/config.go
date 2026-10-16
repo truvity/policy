@@ -18,6 +18,7 @@ import (
 	"path"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/santhosh-tekuri/jsonschema/v6"
 	"github.com/santhosh-tekuri/jsonschema/v6/kind"
@@ -125,7 +126,31 @@ func Validate(doc any, schema []byte) error {
 	return nil
 }
 
+// compiled is one schema's compilation, run at most once: the result, or the
+// error text the first run produced, which every later call returns unchanged.
+type compiled struct {
+	once   sync.Once
+	schema *jsonschema.Schema
+	err    error
+}
+
+// compiledSchemas holds one entry per distinct schema text seen by the
+// process, so a schema is compiled (with the embedded shared shapes) once and
+// not on every Load, LoadKind or Validate. A compiled *jsonschema.Schema is
+// immutable and safe for concurrent use. The set is the schemas a binary
+// passes, a handful for its whole life, so it is not bounded.
+var compiledSchemas sync.Map // string (the schema text) -> *compiled
+
+// compile returns the compiled form of schema, compiling it on first use.
+// Concurrent callers of one schema wait for the single compilation.
 func compile(schema []byte) (*jsonschema.Schema, error) {
+	entry, _ := compiledSchemas.LoadOrStore(string(schema), new(compiled))
+	c := entry.(*compiled)
+	c.once.Do(func() { c.schema, c.err = compileSchema(schema) })
+	return c.schema, c.err
+}
+
+func compileSchema(schema []byte) (*jsonschema.Schema, error) {
 	doc, err := jsonschema.UnmarshalJSON(strings.NewReader(string(schema)))
 	if err != nil {
 		return nil, fmt.Errorf("the schema itself is not valid JSON: %w", err)
