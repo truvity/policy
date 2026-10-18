@@ -400,7 +400,9 @@ two, and the split is not optional for it:
 - the **application chart** only references the account by name and renders the
   library's identity check (`service-lib.identityCheck`), a `pre-install,pre-upgrade`
   hook Job that runs as that account and fails until a pod admitted now has
-  the identity. It does not render the account.
+  the identity (and, when the chart names `expectAccount`, until that identity
+  is in the expected AWS account; optionally also the expected role). It does
+  not render the account.
 
 The infrastructure release is installed, and healthy, before the application
 release. A hook runs before anything else in its release, so an account the

@@ -52,8 +52,11 @@ check that a pod admitted now has the identity.**
   releases no binary for it. The command works out which workload identity its
   own pod was admitted with (Pod Identity, or IRSA), asks STS who it is
   (`GetCallerIdentity`, which needs no permission), and exits non-zero if it
-  has none, if STS refuses it, or if the role is not the one named by
-  `-expect-role`. With no injected identity it fails **before** the SDK is
+  has none, if STS refuses it, if the role is not the one named by
+  `-expect-role`, or if the AWS account is not the one named by
+  `-expect-account` (12 digits; the STS `Account` and the account in the
+  caller's ARN must both match it, so a wrong estate fails here rather than
+  as a permissions error later). With no injected identity it fails **before** the SDK is
   built, and it never reads the instance metadata service: a node's role would
   answer, and a pod with no identity of its own would look as though it had
   one. A chart names the image in its own `images.identity-check`.
