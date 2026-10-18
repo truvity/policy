@@ -24,6 +24,12 @@ Takes the component spec, plus:
                    false or absent renders NOTHING. The including chart derives
                    it from the tier, so there is no switch for a deployer.
     expectRole     optional role NAME the pod must have assumed.
+    expectAccount  optional 12-digit AWS account id the pod must run in; the
+                   render fails on anything else. The command checks the STS
+                   `Account` and the account in the caller's ARN. Needs an
+                   identity-check image from truvity/k8s v0.34.0 or later: an
+                   older one does not know the flag and fails every retry.
+                   Absent or empty, the flag is not passed.
     image          optional {registry, repository, tag, digest}; absent, the
                    chart's own top-level `images.identity-check`.
 
@@ -38,6 +44,13 @@ therefore its own (the infrastructure chart renders it beside the component's).
 */}}
 {{- define "service-lib.identityCheck" -}}
 {{- if .cloudIdentity -}}
+{{- $account := .expectAccount | default "" | toString -}}
+{{- if and $account (not (regexMatch "^[0-9]{12}$" $account)) -}}
+{{- fail (printf "service-lib.identityCheck: expectAccount %q is not a 12-digit AWS account id (quote it in YAML so leading zeros survive)" $account) -}}
+{{- end -}}
+{{- $args := list -}}
+{{- with .expectRole }}{{- $args = concat $args (list "-expect-role" .) -}}{{- end -}}
+{{- if $account }}{{- $args = concat $args (list "-expect-account" $account) -}}{{- end -}}
 {{- $p := .platform | default dict -}}
 {{- $labels := dict "context" .context "name" (printf "%s-identity-check" .name) -}}
 {{- $image := dict "context" .context "name" "identity-check" "platform" (dict "image" (.image | default dict)) -}}
@@ -67,8 +80,8 @@ spec:
           image: {{ include "service-lib.image" $image }}
           imagePullPolicy: {{ $p.imagePullPolicy | default "IfNotPresent" }}
           {{- include "service-lib.containerSecurityContext" . | nindent 10 }}
-          {{- with .expectRole }}
-          args: ["-expect-role", {{ . | quote }}]
+          {{- with $args }}
+          args: {{ . | toJson }}
           {{- end }}
           resources:
             requests:
