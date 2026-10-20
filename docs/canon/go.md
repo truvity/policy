@@ -27,7 +27,7 @@ itself.
 | Circuit breaking, bulkheads, rate limiting | **no canon yet** | see below |
 | Testing | `stretchr/testify`, `neilotoole/slogt/v2`, `pgregory.net/rapid` | rapid where the property is the point |
 | Errors | stdlib wrapping | |
-| Database | driver `jackc/pgx/v5`; `gorm.io/gorm` where an ORM is wanted | different layers, not alternatives |
+| Database | driver `jackc/pgx/v5`; `gorm.io/gorm` where an ORM is wanted; the connection (TLS, files re-read per connection, retry across a switchover) from `github.com/truvity/cnpg/v2/clients/go/pgclient`, which wraps pgx | different layers, not alternatives; the client is a library, not a driver |
 | Key-value and cache | `redis/go-redis/v9` | the protocol client; `alicebob/miniredis/v2` is the test fake |
 | Object store and cloud | `aws-sdk-go-v2` | the S3 API, not necessarily the vendor: an endpoint is configuration ([config.md](../contracts/config.md)) |
 | Kubernetes | `client-go`; `controller-runtime` in an operator only | |

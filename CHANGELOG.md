@@ -4,6 +4,10 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+- Documentation only: the url-shortener README describes the database connection as it is (libpq environment, no URL; the cnpg client's default retry for a call in flight, a longer start-up wait, `Health` as readiness) and lists the real negative fixtures; `docs/canon/go.md` names the cnpg `pgclient` for the connection; `docs/contracts/platform.md` no longer speaks of a connection URL. No chart, schema or code changes.
+
 ## v1.54.1 — 2026-10-19
 
 - Dependency updates.
