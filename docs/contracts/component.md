@@ -26,9 +26,9 @@ contradicted each other on two; this page decides both (see
 here rather than restating a rule, because a restated rule is a second
 version of it.
 
-Every rule has an ID, **C1** to **C17**, so that a review comment, a
+Every rule has an ID, **C1** to **C18**, so that a review comment, a
 ticket and a failing check can say "C5" instead of paraphrasing. Each says
-what must be true, why, and how it is checked. **C1 to C13 are checked
+what must be true, why, and how it is checked. **C1 to C13 and C18 are checked
 mechanically** by the `policy-conformance` action in `truvity/ci-actions`,
 which reads a checkout and reports each rule by its ID; **C13 is checked
 only for the five shapes a script can tell from a neutral default with
@@ -597,6 +597,33 @@ every `values.schema.src.json` (`examples/url-shortener`:
 `chartschema`'s own tests prove the composed schema is self-contained (it refers
 to nothing Helm would have to fetch) and refuses what the sources do.
 
+## C18. Workflow and action YAML is runner-agnostic
+
+**What.** The workflow and action files of a repository (`.github/workflows/*.yaml`
+and every `action.yaml`) do not know which runner they run on. They contain no
+in-cluster service address (`<svc>.<ns>.svc`, with or without the cluster domain
+after it), no expression that branches on `runner.environment`, and no static AWS
+credential (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` or `AWS_SESSION_TOKEN` in
+an `env:` block or a script, a secret of one of those names, the
+`aws-access-key-id` family of inputs). Addresses are inputs (the estate's org
+variables); a capability is probed, not inferred from the kind of runner; the AWS
+identity is the runner's own (a pod identity) or the job's OIDC token. Clearing a
+variable (`AWS_ACCESS_KEY_ID: ""`) is not a credential.
+
+**Why.** A job has to run, and mean the same thing, on an ARC runner, a
+GitHub-hosted one and the pool that replaces either. A service address resolves
+inside one cluster only; a branch on the kind of runner makes two behaviours of
+which one is never tested; a key in a repository's secrets is a credential that
+outlives the job that needed it and is rotated by hand. Each of the three is how a
+job quietly stops working when the pool changes.
+
+**Conformance.** `policy-conformance` reads the tracked workflow and action files
+(comments, and test, fixture, golden and vendored directories, excepted) and
+prints each finding as `C18 <file>:<line>`. **C18 is an error**: a finding fails
+`strict`. Existing code that still violates it is exempted per repository; an
+[exemption](#exemptions) (`exempt: C18`) names a reviewed exception, with a
+reason and the `paths` it covers.
+
 ---
 
 ## Exemptions
@@ -759,3 +786,4 @@ later is in scope by the rule, not by being added here.
 | C15 library chart | the chart's own render tests (`PortsEqualConfig`, `EnvIsDeclared`) and the lock test; review elsewhere |
 | C16 configuration verbatim | the chart's own render test (`ConfigMapEqualsConfig`, `ChecksumFollowsConfig`, `ValidDocument`); review of a product chart's mapping |
 | C17 composed schema | the chart's own test (`ChartSchemaIsComposed`) and the `drift` recipe |
+| C18 runner-agnostic YAML | `policy-conformance`: no in-cluster service address, no `runner.environment` branch, no static AWS credential in workflow and action YAML |
