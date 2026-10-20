@@ -508,9 +508,9 @@ absent.
 
 Prefer a client certificate. Nothing generates it, nothing rotates it by
 hand, no tier needs a provider, and there is no password to leak or to
-print. Where a connection string carries the certificate's paths, this
-costs the application nothing at all — a service that names no password
-variable already uses its URL as given.
+print. The client library takes the certificate's paths from
+`PGSSLCERT` and `PGSSLKEY`, so this costs the application nothing at all — a
+service that names no password file already connects as given.
 
 **Check what your operator actually offers before designing around this.**
 This section used to say "a credential the database operator issues for
