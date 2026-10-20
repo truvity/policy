@@ -6,6 +6,12 @@ subjects under them are the GitHub Release's own list.
 
 ## Unreleased
 
+### Added
+
+- **Component contract rule C18: workflow and action YAML is runner-agnostic.** No in-cluster service address, no expression branching on `runner.environment`, no static AWS credential. `policy-conformance` (truvity/ci-actions) checks it and reports an error; a repository that still has findings carries a reviewed exemption per repository (`exempt: C18`, with a reason and the paths), and the contract says so. The rules are now C1 to C18.
+
+### Changed
+
 - Documentation only: the url-shortener README describes the database connection as it is (libpq environment, no URL; the cnpg client's default retry for a call in flight, a longer start-up wait, `Health` as readiness) and lists the real negative fixtures; `docs/canon/go.md` names the cnpg `pgclient` for the connection; `docs/contracts/platform.md` no longer speaks of a connection URL. No chart, schema or code changes.
 
 ## v1.54.1 — 2026-10-19

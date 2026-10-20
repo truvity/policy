@@ -169,7 +169,7 @@ they fit together. The contracts:
 - [delivery interface](docs/contracts/delivery-interface.md) — the one number a
   chart declares so a platform hands it only what it can take
 - [release](docs/contracts/release.md) — one tag, what a version means
-- [component](docs/contracts/component.md) — the rules C1–C17 for every
+- [component](docs/contracts/component.md) — the rules C1–C18 for every
   public repository that ships charts, images, libraries, CLIs or actions
 
 ## The rule that makes this repository public
