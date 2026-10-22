@@ -275,10 +275,10 @@ and it is allowed to tighten but not to select adapters.
 | 8. more than one document | review — unchecked |
 | 9. a preset names only built choices | CI check per service — planned, unchecked here |
 
-The [Go loader](../../config) and the [TypeScript loader](../../ts) implement
+The [Go loader](../../config) and the [TypeScript loader](https://github.com/truvity/url-shortener/tree/master/ts) implement
 rules 1, 5, 6 and 7 so that a service does not have to, and
 [`conformance`](../../conformance) is what a chart's tests use to be held to
-the same schema. The [Python](../../python) and [Kotlin](../../kotlin)
+the same schema. The [Python](https://github.com/truvity/url-shortener/tree/master/python) and [Kotlin](https://github.com/truvity/url-shortener/tree/master/kotlin)
 loaders implement rules 1, 5 and 6, and only the plain loader's half of rule
 7: they read v1 and refuse a document that names a later version. That is a
 gap, stated rather than hidden: a service in either language cannot yet read

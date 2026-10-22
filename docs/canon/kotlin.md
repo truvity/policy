@@ -21,7 +21,7 @@ inherits this list rather than proposing a second one.
 | Persistence | the framework's JPA integration over Hibernate | not Exposed; the same reason |
 | Migrations | Flyway | versioned SQL, applied by the migration job of the service contract, never at start-up |
 | Security | the framework's OAuth2 resource server | a JWT is verified against the issuer's keys, never parsed by hand |
-| Configuration | a file plus a schema, through this repository's loader | [config.md](../contracts/config.md), [0002](../decisions/0002-config-file-plus-env.md) |
+| Configuration | a file plus a schema, through the Kotlin loader in the [url-shortener repository](https://github.com/truvity/url-shortener/tree/master/kotlin) | [config.md](../contracts/config.md), [0002](../decisions/0002-config-file-plus-env.md) |
 | Logging | the framework's SLF4J binding, configured to emit JSON to **stderr** at one level | [service.md §4](../contracts/service.md) |
 | Telemetry | the OpenTelemetry Java agent or SDK, configured by its own environment | [0006](../decisions/0006-telemetry-is-the-sdk-environment.md) |
 | Transport identity | the framework's SSL bundles, with reload on update | see below |

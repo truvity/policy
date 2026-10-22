@@ -16,10 +16,10 @@ lost, because the runtime captures both streams and tags each line.
 
 | Language | Logger | Wired at |
 |---|---|---|
-| Go | `slog` with a JSON handler on stderr, in [`internal/runtime/runtime.go`](../../examples/url-shortener/internal/runtime/runtime.go) | each `main`, before anything else is constructed |
+| Go | `slog` with a JSON handler on stderr, in [`internal/runtime/runtime.go`](https://github.com/truvity/url-shortener/blob/master/internal/runtime/runtime.go) | each `main`, before anything else is constructed |
 | TypeScript | a JSON logger to stderr | the composition root; the framework's own logger replaced at start-up |
 | Kotlin | the framework's binding, configured for JSON on stderr | |
-| Python | `structlog`, JSON to stderr, in [`runtime.py`](../../examples/url-shortener/log/src/url_shortener_log/runtime.py) | `run`, before anything else is constructed |
+| Python | `structlog`, JSON to stderr, in [`runtime.py`](https://github.com/truvity/url-shortener/blob/master/log/src/url_shortener_log/runtime.py) | `run`, before anything else is constructed |
 
 ## Every library that logs is wired to your logger
 
@@ -30,7 +30,7 @@ and — worse — it will not respect the level the configuration set.
 
 The example's database layer is exactly this case. See
 `runtime.GormLogger` in
-[`internal/runtime/gormlog.go`](../../examples/url-shortener/internal/runtime/gormlog.go):
+[`internal/runtime/gormlog.go`](https://github.com/truvity/url-shortener/blob/master/internal/runtime/gormlog.go):
 the library's messages become a field under a constant message, because a
 message that varies per call cannot be grouped, counted or alerted on, and
 its statements go at debug so a service at the default level does not log
@@ -293,7 +293,7 @@ database?" has no answer. Two rules for the database:
 - **Prefer a small callback of your own to a plugin that imports every
   driver.** The published GORM plugin does, so a service that speaks to one
   database ships the client for four; the example's copy is
-  [`gormtrace.go`](../../examples/url-shortener/internal/runtime/gormtrace.go).
+  [`gormtrace.go`](https://github.com/truvity/url-shortener/blob/master/internal/runtime/gormtrace.go).
 
 An object-store client gets its spans from the SDK's instrumentation; the
 example's archiver installs the botocore one before it builds the client.
@@ -303,11 +303,11 @@ A missing row is an answer, not a failure — do not mark it an error.
 
 | | |
 |---|---|
-| RPC, caller (TypeScript) | [`urls.ts`](../../examples/url-shortener/web/src/server/urls.ts), an interceptor |
-| RPC, callee (Go) | `otelconnect.NewInterceptor(otelconnect.WithTrustRemote())` in [`cmd/urls/main.go`](../../examples/url-shortener/cmd/urls/main.go) |
-| Publish (Go) | [`publisher.go`](../../examples/url-shortener/internal/events/publisher.go) |
-| Consume (Kotlin) | `consumed` in [`Stat.kt`](../../examples/url-shortener/stat/src/main/kotlin/com/truvity/example/stat/Stat.kt) |
-| Consume and link (Python) | [`tracing.py`](../../examples/url-shortener/log/src/url_shortener_log/tracing.py) |
+| RPC, caller (TypeScript) | [`urls.ts`](https://github.com/truvity/url-shortener/blob/master/web/src/server/urls.ts), an interceptor |
+| RPC, callee (Go) | `otelconnect.NewInterceptor(otelconnect.WithTrustRemote())` in [`cmd/urls/main.go`](https://github.com/truvity/url-shortener/blob/master/cmd/urls/main.go) |
+| Publish (Go) | [`publisher.go`](https://github.com/truvity/url-shortener/blob/master/internal/events/publisher.go) |
+| Consume (Kotlin) | `consumed` in [`Stat.kt`](https://github.com/truvity/url-shortener/blob/master/stat/src/main/kotlin/com/truvity/example/stat/Stat.kt) |
+| Consume and link (Python) | [`tracing.py`](https://github.com/truvity/url-shortener/blob/master/log/src/url_shortener_log/tracing.py) |
 
 ### Verifying it
 

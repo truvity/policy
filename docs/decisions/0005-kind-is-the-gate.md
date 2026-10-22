@@ -124,10 +124,21 @@ S3 stand-in, a local registry — and installs no infra-shaped chart.** What
 such a chart would have provisioned is an example's own job: a FIXTURE,
 under the example's own directory, naming what it creates by the exact
 names the example's application chart takes as values. `hack/kind/README.md`
-says why; `examples/url-shortener/e2e/fixture` is the worked example.
+says why; [`e2e/fixture`](https://github.com/truvity/url-shortener/tree/master/e2e/fixture) is the worked example.
 
 The infra chart itself is unaffected — it still renders, still has goldens,
 still gets validated against the Kubernetes API's own schemas in the
-`charts` job. It is simply never installed on a public repository's local
+`charts` job (in the url-shortener repository since the move below). It is simply never installed on a public repository's local
 cluster, because installing it would prove one platform's choices on
 infrastructure meant to outlive any one example.
+
+## Amendment: the example's cluster lane moved with the example
+
+On 2026-10-22 the example, and the CI job that stood this box up and ran the
+example on it, moved to [truvity/url-shortener](https://github.com/truvity/url-shortener)
+([0014](0014-the-worked-example-lives-in-its-own-repository.md)). The decision
+above is unchanged and applies to that repository, which is the one that
+holds an example to run. This repository keeps the box itself, `hack/kind/`,
+which other repositories fetch at a pinned release tag; its own CI no longer
+runs a cluster lane, and a downstream canary builds and tests the example
+against each pull request instead.

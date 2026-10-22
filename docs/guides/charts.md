@@ -17,7 +17,7 @@ with its binary.
 
 ## The smallest chart
 
-[`examples/url-shortener/charts/testdata/service-example`](../../examples/url-shortener/charts/testdata/service-example/)
+[`charts/testdata/service-example`](https://github.com/truvity/url-shortener/tree/master/charts/testdata/service-example)
 is a whole service chart. Its template is one `include`:
 
 ```yaml
@@ -133,7 +133,7 @@ every value ([`conformance`](../../conformance/chart.go)):
 | `ChartSchemaIsComposed` | the committed schema is not what its source composes to |
 | `ValidDocument` | the rendered file is refused by the service's own schema |
 
-[`library_test.go`](../../examples/url-shortener/charts/library_test.go) does
+[`library_test.go`](https://github.com/truvity/url-shortener/blob/master/charts/library_test.go) does
 all of them on the example, and also holds the refusals (an identity file
 outside its mount, a secret with no key, the `default` account).
 
@@ -145,7 +145,7 @@ and the install name, each caller's account from the release name, the address
 of `urls` from its transport mode. A literal in a values file cannot be computed
 from the release it is installed into, so the chart builds each component's
 `platform` and `config` from product-level values, in
-[`templates/_components.tpl`](../../examples/url-shortener/charts/url-shortener/templates/_components.tpl)
+[`templates/_components.tpl`](https://github.com/truvity/url-shortener/blob/master/charts/url-shortener/templates/_components.tpl)
 and nowhere else, and hands the library the two dicts. The library does not
 know the difference: it renders the `config` it was given verbatim and derives
 the ports, the probes, the mounts and the checksum from it, and the same

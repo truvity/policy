@@ -35,18 +35,18 @@ The `bucket` fragment, in [`schemas/fragments/bucket.json`](../../schemas/fragme
 [upgrade steps](../how-to/upgrade/v1.45.md)). The chart projects the two
 secrets as files with `platform.secretFiles` and the configuration declares
 `secrets: {source: file, root: <the mount>}`; the archiver reads them from there
-(`read_secret` in [`archive.py`](../../examples/url-shortener/log/src/url_shortener_log/archive.py)).
+(`read_secret` in [`archive.py`](https://github.com/truvity/url-shortener/blob/master/log/src/url_shortener_log/archive.py)).
 
 ## Where to look
 
 | Language | Client | Configuration |
 |---|---|---|
-| Python | [`archive.py`](../../examples/url-shortener/log/src/url_shortener_log/archive.py) — one `put_object`, behind a one-method protocol | [`config.py`](../../examples/url-shortener/log/src/url_shortener_log/config.py) |
+| Python | [`archive.py`](https://github.com/truvity/url-shortener/blob/master/log/src/url_shortener_log/archive.py) — one `put_object`, behind a one-method protocol | [`config.py`](https://github.com/truvity/url-shortener/blob/master/log/src/url_shortener_log/config.py) |
 | Go | follows, with the first Go component that stores something | |
 | Kotlin | the cloud vendor's v2 SDK; see [canon/kotlin.md](../canon/kotlin.md) | |
 | TypeScript | follows | |
 
-The chart builds it in [`_components.tpl`](../../examples/url-shortener/charts/url-shortener/templates/_components.tpl),
+The chart builds it in [`_components.tpl`](https://github.com/truvity/url-shortener/blob/master/charts/url-shortener/templates/_components.tpl),
 and the local cluster's store is an ordinary Deployment in
 [`hack/kind/localstack.yaml`](../../hack/kind/localstack.yaml).
 

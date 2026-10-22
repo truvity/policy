@@ -3,6 +3,11 @@
 Not normative. The contracts say what must be true; these say how, and point
 at the file in the worked example where it is done.
 
+The worked example is the [url-shortener repository](https://github.com/truvity/url-shortener), which moved out of
+this one on 2026-10-22 ([0014](../decisions/0014-the-worked-example-lives-in-its-own-repository.md)).
+Where a guide names a file, a `just` recipe or `.goreleaser.yaml` of the
+example, it means that repository's; the links are absolute for that reason.
+
 Each guide has the same shape: the rule in a paragraph, why it is that way in
 another, a table of where to look per language, and the traps — the failures
 that look like something else.
@@ -46,6 +51,6 @@ nobody has run.
 | Language | Canon | In the example |
 |---|---|---|
 | Go | [canon/go.md](../canon/go.md) | the [loader](../../config/), the migration, the URL service and the redirect service |
-| TypeScript | [canon/node.md](../canon/node.md) | the [loader](../../ts/) and the [front end](../../examples/url-shortener/web/) |
-| Kotlin | [canon/kotlin.md](../canon/kotlin.md) | the [loader](../../kotlin/) and the [counter](../../examples/url-shortener/stat/) |
-| Python | [canon/python.md](../canon/python.md) | the [loader](../../python/) and the [archiver](../../examples/url-shortener/log/) |
+| TypeScript | [canon/node.md](../canon/node.md) | the [loader](https://github.com/truvity/url-shortener/tree/master/ts) and the [front end](https://github.com/truvity/url-shortener/tree/master/web) |
+| Kotlin | [canon/kotlin.md](../canon/kotlin.md) | the [loader](https://github.com/truvity/url-shortener/tree/master/kotlin) and the [counter](https://github.com/truvity/url-shortener/tree/master/stat) |
+| Python | [canon/python.md](../canon/python.md) | the [loader](https://github.com/truvity/url-shortener/tree/master/python) and the [archiver](https://github.com/truvity/url-shortener/tree/master/log) |

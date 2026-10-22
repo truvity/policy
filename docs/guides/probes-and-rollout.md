@@ -15,13 +15,13 @@ throughout.
 
 | Language | Probes | Drain |
 |---|---|---|
-| Go | `runtime.Probes` and `runtime.Serve` in [`internal/runtime/runtime.go`](../../examples/url-shortener/internal/runtime/runtime.go) | `runtime.Drain`, and `signal.NotifyContext` in each `main` |
+| Go | `runtime.Probes` and `runtime.Serve` in [`internal/runtime/runtime.go`](https://github.com/truvity/url-shortener/blob/master/internal/runtime/runtime.go) | `runtime.Drain`, and `signal.NotifyContext` in each `main` |
 | TypeScript | follows | follows |
 | Kotlin | follows | the framework's graceful shutdown |
-| Python | `Probes` in [`runtime.py`](../../examples/url-shortener/log/src/url_shortener_log/runtime.py), on the standard library's server | the consume loop in `__main__.py`: stop fetching, write what is held, acknowledge, bounded by the same number the chart gives the platform |
+| Python | `Probes` in [`runtime.py`](https://github.com/truvity/url-shortener/blob/master/log/src/url_shortener_log/runtime.py), on the standard library's server | the consume loop in `__main__.py`: stop fetching, write what is held, acknowledge, bounded by the same number the chart gives the platform |
 
 The chart side is
-[`examples/url-shortener/charts/url-shortener/templates/`](../../examples/url-shortener/charts/url-shortener/templates/):
+[`charts/url-shortener/templates/`](https://github.com/truvity/url-shortener/tree/master/charts/url-shortener/templates):
 the probe blocks in each workload, the shared drain and spread helpers in
 `_helpers.tpl`, and `poddisruptionbudget.yaml`.
 

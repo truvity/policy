@@ -19,12 +19,12 @@ committed.
 
 | Language | Load it | Declare it |
 |---|---|---|
-| Go | `config.Load(path, schema, &cfg)` in [`config/`](../../config/) | the types in [`examples/url-shortener/internal/config/config.go`](../../examples/url-shortener/internal/config/config.go), one per binary |
-| TypeScript | `load(path, schema)` in [`ts/src/config.ts`](../../ts/src/config.ts) | the front end's [`web/src/server/config.ts`](../../examples/url-shortener/web/src/server/config.ts) |
-| Kotlin | `load(path, schema)` in [`kotlin/src/main/kotlin/com/truvity/policy/Config.kt`](../../kotlin/src/main/kotlin/com/truvity/policy/Config.kt) | a data class per binary: the counter's [`Config.kt`](../../examples/url-shortener/stat/src/main/kotlin/com/truvity/example/stat/Config.kt) |
-| Python | `load(path, schema)` in [`python/src/truvity_policy/config.py`](../../python/src/truvity_policy/config.py) | a `TypedDict` per binary, with the log component |
+| Go | `config.Load(path, schema, &cfg)` in [`config/`](../../config/) | the types in [`internal/config/config.go`](https://github.com/truvity/url-shortener/blob/master/internal/config/config.go), one per binary |
+| TypeScript | `load(path, schema)` in [`ts/src/config.ts`](https://github.com/truvity/url-shortener/blob/master/ts/src/config.ts) | the front end's [`web/src/server/config.ts`](https://github.com/truvity/url-shortener/blob/master/web/src/server/config.ts) |
+| Kotlin | `load(path, schema)` in [`kotlin/src/main/kotlin/com/truvity/policy/Config.kt`](https://github.com/truvity/url-shortener/blob/master/kotlin/src/main/kotlin/com/truvity/policy/Config.kt) | a data class per binary: the counter's [`Config.kt`](https://github.com/truvity/url-shortener/blob/master/stat/src/main/kotlin/com/truvity/example/stat/Config.kt) |
+| Python | `load(path, schema)` in [`python/src/truvity_policy/config.py`](https://github.com/truvity/url-shortener/blob/master/python/src/truvity_policy/config.py) | a `TypedDict` per binary, with the log component |
 
-The schemas are in [`examples/url-shortener/schemas/`](../../examples/url-shortener/schemas/),
+The schemas are in [`schemas/`](https://github.com/truvity/url-shortener/tree/master/schemas),
 one per binary, each referencing the shared envelope with `allOf`. The shared
 fragments are in [`schemas/`](../../schemas/README.md).
 
@@ -88,7 +88,7 @@ you.
 **The chart and the binary read one schema.** The chart's test pulls each
 configuration file out of a render and validates it with the *binary's*
 schema — see the chart tests in
-[`examples/url-shortener/charts/`](../../examples/url-shortener/charts/).
+[`charts/`](https://github.com/truvity/url-shortener/tree/master/charts).
 Without that, the chart keeps setting a key the binary stopped reading and
 the service runs on a default, with no signal but behaviour.
 

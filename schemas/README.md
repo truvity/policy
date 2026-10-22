@@ -53,7 +53,8 @@ shapes by pinning this repository's version.
 ## `format` is documentation, not validation
 
 In draft 2020-12 `format` is an annotation unless a validator is told to
-assert it, and neither loader in this repository turns assertion on. A
+assert it, and no loader turns assertion on, whether the Go one here or the others in the
+[url-shortener repository](https://github.com/truvity/url-shortener). A
 `format` that bit in one runtime and not the other would mean a configuration
 accepted by a chart's tests and refused by the service — the exact drift these
 schemas exist to prevent.

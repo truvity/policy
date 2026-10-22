@@ -75,11 +75,11 @@ exactly the same things a public one is:
   cluster, installed through the consumer's own tenant harness, rather than
   against kind. Kind stays available for the fast local loop — standing up
   a cluster from nothing, rendering and installing before anything is
-  pushed — the same recipes (`just cluster`, `just cluster-all`) still work
+  pushed — the same recipes (`just cluster`, and the example's `just cluster-all`) still work
   on a laptop; it simply stops being what the *required* check runs.
 - **Where a release goes.** The release is still built by the same OSS
-  goreleaser configuration shape this repository's own
-  [`.goreleaser.yaml`](../../.goreleaser.yaml) uses — one job, images first,
+  goreleaser configuration shape the example's own
+  [`.goreleaser.yaml`](https://github.com/truvity/url-shortener/blob/master/.goreleaser.yaml) uses — one job, images first,
   charts packaged from the digests that job wrote
   ([release.md §5](../contracts/release.md#5-the-build-is-the-release)) —
   pointed at a private registry instead of a public one. That is the "ONE
@@ -102,9 +102,12 @@ exactly the same things a public one is:
   is the reason: one tag stamps every artifact this repository publishes
   together, and a copy of the source cannot be pinned or bumped the same
   way a dependency can.
-- **Private module or package access.** The three ecosystems this
-  repository publishes to are not symmetric, and a private consumer meets
-  each one differently:
+- **Private module or package access.** Only the Go module is published from
+  this repository now; the TypeScript, Python and Kotlin loaders moved to the
+  [url-shortener repository](https://github.com/truvity/url-shortener) on 2026-10-22, and
+  how they are distributed is that repository's decision. What follows
+  describes the versions published from here up to v1.54.2, which stay where
+  they were, and how a private consumer meets each ecosystem:
   - **Go.** `github.com/truvity/policy` is a public module on a public
     repository, so `GOPRIVATE` is not needed for it and never will be — see
     ["No token, no installation, no rotation for any consumer"](../decisions/0004-policy-is-public.md#consequences).
@@ -120,7 +123,7 @@ exactly the same things a public one is:
     is gated by it, only reaching it is.
   - **pip.** The wheel is **not** published to any package index; it is
     attached as an asset on the GitHub Release for its tag
-    ([`hack/publish.sh`](../../hack/publish.sh)). `pip install
+    ([`hack/publish.sh`](https://github.com/truvity/policy/blob/v1.54.2/hack/publish.sh)). `pip install
     truvity-policy` resolves nothing. A private consumer either points its
     resolver at the release asset's own URL for the pinned tag, or mirrors
     that asset into whatever private index the estate already runs — but it

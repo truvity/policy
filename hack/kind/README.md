@@ -36,7 +36,7 @@ endpoint, regardless of which operator a real deployment reconciles that
 endpoint through. What an infra-shaped chart would have provisioned is now
 an example's own job, under its own directory, naming what it creates by
 the names its application chart takes — see
-[`examples/url-shortener/e2e/fixture`](../../examples/url-shortener/e2e/fixture)
+[`e2e/fixture`](https://github.com/truvity/url-shortener/tree/master/e2e/fixture)
 for the worked example.
 
 ## What is in it, and why
@@ -48,8 +48,9 @@ for the worked example.
 | An S3 implementation | the one stand-in this box has ever needed one for: no vendor runs a licensed object store for a laptop. It is an endpoint, not a product — a schema addresses a store by endpoint, region and path style, so swapping it for a real bucket is configuration |
 | A local registry | kind's own documented recipe (https://kind.sigs.k8s.io/docs/user/local-registry/): every node resolves `localhost:5001` to it, so a chart's `images.*.registry` value can be proved against a real push and pull rather than `kind load` |
 
-What pushes to that registry is `.goreleaser.yaml` itself, run by
-[`hack/example-snapshot.sh`](../example-snapshot.sh) for one architecture
+In the url-shortener repository, what pushes to that registry is its
+`.goreleaser.yaml` itself, run by
+[`hack/example-snapshot.sh`](https://github.com/truvity/url-shortener/blob/master/hack/example-snapshot.sh) for one architecture
 instead of every one — the same release configuration a tag builds,
 pointed at this box instead of a real registry, never a second build
 definition kept beside it. See
@@ -94,10 +95,10 @@ catch the server refusing to hold it.
 - **Every operator.** No CNPG, no NACK, no cert-manager. A chart that
   describes an operator-managed resource is proved as far as a renderer
   and the Kubernetes API's own admission can prove it (see the `charts`
-  job and `hack/kubeconform.sh`), and no further, on this box.
+  job and [`hack/kubeconform.sh`](https://github.com/truvity/url-shortener/blob/master/hack/kubeconform.sh) in the url-shortener repository), and no further, on this box.
 - **Workload identity.** Transport identity testing (mTLS, SPIFFE) moved
   off this box entirely; it belongs to a different tier, one with a real
-  certificate authority behind it. `examples/url-shortener/hack/identity-smoke.sh`
+  certificate authority behind it. [`hack/identity-smoke.sh`](https://github.com/truvity/url-shortener/blob/master/hack/identity-smoke.sh)
   still exists and is not yet run anywhere — a later task ports it to
   where it now belongs.
 - **A gateway implementation, and its CRDs.** Nothing here renders a route

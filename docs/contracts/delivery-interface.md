@@ -113,8 +113,9 @@ before it. A product's first release of a step is written as `next` in the pull
 request that adds the reading, and replaced by the release's version when it is
 cut.
 
-A product's current number is in its charts' `Chart.yaml`; the examples
-under `examples/` declare it and a test holds them to this document.
+A product's current number is in its charts' `Chart.yaml`; the
+url-shortener example's charts declare it and its tests hold them to this
+document.
 
 ## 5. Adding a step
 

@@ -14,11 +14,18 @@ needs, an operator that accepted a manifest and did nothing.
 
 | Tier | Needs | Runs |
 |---|---|---|
-| the gate | the checkout | `just check`: build, test, lint, vulnerabilities, drift, the canary |
-| the cluster (required) | a container runtime | `just cluster-all`: stand up, verify, prove each operator acts, then install the example and exercise it |
+| the gate | the checkout | `just check`: build, test, lint, the canary (and `drift`, in a repository that commits generated code) |
+| the cluster (required) | a container runtime | in the example's repository, `just cluster-all`: stand up, verify, prove each operator acts, then install the example and exercise it |
 
 Both run on ordinary hosted runners. Nothing here needs a machine of ours,
 which is what lets a stranger reproduce the whole thing.
+
+The example, its recipes (`just example-*`, `just cluster-all`) and its
+`.goreleaser.yaml` live in the [url-shortener repository](https://github.com/truvity/url-shortener) since
+2026-10-22 ([0014](../decisions/0014-the-worked-example-lives-in-its-own-repository.md));
+this repository keeps the box they run on (`just cluster`, `just
+cluster-verify`, `just cluster-down`, [`hack/kind/`](../../hack/kind/README.md)).
+Every recipe and path below that belongs to the example is that repository's.
 
 Beyond these two there is a third tier that belongs to a **private consumer**:
 a real cluster with an identity plane, provisioning and cloud services. It is
@@ -82,14 +89,14 @@ same tool a release uses, `helmctl`. `example-install` installs that
 rule (docs/contracts/release.md §7) is that a published artifact is tested
 as published, and a chart bug that only shows up once images are pushed
 and digests are baked in is exactly what a source-directory install would
-never see. See `hack/example-snapshot.sh` for the two things this loop
+never see. See [`hack/example-snapshot.sh`](https://github.com/truvity/url-shortener/blob/master/hack/example-snapshot.sh) for the two things this loop
 does differently from a real release — where the images go, and one
 architecture instead of every one — and nothing else.
 
 ## Two install paths, and why both must render the same
 
 The cluster lane here installs a chart the way `just example-install`
-(`examples/url-shortener/hack/install.sh`) does it: `helm upgrade
+([`hack/install.sh`](https://github.com/truvity/url-shortener/blob/master/hack/install.sh)) does it: `helm upgrade
 --install`, which holds a Helm release record. That
 record is what makes `lookup` return something, `.Release.IsUpgrade` and
 `.Release.IsInstall` tell the truth, and `helm install`/`upgrade` stamp the
@@ -124,7 +131,7 @@ What that chart would have provisioned is instead an example's own
 FIXTURE, under the example's own directory, naming what it creates by the
 exact names the application chart takes as values — rendered from the
 chart, not repeated by hand, so the fixture cannot drift from the
-interface it stands in for. See `examples/url-shortener/e2e/fixture` and
+interface it stands in for. See [`e2e/fixture`](https://github.com/truvity/url-shortener/tree/master/e2e/fixture) and
 `docs/decisions/0005-kind-is-the-gate.md`'s amendment.
 
 The box's Postgres is shared the same way its NATS broker is — ONE server
@@ -146,7 +153,7 @@ identifier limit, leaving room for the longer of the two role suffixes —
 truncated with an 8-character hash suffix from its own scope, so two tenants
 that truncate to the same prefix still do not collide). An explicit value
 always wins over the derived one, flag or no flag. See
-`examples/url-shortener/charts/url-shortener-infra/templates/_helpers.tpl`'s
+[`charts/url-shortener-infra/templates/_helpers.tpl`](https://github.com/truvity/url-shortener/blob/master/charts/url-shortener-infra/templates/_helpers.tpl)'s
 `"url-shortener-infra.postgresBase"` and `"url-shortener-infra.resolvedDatabase"`
 for the exact rules. Before this, the fixture created the database and both
 roles under the chart's fixed names regardless; two installs in different
@@ -162,7 +169,7 @@ requests made. Exactly, not at least — an upsert that overwrote instead of
 incrementing passes "the row exists".
 
 The url-shortener example's suite
-(`examples/url-shortener/e2e/suite`) is ONE Go program, meant to run
+([`e2e/suite`](https://github.com/truvity/url-shortener/tree/master/e2e/suite)) is ONE Go program, meant to run
 unchanged in three places: the kind lane above, a private repository's
 own shared cluster, and a cluster a release has just been promoted to.
 Only the environment differs — it reaches every Service through
@@ -174,10 +181,10 @@ suite branches on which tier it is running against.
 It is inert unless `E2E_NAMESPACE` is set — `just example-smoke` sets it,
 `go test ./...` on its own does not — so `just test` stays hermetic. Set
 it (and, on a namespace or release that is not this box's own defaults,
-`E2E_APP_RELEASE`/`E2E_BUCKET`) and run it directly:
+`E2E_APP_RELEASE`/`E2E_BUCKET`) and run it directly, from a checkout of the url-shortener repository:
 
 ```sh
-E2E_NAMESPACE=shortener go test ./examples/url-shortener/e2e/suite/... -v
+E2E_NAMESPACE=shortener go test ./e2e/suite/... -v
 ```
 
 Most of it asserts through Service endpoints only:
@@ -232,7 +239,7 @@ That trace store may authenticate its readers. `E2E_TRACES_TOKEN_URL`,
 `E2E_TRACES_CLIENT` and `E2E_TRACES_TOKEN_FILE`, set together, tell the
 test to trade a projected ServiceAccount token at `E2E_TRACES_TOKEN_URL`
 for a bearer token scoped to `E2E_TRACES_CLIENT` (RFC 8693 token
-exchange, `examples/url-shortener/e2e/traceauth`) before it queries
+exchange, [`e2e/traceauth`](https://github.com/truvity/url-shortener/tree/master/e2e/traceauth)) before it queries
 `E2E_TRACES_URL`; `E2E_TRACES_CA_FILE`, independently, names a CA bundle
 for `E2E_TRACES_URL` alone — never for the token exchange, which is
 verified against the suite image's own default trust store, appropriate
@@ -242,7 +249,7 @@ same unauthenticated request this test always sent.
 ## The suite, as an image
 
 `.goreleaser.yaml` also publishes the compiled suite itself
-(`examples/url-shortener/e2e/Dockerfile`, `e2e/hack/build.sh`) — a
+([`e2e/Dockerfile`](https://github.com/truvity/url-shortener/blob/master/e2e/Dockerfile), `e2e/hack/build.sh`) — a
 `go test -c` binary with a pinned `kubectl` beside it, so a third caller
 can run it as a Job rather than as `go test`: a post-promotion
 verification, on a cluster whose names are not this box's own defaults.
@@ -314,11 +321,11 @@ count back and see it move) in a loop, against this release's own `urls` and
 `pullPolicy`, takes no Kubernetes API access, and carries its image under
 `images.prober` like every component.
 
-**The request-making code is not duplicated.** `examples/url-shortener/e2e/journey`
+**The request-making code is not duplicated.** [`e2e/journey`](https://github.com/truvity/url-shortener/tree/master/e2e/journey)
 is the one library: three functions, no `*testing.T`, imported by
-`examples/url-shortener/e2e/suite` (which wraps each call with `t.Fatalf` and
+[`e2e/suite`](https://github.com/truvity/url-shortener/tree/master/e2e/suite) (which wraps each call with `t.Fatalf` and
 the harness's pod-aware error wrapping) and by
-`examples/url-shortener/e2e/cmd/prober` (which wraps each call with an
+[`e2e/cmd/prober`](https://github.com/truvity/url-shortener/tree/master/e2e/cmd/prober) (which wraps each call with an
 OpenTelemetry metric and a structured log line instead). A protocol change
 either would need to follow now has exactly one place to make it.
 
@@ -337,7 +344,7 @@ OpenTelemetry collector (0005's amendment), so a metric this prober computes
 is never exported anywhere off the box. What IS always there is the
 structured log line `"probe journey succeeded"` (or `"probe journey
 failed"`), with `journey`, `result` and `duration_seconds` fields, which
-`just example-prober` (`examples/url-shortener/hack/install-prober.sh`) reads
+`just example-prober` ([`hack/install-prober.sh`](https://github.com/truvity/url-shortener/blob/master/hack/install-prober.sh)) reads
 back with `kubectl logs`. It enables the prober on the release `example-install`
 installed with `helm upgrade --reuse-values`, waits for its Deployment, and
 fails unless a successful pass shows up within 60 seconds. It is part of

@@ -37,12 +37,12 @@ assume is a mistake.
 
 | Language | Server | Client |
 |---|---|---|
-| Go | [`cmd/urls/main.go`](../../examples/url-shortener/cmd/urls/main.go), one handler in [`internal/business/urls/`](../../examples/url-shortener/internal/business/urls/) | the generated client in `internal/gen/`; no Go component consumes this boundary today |
-| TypeScript | — | [`server/urls.ts`](../../examples/url-shortener/web/src/server/urls.ts); **one plugin**, because connect-es v2 builds a client from the descriptor `protoc-gen-es` already emits |
+| Go | [`cmd/urls/main.go`](https://github.com/truvity/url-shortener/blob/master/cmd/urls/main.go), one handler in [`internal/business/urls/`](https://github.com/truvity/url-shortener/tree/master/internal/business/urls) | the generated client in `internal/gen/`; no Go component consumes this boundary today |
+| TypeScript | — | [`server/urls.ts`](https://github.com/truvity/url-shortener/blob/master/web/src/server/urls.ts); **one plugin**, because connect-es v2 builds a client from the descriptor `protoc-gen-es` already emits |
 | Python | not yet; the ecosystem's support is younger. See [canon/python.md](../canon/python.md) | |
-| Kotlin | **client-only by design** — the library generates no servers | [`Stat.kt`](../../examples/url-shortener/stat/src/main/kotlin/com/truvity/example/stat/Stat.kt), over the same schema the Go server is generated from |
+| Kotlin | **client-only by design** — the library generates no servers | [`Stat.kt`](https://github.com/truvity/url-shortener/blob/master/stat/src/main/kotlin/com/truvity/example/stat/Stat.kt), over the same schema the Go server is generated from |
 
-The schema is [`proto/urlshortener/v1/`](../../examples/url-shortener/proto/urlshortener/v1/),
+The schema is [`proto/urlshortener/v1/`](https://github.com/truvity/url-shortener/tree/master/proto/urlshortener/v1),
 the generation is configured in `buf.gen.yaml`, and the output is committed
 under `internal/gen/`.
 

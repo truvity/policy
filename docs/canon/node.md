@@ -8,8 +8,8 @@
 | Service framework | Nest | its own dependency injection is the framework's, and stays inside it — [0001](../decisions/0001-no-di-containers.md) draws the line at the framework boundary, not through it |
 | HTTP client | the runtime's `fetch` | |
 | RPC | Connect (`@connectrpc/connect`), with the browser and Node transports | the same schema as the Go side, generated at build time |
-| Schema validation | Zod for values that cross a boundary at run time | the configuration file is validated against its JSON Schema by this repository's loader, not by a second description of the same shape |
-| Configuration | `@truvity/policy` | [config.md](../contracts/config.md) |
+| Schema validation | Zod for values that cross a boundary at run time | the configuration file is validated against its JSON Schema by the loader, not by a second description of the same shape |
+| Configuration | `@truvity/policy`, the TypeScript loader, which moved to the [url-shortener repository](https://github.com/truvity/url-shortener/tree/master/ts) | [config.md](../contracts/config.md) |
 | Logging | a structured logger writing JSON to **stderr**, at one level | [service.md §4](../contracts/service.md) |
 | Telemetry | the OpenTelemetry SDK, configured by its own environment | [0006](../decisions/0006-telemetry-is-the-sdk-environment.md); never gated on an environment name |
 | Transpiler | SWC | emit only; it reads syntax and never type-checks, which is why it is fast and why the type checker is a separate job |

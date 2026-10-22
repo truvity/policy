@@ -14,10 +14,10 @@ losing. And rules are named because a policy attaches to a rule *by name*.
 
 | Concern | Where |
 |---|---|
-| the route | the `HTTPRoute` in [`templates/route.yaml`](../../examples/url-shortener/charts/url-shortener/templates/route.yaml) |
-| its values | the `route` block in [`values.yaml`](../../examples/url-shortener/charts/url-shortener/values.yaml) |
+| the route | the `HTTPRoute` in [`templates/route.yaml`](https://github.com/truvity/url-shortener/blob/master/charts/url-shortener/templates/route.yaml) |
+| its values | the `route` block in [`values.yaml`](https://github.com/truvity/url-shortener/blob/master/charts/url-shortener/values.yaml) |
 | the refusal when a parent is missing | the negative fixture in `charts/testdata/invalid/` |
-| the test that every rule is named | the chart tests in [`charts/`](../../examples/url-shortener/charts/) |
+| the test that every rule is named | the chart tests in [`charts/`](https://github.com/truvity/url-shortener/tree/master/charts) |
 
 ## The parent
 

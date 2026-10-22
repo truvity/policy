@@ -15,13 +15,13 @@ retention is an operational decision.
 
 | Language | Publish | Consume |
 |---|---|---|
-| Go | [`internal/events/publisher.go`](../../examples/url-shortener/internal/events/publisher.go), called from the redirect service | |
+| Go | [`internal/events/publisher.go`](https://github.com/truvity/url-shortener/blob/master/internal/events/publisher.go), called from the redirect service | |
 | TypeScript | | |
-| Kotlin | | the counter's durable consumer, in [`Stat.kt`](../../examples/url-shortener/stat/src/main/kotlin/com/truvity/example/stat/Stat.kt) |
-| Python | | the pull consumer in [`__main__.py`](../../examples/url-shortener/log/src/url_shortener_log/__main__.py): durable by name, acknowledged only after the batch is stored |
+| Kotlin | | the counter's durable consumer, in [`Stat.kt`](https://github.com/truvity/url-shortener/blob/master/stat/src/main/kotlin/com/truvity/example/stat/Stat.kt) |
+| Python | | the pull consumer in [`__main__.py`](https://github.com/truvity/url-shortener/blob/master/log/src/url_shortener_log/__main__.py): durable by name, acknowledged only after the batch is stored |
 
 The connection helper, including authentication, is
-[`internal/runtime/natstoken.go`](../../examples/url-shortener/internal/runtime/natstoken.go).
+[`internal/runtime/natstoken.go`](https://github.com/truvity/url-shortener/blob/master/internal/runtime/natstoken.go).
 The stream is declared by the infrastructure chart, not the application one.
 
 ## Authentication
@@ -96,7 +96,7 @@ name. The pair is the smallest thing that separates both.
 
 The example's two charts compute these names from one shared formula
 (`installName`, defaulting to the release name, in
-[`_helpers.tpl`](../../examples/url-shortener/charts/url-shortener-infra/templates/_helpers.tpl))
+[`_helpers.tpl`](https://github.com/truvity/url-shortener/blob/master/charts/url-shortener-infra/templates/_helpers.tpl))
 instead of taking them as values — see
 [`platform.md` rule 6](../contracts/platform.md#6-streams-and-databases-are-things-the-service-finds-not-things-it-makes)
 for why a value is the wrong fix here: the name is this project's own
@@ -135,4 +135,4 @@ instead — `max_reconnect_attempts` and `allow_reconnect` are never
 consulted — so every fetch after that raises `ConnectionClosedError`
 forever. The Python consumer dials again itself when that one error
 appears; see
-[`pull.pull_or_reconnect`](../../examples/url-shortener/log/src/url_shortener_log/pull.py).
+[`pull.pull_or_reconnect`](https://github.com/truvity/url-shortener/blob/master/log/src/url_shortener_log/pull.py).

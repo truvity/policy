@@ -16,7 +16,7 @@ tested without credentials for it.
 
 | Concern | Where |
 |---|---|
-| the accounts | [`charts/url-shortener/templates/serviceaccount.yaml`](../../examples/url-shortener/charts/url-shortener/templates/serviceaccount.yaml) |
+| the accounts | [`charts/url-shortener/templates/serviceaccount.yaml`](https://github.com/truvity/url-shortener/blob/master/charts/url-shortener/templates/serviceaccount.yaml) |
 | naming them per workload | the `serviceAccountName` line in each workload template, resolved by `url-shortener.componentServiceAccountName` |
 | a secret reaching a process | `url-shortener.dbPasswordVolume` in `_helpers.tpl` (a mounted file the database client re-reads), and `config.Secret` in [`config/`](../../config/) for a secret read from a variable |
 
