@@ -1,8 +1,0 @@
-listen:
-  address: ":8080"
-probes:
-  address: ":7070"
-log:
-  level: info
-drain:
-  seconds: 20

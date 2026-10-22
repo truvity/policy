@@ -1,5 +1,0 @@
-dist/
-node_modules/
-.yarn/
-# Copied from ../schemas/web.json by the build. One source of truth.
-src/server/web.schema.json
