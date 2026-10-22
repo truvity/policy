@@ -25,11 +25,11 @@ the one before it: do not skip one.
 
 | Concern | Where |
 |---|---|
-| the `tls` block and its comments | the `tls:` block of [`values.yaml`](../../examples/url-shortener/charts/url-shortener/values.yaml) |
-| one account per component | [`serviceaccount.yaml`](../../examples/url-shortener/charts/url-shortener/templates/serviceaccount.yaml) and [identity-and-secrets.md](identity-and-secrets.md) |
+| the `tls` block and its comments | the `tls:` block of [`values.yaml`](https://github.com/truvity/url-shortener/blob/master/charts/url-shortener/values.yaml) |
+| one account per component | [`serviceaccount.yaml`](https://github.com/truvity/url-shortener/blob/master/charts/url-shortener/templates/serviceaccount.yaml) and [identity-and-secrets.md](identity-and-secrets.md) |
 | the `tls` block of a component's ConfigMap | `_components.tpl` in the same chart |
-| the permission to ask for an identity | [`identity-rbac.yaml`](../../examples/url-shortener/charts/url-shortener/templates/identity-rbac.yaml) |
-| the proof on a cluster | [`identity-smoke.sh`](../../examples/url-shortener/hack/identity-smoke.sh) |
+| the permission to ask for an identity | [`identity-rbac.yaml`](https://github.com/truvity/url-shortener/blob/master/charts/url-shortener/templates/identity-rbac.yaml) |
+| the proof on a cluster | [`identity-smoke.sh`](https://github.com/truvity/url-shortener/blob/master/hack/identity-smoke.sh) |
 | the library, per language | the table in [transport-security.md](transport-security.md) |
 
 ## The chart's `tls` block
@@ -134,7 +134,7 @@ same in every language.
 4. **The refusal, not the issuance.** An account asking for **another**
    account's identity must get nothing, and an account off the allow-list
    must be refused at the handshake. Issuance working proves nothing; this
-   is the check [`identity-smoke.sh`](../../examples/url-shortener/hack/identity-smoke.sh)
+   is the check [`identity-smoke.sh`](https://github.com/truvity/url-shortener/blob/master/hack/identity-smoke.sh)
    makes.
 5. After an hour, calls still succeed with no restart.
 

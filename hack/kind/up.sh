@@ -6,7 +6,8 @@
 # What it carries and why: hack/kind/README.md. What that split means for
 # an example's own database, stream and bucket: each example brings its own
 # FIXTURE, under its own directory, naming what it needs by the names its
-# chart takes — see examples/url-shortener/e2e/fixture.
+# chart takes — see e2e/fixture in
+# https://github.com/truvity/url-shortener.
 #
 # Idempotent. Running it against an existing cluster upgrades in place, which
 # is what makes it usable as a development loop rather than only as a CI

@@ -136,7 +136,7 @@ reads the other's events, or replays them, or both, and nothing reports it
 because every health check the two installs run is green. The name that
 survives both shapes of accident is the pair: this install's namespace
 **and** its install name, together — see
-[`examples/url-shortener`](../../examples/url-shortener/charts) for the
+[`url-shortener`](https://github.com/truvity/url-shortener/tree/master/charts) for the
 convention (`installName`, defaulting to the release name) and the chart
 test that proves two installs never share a stream, a subject or a
 durable consumer name.
@@ -221,7 +221,7 @@ convention the platform happens to use. The second renders perfectly and
 installs on exactly one platform, and nothing says so until the second
 platform tries.
 
-The example in this repository is two charts, and the split is load-bearing
+The url-shortener example is two charts, and the split is load-bearing
 — the application's migration runs as a pre-install hook, and a chart that
 created its own database could never migrate it. So the interface is two
 interfaces.
@@ -236,7 +236,7 @@ with no code that verifies a bearer token itself has no reason to accept
 `identityProviders`, and one that sits behind no gateway-auth proxy has no
 reason to accept `access`. Accepting a key a chart does nothing with is
 worse than refusing it: refusing it fails the render loudly, and accepting
-it quietly promises a behaviour the chart does not have. `examples/`'s own
+it quietly promises a behaviour the chart does not have. The url-shortener example's own
 charts accept neither key, for exactly this reason — neither one validates
 a token or sits behind that kind of proxy.
 

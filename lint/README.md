@@ -57,8 +57,8 @@ The path is relative to the config that names it, exactly like an import —
 `../lint/biome.base.jsonc` from a package that sits one level under the
 repository root, `../../../lint/biome.base.jsonc` from one three levels
 down. Add a package's own overrides and a `files.includes` exclusion for
-whatever it generates (this repository's `ts/biome.jsonc` and
-`examples/url-shortener/web/biome.jsonc` are the worked examples) — they
+whatever it generates (the url-shortener repository's [`ts/biome.jsonc`](https://github.com/truvity/url-shortener/blob/master/ts/biome.jsonc) and
+[`web/biome.jsonc`](https://github.com/truvity/url-shortener/blob/master/web/biome.jsonc) are the worked examples) — they
 still `extends` the base rather than replacing it, the same rule
 `golangci-depguard.yaml`'s adopters follow for their own exceptions.
 

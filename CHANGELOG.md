@@ -44,7 +44,7 @@ subjects under them are the GitHub Release's own list.
 
 ### Changed
 
-- **`examples/url-shortener` uses `truvity/cnpg` client v2.30.0 and drops its own request retry.** v2.30.0's `DefaultRetryPolicy` is bound by time, not by a try count (no cap on tries, 0.2 s to 2 s back-off, a 45 s budget), which is what the example's `requestRetry` (1000 tries, 0.2 s to 2 s, 30 s) was a copy of after the old five-try default ran out in about 1.5 s. A call in flight now uses the library default, so it waits up to 45 s for a CloudNativePG switchover (10 to 30 s) instead of 30 s; a caller's own deadline still ends the wait sooner. The start-up policy stays separate, and `CNPG_CLIENT_RETRY_*` still overrides both.
+- **[`url-shortener`](https://github.com/truvity/url-shortener) uses `truvity/cnpg` client v2.30.0 and drops its own request retry.** v2.30.0's `DefaultRetryPolicy` is bound by time, not by a try count (no cap on tries, 0.2 s to 2 s back-off, a 45 s budget), which is what the example's `requestRetry` (1000 tries, 0.2 s to 2 s, 30 s) was a copy of after the old five-try default ran out in about 1.5 s. A call in flight now uses the library default, so it waits up to 45 s for a CloudNativePG switchover (10 to 30 s) instead of 30 s; a caller's own deadline still ends the wait sooner. The start-up policy stays separate, and `CNPG_CLIENT_RETRY_*` still overrides both.
 - **`url-shortener-infra` renders the runtime role's password through cnpg-database 2.31.0 in both modes, and has no database template of its own.** The subchart is now unconditional. Where the chart owns its Cluster (the Cluster declares the managed role), `templates/credential.yaml` is gone: the password comes from one `cnpg-database.roles` entry with `databaseRole: false`, which renders only the Password generator and the once-only ExternalSecret, with the same names, keys, labels and `refreshInterval: "0"`, so no password regenerates. The platform-owned render is byte-identical for the live Argo values. **Breaking for a platform that relied on the defaults:** `cnpg-database.roles` now defaults to empty (the old default was the live install's role), so a platform-owned install states the role itself (the live platform already does), and an install that sets `postgres.runtimePassword.generate` on its own Cluster adds the one `databaseRole: false` entry; the render fails, naming the value, when `roles` and `postgres` disagree. See `charts/testdata/infra-generated-password.yaml`.
 
 ## v1.52.1 — 2026-10-16
@@ -57,7 +57,7 @@ subjects under them are the GitHub Release's own list.
 
 ### Changed
 
-- **The url-shortener example's infrastructure chart renders the runtime role of a platform-owned database through the cnpg-database chart (2.29.0, `oci://ghcr.io/truvity/charts`).** With `postgres.platformOwned` the `DatabaseRole`, the Password generator and the once-only ExternalSecret are the subchart's, not this chart's. The objects render as before (same names, spec and password Secret, so the password does not rotate and the role is not recreated), except that the `DatabaseRole` no longer carries the platform's `postgres.labels` (a chart default cannot hold a platform's label keys, and a subchart cannot read `postgres`), only the chart's own two labels. A platform that passes nothing new gets exactly this: the `cnpg-database` values default to the live install (release `url-shortener-infra`, role `url_shortener_app`, Secret `url-shortener-pg-runtime`). A platform that wants labels on the role states them in `cnpg-database.roles[0].labels`. A subchart's values cannot be computed from the chart's, so a platform with another release name, role or Secret states `cnpg-database.clusterName` and `.roles` itself; the render fails, naming the value, when they disagree with `postgres`. Without `postgres.platformOwned` nothing changes. `examples/url-shortener/hack/prove-infra-render.sh` renders the chart at any ref beside this tree with real values and compares the two object by object.
+- **The url-shortener example's infrastructure chart renders the runtime role of a platform-owned database through the cnpg-database chart (2.29.0, `oci://ghcr.io/truvity/charts`).** With `postgres.platformOwned` the `DatabaseRole`, the Password generator and the once-only ExternalSecret are the subchart's, not this chart's. The objects render as before (same names, spec and password Secret, so the password does not rotate and the role is not recreated), except that the `DatabaseRole` no longer carries the platform's `postgres.labels` (a chart default cannot hold a platform's label keys, and a subchart cannot read `postgres`), only the chart's own two labels. A platform that passes nothing new gets exactly this: the `cnpg-database` values default to the live install (release `url-shortener-infra`, role `url_shortener_app`, Secret `url-shortener-pg-runtime`). A platform that wants labels on the role states them in `cnpg-database.roles[0].labels`. A subchart's values cannot be computed from the chart's, so a platform with another release name, role or Secret states `cnpg-database.clusterName` and `.roles` itself; the render fails, naming the value, when they disagree with `postgres`. Without `postgres.platformOwned` nothing changes. [`hack/prove-infra-render.sh`](https://github.com/truvity/url-shortener/blob/master/hack/prove-infra-render.sh) renders the chart at any ref beside this tree with real values and compares the two object by object.
 
 ## v1.51.1 — 2026-10-16
 
@@ -375,7 +375,7 @@ Two delivery-interface steps. No chart or code changes: the url-shortener charts
 - **The Pkl shadow phase of decision 0010 begins.** The url-shortener's data
   contracts (the configuration of each component, and the values of each of
   its charts, the product chart included) are written in Pkl under
-  `examples/url-shortener/contract/` and generated beside the hand-written
+  [`contract/`](https://github.com/truvity/url-shortener/tree/master/contract) and generated beside the hand-written
   schemas: JSON Schemas, each chart's values schema, TypeScript with zod,
   Python with pydantic and a reference. **The hand-written schemas stay
   authoritative; nothing reads the generated files.** `just shadow-diff`
@@ -989,7 +989,7 @@ Two delivery-interface steps. No chart or code changes: the url-shortener charts
 
 ### Security
 
-- **`examples/url-shortener/web`'s `@opentelemetry/exporter-metrics-otlp-http`
+- **[`web`](https://github.com/truvity/url-shortener/tree/master/web)'s `@opentelemetry/exporter-metrics-otlp-http`
   and `@opentelemetry/exporter-trace-otlp-http` bumped to v0.222.0**
   (from v0.205.0), which pulls `@opentelemetry/core` to v2.11.0. The
   version in use resolved `@opentelemetry/core` v2.1.0, affected by
@@ -1006,7 +1006,7 @@ Two delivery-interface steps. No chart or code changes: the url-shortener charts
   ([node.md](docs/canon/node.md)) names no TypeScript rule of its own.
   `.editorconfig` is copy-only, like the depguard block: EditorConfig has
   no `extends`. This repository dogfoods both — `ts/biome.jsonc` and
-  `examples/url-shortener/web/biome.jsonc` extend the base, and the root
+  [`web/biome.jsonc`](https://github.com/truvity/url-shortener/blob/master/web/biome.jsonc) extend the base, and the root
   `.editorconfig` is the copy — and `just lint` runs `biome check` and
   `editorconfig-checker` (the universal checks only; indentation WIDTH
   stays each language's own formatter's job). See
@@ -1181,11 +1181,11 @@ Commits in this release:
   `traces.caConfigMap`/`traces.caConfigMapKey`. Set, the Job projects a
   ServiceAccount token and trades it at `tokenURL` for a bearer token
   scoped to `client` (RFC 8693 token exchange), which
-  `examples/url-shortener/e2e/suite`'s `TestRedirectTraceCrossesEveryComponent`
+  [`e2e/suite`](https://github.com/truvity/url-shortener/tree/master/e2e/suite)'s `TestRedirectTraceCrossesEveryComponent`
   now sends as `Authorization: Bearer` when it queries the trace store —
   optionally verified against a CA bundle from `caConfigMap`, independent
   of the trust store the token exchange itself is verified against (the
-  new `examples/url-shortener/e2e/traceauth` package doc comment explains
+  new [`e2e/traceauth`](https://github.com/truvity/url-shortener/tree/master/e2e/traceauth) package doc comment explains
   why the two are never the same). Unset (the default, and the only shape
   the kind tier ever renders), nothing changes: the chart wires no auth
   and the suite sends no Authorization header, exactly as before.
@@ -1211,7 +1211,7 @@ Commits in this release:
   keeps exactly two ways to run — outside-in
   (`e2e/fixture.Resolve`, the kind/local loop) and as the test chart's Job
   (`E2E_NAMES_FROM_ENV=1`) — the hook was a third, and is gone from
-  `examples/url-shortener/e2e/suite` along with it.
+  [`e2e/suite`](https://github.com/truvity/url-shortener/tree/master/e2e/suite) along with it.
 
 Commits in this release:
 
@@ -1271,7 +1271,7 @@ Commits in this release:
   the previous version's Job is left for the next version's apply to
   prune, or for `helm uninstall`, never a TTL. See
   `docs/guides/conformance.md`, and a new conformance check
-  (`examples/url-shortener/charts/conformance_test.go`) that fails on any
+  ([`charts/conformance_test.go`](https://github.com/truvity/url-shortener/blob/master/charts/conformance_test.go)) that fails on any
   plain (non-hook) Job a chart renders that still sets
   `ttlSecondsAfterFinished`.
 
@@ -1290,7 +1290,7 @@ Commits in this release:
   before, during and after a rollout. It is a SEPARATE workload from the
   suite's Job on purpose (one proves a release IS healthy, once; the other
   proves it STAYS healthy) and shares its request-making code with the
-  suite through a new package, `examples/url-shortener/e2e/journey`, so the
+  suite through a new package, [`e2e/journey`](https://github.com/truvity/url-shortener/tree/master/e2e/journey), so the
   two can never drift on what a journey even is. Metrics are OpenTelemetry
   (`probe_journey_total{journey,result}`, `probe_journey_duration_seconds{journey}`),
   wired the same way as every other component here (decision 0006): no
@@ -1372,7 +1372,7 @@ Commits in this release:
   that raised the same error forever. The archiver now dials again itself
   the one time this happens, which reads the credential file fresh, and
   only lets a second failure in a row surface. See
-  `examples/url-shortener/log/src/url_shortener_log/pull.py`.
+  [`log/src/url_shortener_log/pull.py`](https://github.com/truvity/url-shortener/blob/master/log/src/url_shortener_log/pull.py).
 
 Commits in this release:
 
@@ -1407,7 +1407,7 @@ Commits in this release:
 
 - **The url-shortener example's cluster suite is now one Go program, not a
   shell script.** `just example-smoke` runs
-  `examples/url-shortener/e2e/suite` in place of the retired
+  [`e2e/suite`](https://github.com/truvity/url-shortener/tree/master/e2e/suite) in place of the retired
   `hack/smoke.sh`. It reaches every Service through
   `github.com/truvity/gemaal/pkg/harness` (>=0.24.0, which added a kind
   tier: a port-forward to the exact Pod behind a Service stands in for the
@@ -1454,7 +1454,7 @@ Commits in this release:
   schemas; it is simply never installed here, because doing so proved one
   example's platform choices on infrastructure meant to outlive any one
   example. What it would have provisioned is now the worked example's own
-  fixture (`examples/url-shortener/e2e/fixture`), which reads the names it
+  fixture ([`e2e/fixture`](https://github.com/truvity/url-shortener/tree/master/e2e/fixture)), which reads the names it
   needs off the charts rather than repeating them. Workload-identity testing
   (`example-identity`) is removed from this box for the same reason and
   moves to another tier; `identity-smoke.sh` is unchanged and not yet run

@@ -136,7 +136,7 @@ rule or a render-time `fail`), each otherwise valid so it fails for its one
 reason. `unknown-key.yaml` is always one of them.
 
 A repository that tests its charts in Go instead (this one does, under
-`examples/url-shortener/charts/`) satisfies C3 when those tests compare
+[`charts/`](https://github.com/truvity/url-shortener/tree/master/charts)) satisfies C3 when those tests compare
 committed renders byte for byte and render at least one values file the
 chart must refuse, and assert that it is refused.
 
@@ -475,7 +475,7 @@ off the request path.
 **Conformance.** The chart's own render test: no two Deployments or Jobs
 render the same `serviceAccountName`, in the default render and in a fully
 set one, and the render itself refuses a values file that makes two
-components collide (`examples/url-shortener`:
+components collide ([`url-shortener`](https://github.com/truvity/url-shortener):
 `TestNoTwoWorkloadsShareAServiceAccount`). The migration hook is not
 exempt. Review for a chart in another repository.
 
@@ -523,7 +523,7 @@ probes are on the probes port), `conformance.EnvIsDeclared` (no environment
 variable is neither telemetry nor one the chart allows, and none is read from a
 Secret), `conformance.SecretsAreFiles`, `conformance.NoEnvSecretFields`, and
 a test that the chart declares the library by path and commits its lock
-(`examples/url-shortener`: `TestTheApplicationChartResolvesTheLibraryFromItsLock`),
+([`url-shortener`](https://github.com/truvity/url-shortener): `TestTheApplicationChartResolvesTheLibraryFromItsLock`),
 with `just chart-deps` (and so `drift`) failing on a stale lock. The library
 is a `type: library` chart, exempt from C2 as that rule says. C3's check wants
 goldens and a refused fixture per chart under `charts/`, and a library renders
@@ -568,7 +568,7 @@ stream.
 parsed, for the default render and for one that sets every value),
 `conformance.ChecksumFollowsConfig` (the pod annotation is the checksum of the
 file) and `conformance.ValidDocument` with the service's own schema
-(`examples/url-shortener`: `TestAFollowingChartRendersItsConfigurationVerbatim`
+([`url-shortener`](https://github.com/truvity/url-shortener): `TestAFollowingChartRendersItsConfigurationVerbatim`
 on the example chart, `TestWhatTheChartRendersIsWhatTheBinariesAccept` on the
 product chart). Review for the mapping of a product chart.
 
@@ -592,7 +592,7 @@ fails the other, in a cluster. A bundled copy is not editable by hand without a
 test noticing, which is the point of committing it.
 
 **Conformance.** The chart's own test: `conformance.ChartSchemaIsComposed` for
-every `values.schema.src.json` (`examples/url-shortener`:
+every `values.schema.src.json` ([`url-shortener`](https://github.com/truvity/url-shortener):
 `TestEveryCommittedChartSchemaIsTheComposedOne`), and the `drift` recipe.
 `chartschema`'s own tests prove the composed schema is self-contained (it refers
 to nothing Helm would have to fetch) and refuses what the sources do.

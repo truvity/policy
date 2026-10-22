@@ -2,12 +2,12 @@
 
 The engineering contracts a service is held to: how it is configured, how it
 starts and stops, how it is built and released — and one worked example that
-runs them.
+runs them, in its own repository ([truvity/url-shortener](https://github.com/truvity/url-shortener)).
 
 A contract here is short, normative and testable. The reasoning lives beside
 it as a decision record, the allowed libraries as a canon, and the whole
-thing is proven by an example service in this repository rather than by
-assertion.
+thing is proven by an example service, kept in its own repository, rather
+than by assertion.
 
 ## What ships
 
@@ -16,17 +16,14 @@ assertion.
 | the contracts, canons, guides, decisions and [glossary](docs/glossary.md) | [`docs/`](docs/README.md) | the tagged source |
 | configuration schemas (JSON Schema) | [`schemas/`](schemas/README.md) | the tagged source, and inside every loader |
 | the Go configuration loader, conformance helpers and chart schema composer | `config/`, `conformance/`, `chartschema/` | Go module `github.com/truvity/policy` |
-| the TypeScript loader | [`ts/`](ts/package.json) | `@truvity/policy` on GitHub Packages |
-| the Python loader | [`python/`](python/README.md) | a wheel attached to each GitHub Release |
-| the Kotlin loader | [`kotlin/`](kotlin/README.md) | not published: built and tested here, used from a checkout |
+| the TypeScript, Python and Kotlin loaders | [`ts/`](https://github.com/truvity/url-shortener/tree/master/ts), [`python/`](https://github.com/truvity/url-shortener/tree/master/python), [`kotlin/`](https://github.com/truvity/url-shortener/tree/master/kotlin) in the url-shortener repository | moved there on 2026-10-22; this repository no longer publishes `@truvity/policy` or the wheel (versions up to v1.54.2 stay where they were published) |
 | the shared lint configuration | [`lint/`](lint/README.md) | the tagged source, copied into a repository |
 | the local cluster the example is tested on | [`hack/kind/`](hack/kind/README.md) | the tagged source, fetched at a pinned tag |
 | the library chart service charts render with | [`charts/service-lib`](charts/service-lib/Chart.yaml) | chart `service-lib` under `oci://ghcr.io/truvity/charts`; embedded for tests by the Go package `charts/` |
-| the worked example, a URL shortener | [`examples/url-shortener/`](examples/url-shortener/README.md) | charts `url-shortener` and `url-shortener-infra` under `oci://ghcr.io/truvity/charts`; images under `ghcr.io/truvity/policy/url-shortener/` |
+| the worked example, a URL shortener | [truvity/url-shortener](https://github.com/truvity/url-shortener/blob/master/README.md) | moved there on 2026-10-22: charts `url-shortener` and `url-shortener-infra` under `oci://ghcr.io/truvity/charts`, released from that repository's own tags (up to v1.54.2 they were released from here, images under `ghcr.io/truvity/policy/url-shortener/`) |
 
 One tag stamps all of them: `vX.Y.Z` releases the documents, the schemas, the
-Go module, the TypeScript package, the Python wheel and the example's charts
-and images together. A consumer pins one version.
+Go module and the library chart together. A consumer pins one version.
 
 ## Who it is for
 
@@ -76,15 +73,13 @@ tag at the time of writing — the
 
 ```sh
 go get github.com/truvity/policy@v1.29.0
-
-# GitHub Packages: map the @truvity scope to npm.pkg.github.com, with a
-# token that can read packages — the registry asks for one even here.
-yarn add @truvity/policy@1.29.0
-
-uv add https://github.com/truvity/policy/releases/download/v1.29.0/truvity_policy-1.29.0-py3-none-any.whl
 ```
 
-A service loads its configuration in three lines, and a misconfiguration is
+The TypeScript, Python and Kotlin loaders are not installed from here any
+more: they moved to the [url-shortener repository](https://github.com/truvity/url-shortener) together with the
+example that consumes them.
+
+A Go service loads its configuration in three lines, and a misconfiguration is
 refused before anything is constructed:
 
 ```go
@@ -94,7 +89,7 @@ if err := config.Load(path, schemaBytes, &cfg); err != nil {
 }
 ```
 
-The worked example runs every contract end to end, and its application
+The [worked example](https://github.com/truvity/url-shortener) runs every contract end to end, and its application
 chart renders from the release with only the names it refuses to guess —
 the database's host, the root its certificate chains to and the two Secrets
 holding its credentials, the broker, the bucket:
@@ -123,7 +118,7 @@ helm template example oci://ghcr.io/truvity/charts/url-shortener --version 1.29.
 
 What provides those names is the infrastructure chart's job, installed per
 install beside it ([platform.md §11](docs/contracts/platform.md));
-[the example's README](examples/url-shortener/README.md) walks what each
+[the example's README](https://github.com/truvity/url-shortener/blob/master/README.md) walks what each
 component proves.
 
 ## Consumers
@@ -135,22 +130,23 @@ versions: each consumer's own pin is the record of that.
 |---|---|
 | `truvity/ci-actions` | the `cluster` action fetches `hack/kind/` at a pinned release tag |
 | 14 repositories | copy [`lint/golangci-depguard.yaml`](lint/golangci-depguard.yaml) into their `.golangci.yaml` |
-| `truvity/gitops` | deploys the url-shortener example's charts |
+| `truvity/gitops` | deploys the url-shortener example's charts (released from the url-shortener repository) |
 | every public component repository | is held to [the component contract](docs/contracts/component.md) |
 
 ## Neighbours
 
 - **[ci-workflows](https://github.com/truvity/ci-workflows)** runs this
   repository's gate (`check.yaml`), its release (`release-public.yaml`) and
-  its cluster lane (`integration.yaml`, whose kind tier stands up
-  `hack/kind/` at the `policy-version` it is given).
+  the cluster lane of any repository that calls it (`integration.yaml`, whose
+  kind tier stands up `hack/kind/` at the `policy-version` it is given).
 - **[ci-actions](https://github.com/truvity/ci-actions)** holds the `cluster`
   action that fetches `hack/kind/` from a policy release; the box is defined
   here and nowhere else.
 - **[gemaal](https://github.com/truvity/gemaal)** provides the `harness`
-  package the example's end-to-end suite reaches every Service through.
+  package the url-shortener example's end-to-end suite reaches every Service
+  through.
 - **[ocictl](https://github.com/truvity/ocictl)** provides `helmctl`, which
-  bakes image digests into the example's charts at release.
+  bakes image digests into the url-shortener example's charts at its release.
 - Every other public component repository is held to the contracts here;
   [component.md](docs/contracts/component.md#applies-to) lists them.
 
@@ -194,10 +190,10 @@ contract is at version 1.0, effective 2026-09-29.
 In progress: the url-shortener's data contracts are also written in Pkl and
 generated beside the hand-written schemas, which stay authoritative
 ([guides/pkl-shadow.md](docs/guides/pkl-shadow.md): the shadow phase of
-[decision 0010](docs/decisions/0010-data-contracts-are-written-in-pkl.md)).
+[decision 0010](docs/decisions/0010-data-contracts-are-written-in-pkl.md)),
+in the url-shortener repository.
 
-What is not done: the Kotlin loader is built and tested but not published,
-and two guides — keys and signing, and migrating off a framework — arrive
+What is not done: two guides — keys and signing, and migrating off a framework — arrive
 with the component that proves them
 ([guides/README.md](docs/guides/README.md)).
 
@@ -206,18 +202,18 @@ with the component that proves them
 ```sh
 devbox shell   # or direnv, which does it on cd
 just check     # the gate: exactly what CI runs
-just golden    # regenerate the chart goldens — read the diff first
+just example-canary   # build and test the url-shortener example against this checkout
 ```
 
 `just check` needs no credentials, no container runtime and no cluster.
 The cluster tier needs a container runtime, stands up a local cluster
-([`hack/kind/`](hack/kind/README.md)) and installs the example from the
-same artifacts a release publishes:
+([`hack/kind/`](hack/kind/README.md)); the example installs onto it from the
+same artifacts a release publishes, from its own repository:
 
 ```sh
 just cluster          # the box: about a minute from nothing
 just cluster-verify   # ask each server a real question
-just cluster-all      # the whole tier, from nothing, as CI runs it
+just cluster-down     # remove it
 ```
 
 [AGENTS.md](AGENTS.md) is the entry point for anyone — or anything —

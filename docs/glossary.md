@@ -36,8 +36,8 @@ rings; the contracts care only about the **scope**, never the number.
   ([decision 0005](decisions/0005-kind-is-the-gate.md)).
 
 **Lane.** One build → install → test sequence the integration workflow
-runs on a tier. This repository has one, `example`, in
-[`.github/workflows/ci.yaml`](../.github/workflows/ci.yaml); "the kind
+runs on a tier. The url-shortener repository has one, `example`, in its
+[`.github/workflows/ci.yaml`](https://github.com/truvity/url-shortener/blob/master/.github/workflows/ci.yaml); "the kind
 lane" and "the cluster lane" are that lane on the kind tier.
 
 **Component.** A public repository that ships mechanism for an estate to

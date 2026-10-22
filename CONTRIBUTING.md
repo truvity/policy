@@ -41,9 +41,12 @@ CHANGELOG under the version it will be tagged as, creating the heading if it
 is the first. A breaking bullet starts with **Breaking:** and names the
 adoption step.
 
-The example in `examples/` is how a contract is proven. A contract that the
-example does not satisfy is not finished, and a change to a contract changes
-the example in the same pull request.
+The example, [truvity/url-shortener](https://github.com/truvity/url-shortener), is how a contract is proven. A
+contract that the example does not satisfy is not finished. The example lives
+in its own repository, so a change here cannot change it in the same pull
+request: the `example-canary` job builds and tests the example against the
+pull request and tells you when the change would break it, and the example
+then adopts the new release.
 
 ## Tooling
 

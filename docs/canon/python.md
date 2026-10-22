@@ -16,8 +16,8 @@ component needs it, not in anticipation.
 | Project and dependencies | `uv` | one tool for the interpreter, the resolution and the lock; the lock is committed ([repository.md §3](../contracts/repository.md)) |
 | Linting and formatting | `ruff` | one tool for both, so formatting is never a second opinion |
 | Testing | `pytest` | |
-| Boundary validation | `pydantic` for values that cross a boundary at run time | the configuration file is validated against its JSON Schema by this repository's loader, not by a second description of the same shape — the same rule the Node canon states for its validator |
-| Configuration | this repository's loader | [config.md](../contracts/config.md) |
+| Boundary validation | `pydantic` for values that cross a boundary at run time | the configuration file is validated against its JSON Schema by the loader, not by a second description of the same shape — the same rule the Node canon states for its validator |
+| Configuration | the Python loader, in the [url-shortener repository](https://github.com/truvity/url-shortener/tree/master/python) | [config.md](../contracts/config.md) |
 | Logging | `structlog`, emitting JSON to **stderr** at one level | [service.md §4](../contracts/service.md) |
 | Telemetry | the OpenTelemetry Python SDK, configured by its own environment | [0006](../decisions/0006-telemetry-is-the-sdk-environment.md) |
 | HTTP client | `httpx` | |
@@ -30,7 +30,7 @@ component needs it, not in anticipation.
 **No web framework.** The first Python component held to these contracts is a
 stream consumer: it reads from a broker, writes objects to a store, and
 serves only its probes, which is a handful of lines on the standard library's
-server — [`runtime.py`](../../examples/url-shortener/log/src/url_shortener_log/runtime.py).
+server — [`runtime.py`](https://github.com/truvity/url-shortener/blob/master/log/src/url_shortener_log/runtime.py).
 Naming a framework before a component needs one is how a canon acquires an
 entry nobody chose.
 
@@ -94,8 +94,8 @@ rather than by moving the build into an earlier stage of the same file — a
 multi-stage build still executes a package manager while the image is
 assembled, which is what makes a cross-architecture build need emulation.
 
-See [`hack/build.sh`](../../examples/url-shortener/log/hack/build.sh) and
-[`Dockerfile`](../../examples/url-shortener/log/Dockerfile).
+See [`hack/build.sh`](https://github.com/truvity/url-shortener/blob/master/log/hack/build.sh) and
+[`Dockerfile`](https://github.com/truvity/url-shortener/blob/master/log/Dockerfile).
 
 **The base is pinned by tag, not by digest**, which is the same choice the Go
 components' base makes, and for a reason worth writing down: the registry's

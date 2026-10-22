@@ -2,7 +2,7 @@
 
 **The rule.** The url-shortener's data contracts are also written in Pkl, and
 everything restating them is generated from that one source into
-[`examples/url-shortener/contract/generated/`](../../examples/url-shortener/contract/generated/).
+[`contract/generated/`](https://github.com/truvity/url-shortener/tree/master/contract/generated).
 CI compares the generated schemas with the hand-written ones and reports every
 difference. **The hand-written schemas stay authoritative:** nothing reads the
 generated files, and no difference fails a build.
@@ -20,12 +20,12 @@ build, and what authoring in Pkl costs the person making a change.
 
 | | Where |
 |---|---|
-| The contract | [`examples/url-shortener/contract/`](../../examples/url-shortener/contract/): a Pkl project, beside the schemas it shadows |
+| The contract | [`contract/`](https://github.com/truvity/url-shortener/tree/master/contract): a Pkl project, beside the schemas it shadows |
 | Its pins | `PklProject` names the `truvity/pkl-contracts` packages at one exact version; `PklProject.deps.json` records their checksums and is committed |
 | Each component's config | `config/*.pkl`: the six binaries' configuration, the archiver's, and the test chart's `echo` |
 | Each chart's values | `charts/*.pkl`: the product chart, its infra chart, and the smallest service chart. The product chart is the one [0009](../decisions/0009-charts-pass-config-through-and-share-a-library.md) calls the exception; 0010 ends the exception, so it is modelled here like the others, and `charts/ServiceExampleValues.pkl` carries one chart's defaults |
 | What it generates | `generated/schemas/` (JSON Schema), `generated/charts/<chart>/` (values schema, values table, defaults where modelled), `generated/ts/` (zod), `generated/py/` (pydantic), `generated/docs/` (reference) |
-| Pkl itself | [`bin/pkl`](../../bin/pkl): Pkl 0.32.1, downloaded once and checked against a pinned sha256. **Temporary**: nixpkgs ships an older Pkl, and the wrapper goes when it ships 0.32 |
+| Pkl itself | [`bin/pkl`](https://github.com/truvity/url-shortener/blob/master/bin/pkl): Pkl 0.32.1, downloaded once and checked against a pinned sha256. **Temporary**: nixpkgs ships an older Pkl, and the wrapper goes when it ships 0.32 |
 
 Go and Kotlin types are not generated yet. They come from Pkl's official
 generators, each needing a further download, and carry none of the constraints,

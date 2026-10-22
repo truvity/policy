@@ -145,4 +145,4 @@ charts: the infrastructure one and the application one. The reasons are in
   is a name two installs can share by accident, and neither install fails
   when they do. Render two installs, vary the namespace and the install
   name one at a time, and check that neither shares a name with the
-  other; `examples/url-shortener`'s chart test is the pattern.
+  other; [`url-shortener`](https://github.com/truvity/url-shortener)'s chart test is the pattern.

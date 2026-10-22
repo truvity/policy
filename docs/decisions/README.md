@@ -31,3 +31,4 @@ sales pitch.
 | [0011](0011-config-source-versions-and-secret-delivery.md) | accepted; amended by 0012 | Configuration is immutable per instance, versioned (a binary reads N and N-1), and found the same way on every platform; secrets arrive by name as a variable, a file or a source read at start-up (amends 0002) |
 | [0012](0012-stabilization-amendments.md) | accepted | Documents carry a product group; secrets are named and resolved through one source; a service may read a policy document; presets are defined; a stabilizing product may break in a minor (amends 0002, 0011) |
 | [0013](0013-pods-are-admitted-with-their-identity.md) | accepted | A pod is admitted with its cloud identity, and a hook Job proves it before the workloads exist |
+| [0014](0014-the-worked-example-lives-in-its-own-repository.md) | accepted | The worked example and the TypeScript, Python and Kotlin loaders live in their own repository; this one keeps a downstream canary |

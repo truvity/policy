@@ -14,8 +14,8 @@ property a release exists to remove.
 
 | Concern | Where |
 |---|---|
-| how images are built | [`examples/url-shortener/.ko.yaml`](../../examples/url-shortener/.ko.yaml) |
-| the version the binary reports | `runtime.Version` in [`internal/runtime/runtime.go`](../../examples/url-shortener/internal/runtime/runtime.go) |
+| how images are built | [`.ko.yaml`](https://github.com/truvity/url-shortener/blob/master/.ko.yaml) |
+| the version the binary reports | `runtime.Version` in [`internal/runtime/runtime.go`](https://github.com/truvity/url-shortener/blob/master/internal/runtime/runtime.go) |
 | how the chart pins an image | the image helper in `charts/url-shortener/templates/_helpers.tpl` |
 | what the toolchain pins | [`canon/toolchain.md`](../canon/toolchain.md), [`canon/build-tools.md`](../canon/build-tools.md) |
 
@@ -51,7 +51,7 @@ indistinguishable from a correct one until somebody else pulls it.
 | Go | the compiled binary on a minimal base | a tool that cross-compiles and pushes, with no daemon and no emulation |
 | TypeScript | a copy of the built bundle onto a runtime base | the bundler, then a copy |
 | Kotlin | a copy of the built artifact onto a JRE base | the build tool, then a copy |
-| Python | a copy of the installed environment onto a minimal base | [`hack/build.sh`](../../examples/url-shortener/log/hack/build.sh) resolves from the lock and installs OUTSIDE the image, leaving [a Dockerfile](../../examples/url-shortener/log/Dockerfile) with a COPY and no RUN |
+| Python | a copy of the installed environment onto a minimal base | [`hack/build.sh`](https://github.com/truvity/url-shortener/blob/master/log/hack/build.sh) resolves from the lock and installs OUTSIDE the image, leaving [a Dockerfile](https://github.com/truvity/url-shortener/blob/master/log/Dockerfile) with a COPY and no RUN |
 
 The pattern is the same in all four: **something else builds, the image
 copies.** No compiler, no package manager and no shell in the runtime image
