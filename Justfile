@@ -146,3 +146,19 @@ leak-canary:
 [doc("Regenerate the landscape page's table from the GitHub API")]
 landscape:
     hack/landscape.sh
+
+# Does THIS tree still honour the contracts it publishes? Builds and tests the
+# downstream example repository (truvity/url-shortener, which moved out of
+# here) against this checkout, through a throw-away go.work, so a contract
+# change that would break the example breaks it in the pull request that made
+# it. Advisory in CI (see .github/workflows/ci.yaml), runnable by anyone:
+#
+#   just example-canary                     # clones ../url-shortener at master if absent
+#   URL_SHORTENER_DIR=~/src/url-shortener just example-canary
+#   URL_SHORTENER_REF=some-branch just example-canary
+#   URL_SHORTENER_LOCAL_LIB=1 just example-canary   # charts use this checkout's service-lib
+#
+# NOT part of `check`: it needs the network and another repository.
+[doc("Build and test the downstream example against this checkout (advisory)")]
+example-canary:
+    bash hack/example-canary.sh

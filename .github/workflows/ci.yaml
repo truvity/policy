@@ -47,9 +47,71 @@ jobs:
         **/go.sum
         devbox.lock
 
+  # The downstream canary. The worked example lives in its own repository
+  # (docs/decisions/0014-the-worked-example-lives-in-its-own-repository.md) and
+  # depends on this module by released version, so a change here would only
+  # break it after a release and a bump. This job builds and tests the example's
+  # branch against THIS pull request's checkout (a throw-away go.work, see
+  # hack/example-canary.sh, which `just example-canary` runs the same way
+  # anywhere), so the break is seen in the pull request that causes it.
+  #
+  # ADVISORY: it is deliberately NOT in `check`'s `needs`. A change that must
+  # break the example cannot wait for the example to adopt a release that does
+  # not exist yet, so a required canary would deadlock exactly the pull
+  # requests it is for. To make it required once that no longer worries you,
+  # add `example-canary` to `check`'s `needs` and a
+  # `needs.example-canary.result` line to its script below.
+  #
+  # Fork-safe: it runs on a fork's pull request with the read-only token and no
+  # secrets, checks out one public repository, and persists no credentials.
+  # While truvity/url-shortener does not exist, or has no `URL_SHORTENER_REF`
+  # yet, the checkout step fails and this job says so; that is expected, and
+  # blocks nothing.
+  example-canary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      # The one line to change to check against another branch of the example.
+      URL_SHORTENER_REF: master
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: policy
+          persist-credentials: false
+
+      - id: downstream
+        continue-on-error: true
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: truvity/url-shortener
+          ref: ${{ env.URL_SHORTENER_REF }}
+          path: url-shortener
+          persist-credentials: false
+
+      - name: Say what is missing
+        if: steps.downstream.outcome == 'failure'
+        run: |
+          echo "::error::could not check out truvity/url-shortener at ${URL_SHORTENER_REF}: the repository or the ref does not exist yet, or is not public. Nothing to check against. This job is advisory."
+          exit 1
+
+      # The example's own toolchain (its devbox.json), so the hermetic gate runs
+      # with the tools its authors pinned, helm included.
+      - uses: jetify-com/devbox-install-action@8c6a66ed6273138b1915457069de78cb52fe3bd7 # v0.15.0
+        with:
+          project-path: url-shortener
+          enable-cache: "true"
+
+      - name: Build and test the example against this pull request
+        env:
+          URL_SHORTENER_DIR: ${{ github.workspace }}/url-shortener
+        run: bash policy/hack/example-canary.sh
+
   # Stable name for branch protection: the matrix reports as "recipes / lint"
   # and so on, so a required context called "check" would never arrive and
-  # every pull request would hang waiting for it.
+  # every pull request would hang waiting for it. `example-canary` is not
+  # here on purpose: see its comment.
   check:
     needs: [recipes]
     if: always()
