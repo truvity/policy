@@ -13,57 +13,24 @@
 
 # Everything CI requires
 [doc("Everything CI requires")]
-check: build test lint drift leak-canary
+check: build test lint leak-canary
 
 # Compile everything
 [doc("Compile everything")]
 build:
     go build ./...
-    cd examples/url-shortener && go build ./...
-    # Resolving and installing is this package's build: it is what proves the
-    # lock still describes something that exists.
-    cd python && uv sync --frozen --quiet
-    # The example's Python component, for the same reason.
-    cd examples/url-shortener/log && uv sync --frozen --quiet
-    # The Kotlin loader. `assemble` rather than `build`, so this stays a
-    # build: the tests are the test recipe's job.
-    cd kotlin && gradle assemble --console=plain --quiet
-    # The example's Kotlin component, which builds the RPC client from the
-    # same schema the Go server is generated from.
-    cd examples/url-shortener/stat && gradle assemble --console=plain --quiet
 
 # The unit tests. They need no network and no services, which is the whole
 # point of the gate.
 [doc("The unit tests")]
 test:
     go test ./...
-    # The example is its own module, so `./...` at the root does not reach it.
-    # It is also the only place the contracts are proved rather than stated,
-    # which makes it the part of this repository that must not go untested.
-    #
-    # Its chart tests shell out to helm, which devbox supplies — so they are
-    # part of the hermetic gate rather than a separate job: rendering a chart
-    # needs no network and no cluster.
-    cd examples/url-shortener && go test ./...
-    # The Python loader, against the SAME fixtures. It is in the hermetic
-    # gate because it needs nothing but this checkout: the interpreter and
-    # the package manager are declared, and the lock is committed.
-    cd python && uv run --frozen pytest -q
-    # The archiver: what it decides about batching, keys and ordering, and
-    # what its probes answer. No broker and no store — the one call it makes
-    # against a store is a five-line double, which is what the one-method
-    # protocol in archive.py is for.
-    cd examples/url-shortener/log && uv run --frozen pytest -q
-    # The Kotlin loader, against the SAME fixtures as the other three.
-    cd kotlin && gradle test --console=plain --quiet
-    cd examples/url-shortener/stat && gradle test --console=plain --quiet
 
 # Report known vulnerabilities in what this module depends on. Its own
 # workflow (security.yaml), never the gate — see `check`.
 [doc("Report known vulnerabilities")]
 vuln:
     govulncheck ./...
-    cd examples/url-shortener && govulncheck ./...
 
 # The local cluster the charts and every example are tested against: servers
 # only (Postgres, NATS with JetStream, an S3 stand-in, a local registry), no
@@ -85,290 +52,13 @@ cluster:
 cluster-verify:
     bash hack/kind/verify.sh
 
-# Build the example's images and package its chart exactly the way a release
-# does — `.goreleaser.yaml` itself, then `helmctl` — into the box's own
-# registry, one architecture instead of every one. See
-# hack/example-snapshot.sh and docs/guides/testing.md for why: what the
-# cluster installs must be what a release ships.
-[doc("Build the example's images and chart exactly as a release does, into the local registry")]
-example-snapshot:
-    bash hack/example-snapshot.sh
-
-# CI's own entry point: the release snapshot build needs nothing the box
-# provides beyond a registry to push to (which example-snapshot now waits
-# for explicitly), and neither of these depends on the other's RESULT — so
-# they run side by side instead of one after the other.
-#
-# ONE recipe, not the caller backgrounding one `devbox run` beside another:
-# every `devbox run` invocation generates its own copy of
-# .devbox/gen/scripts/.cmd.sh and then executes it, so two started at the
-# same time can each be mid-(over)write of that shared file while the other
-# is mid-exec of it — "text file busy" (measured in CI). Recipe scripts
-# under `just` do not have that problem: this one script, entered through a
-# single `devbox run`, backgrounds `example-snapshot` itself with plain
-# shell `&`, which shares the one devbox environment `just` already
-# resolved rather than asking devbox to resolve a second one concurrently.
-[doc("Stand the box and its fixture up while the release snapshot builds, in the ONE devbox environment")]
-cluster-and-snapshot:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    just example-snapshot > /tmp/example-snapshot.log 2>&1 &
-    snapshot_pid=$!
-
-    just cluster
-    just cluster-verify
-    just example-fixture
-
-    if ! wait "$snapshot_pid"; then
-        echo "::group::example-snapshot"
-        cat /tmp/example-snapshot.log
-        echo "::endgroup::"
-        exit 1
-    fi
-    cat /tmp/example-snapshot.log
-
-# Stand in for the url-shortener-infra chart, which kind never installs (see
-# docs/decisions/0005-kind-is-the-gate.md): the database, the two roles, the
-# stream and the bucket the application chart's values point at, under the
-# EXACT names examples/url-shortener/e2e/fixture reads off the charts. Must
-# run before `example-install`, which the fixture provisions for.
-[doc("Provision what the infra chart would, by name")]
-example-fixture:
-    bash examples/url-shortener/e2e/fixture/apply.sh
-
-# Install the example's PACKAGED application chart — the .tgz `example-snapshot`
-# produced, never the source directory (docs/contracts/release.md §7: a
-# published artifact is tested as published) — on top of what example-fixture
-# provisioned.
-[doc("Install the example into the local cluster")]
-example-install:
-    bash examples/url-shortener/hack/install.sh
-
-# Prove the example WORKS. This is the question the whole box exists to
-# answer: a redirect is served, an event crosses the broker, and a counter a
-# different service owns moves. Rendering a chart cannot ask it.
-#
-# A Go suite (examples/url-shortener/e2e/suite), not a shell script: it
-# reaches every Service through github.com/truvity/gemaal/pkg/harness, the
-# same toolbox a private repository's shared-cluster suite and a
-# post-promotion suite use — see docs/guides/testing.md. E2E_NAMESPACE is
-# what turns it on; `go test ./...` on its own (`just test`) stays hermetic.
-[doc("Prove the example works end to end")]
-example-smoke:
-    cd examples/url-shortener && E2E_NAMESPACE="${NS:-shortener}" E2E_APP_RELEASE="${APP:-example}" \
-        E2E_BUCKET="${BUCKET:-url-shortener-archive}" go test ./e2e/suite/... -count=1 -v
-
-# Prove the application chart's PROBER: enable it (templates/prober.yaml) on
-# the release `example-install` just installed, and assert its journeys
-# succeed within a bounded time. The end-to-end SUITE is not a chart: it runs
-# from the product's own CI (`example-smoke`), against an ephemeral
-# environment, so this recipe makes the one claim a direct run cannot, that
-# the prober Deployment itself comes up and works in the cluster.
-[doc("Prove the application chart's prober runs and succeeds against a real install")]
-example-prober:
-    bash examples/url-shortener/hack/install-prober.sh
-
-# The whole cluster tier, from nothing.
-#
-# No identity step: transport identity testing moved off the box entirely
-# (0005) and examples/url-shortener/hack/identity-smoke.sh is not yet
-# ported to wherever it lands — a later task, not this one.
-[doc("The whole cluster tier, from nothing")]
-cluster-all: cluster cluster-verify example-snapshot example-fixture example-install example-smoke example-prober
-
-# Remove it, and the registry container and the snapshot builder beside it —
-# disk is a shared resource on the machine this usually runs on, and a
-# container `up.sh` or `example-snapshot.sh` started is this recipe's to
-# remove.
+# Remove it, and the registry container beside it — disk is a shared resource
+# on the machine this usually runs on, and a container `up.sh` started is this
+# recipe's to remove.
 [doc("Remove the local cluster")]
 cluster-down:
     kind delete cluster --name policy
     docker rm -f kind-registry >/dev/null 2>&1 || true
-    docker buildx rm policy-example-snapshot >/dev/null 2>&1 || true
-
-# Render and validate every chart.
-#
-# The name is the repository contract's, not a description of the tool: a
-# person moving between repositories should not have to read this file to
-# find out what the chart check is called here, and a repository that has
-# the job under another name has made every caller special. This one was
-# called `kubeconform` until it was noticed that policy was failing its own
-# contract.
-#
-# NOT part of `check`: it fetches the schema for a custom resource, and the
-# gate needs nothing but the checkout. It sits beside `ts` for the same
-# reason — both are real checks that happen to need the network.
-[doc("Render and validate every chart")]
-charts:
-    bash hack/kubeconform.sh
-
-# Regenerate the chart goldens. Read the diff BEFORE running this: a golden
-# updated without being read is a golden that records whatever happened.
-#
-# The pattern matches all THREE chart render tests. `TestWhatTheChartRenders`
-# alone does not: the infrastructure chart's is
-# `TestWhatTheInfraChartRenders` and the library's example chart's is
-# `TestWhatTheServiceExampleChartRenders`, none of which that narrower
-# pattern contains, so this recipe would regenerate one chart's goldens and
-# silently leave the others' stale. The only symptom was a CI failure on a
-# change the author had already run `just golden` for.
-[doc("Regenerate the chart goldens")]
-golden:
-    cd examples/url-shortener && UPDATE_GOLDEN=1 go test ./charts/... -run 'TestWhatThe(Infra|ServiceExample)?ChartRenders' -count=1
-
-# Regenerate the RPC code from the schema.
-[doc("Regenerate the RPC code from the schema")]
-protos:
-    cd examples/url-shortener && buf lint && buf generate
-
-# Compose the values schema of every service chart: the platform schema, and
-# `config` as the service's own schema, bundled into one file Helm can validate
-# with offline (package chartschema; decision 0009). The source of each is the
-# `values.schema.src.json` beside it. Needs no network.
-[doc("Compose every service chart's values.schema.json from its source")]
-chart-schemas:
-    go run ./hack/compose-chart-schema examples/url-shortener/charts
-
-# Refresh the Chart.lock of every chart that has a dependency: the application
-# chart's library (charts/service-lib) and the infrastructure chart's
-# cnpg-database, which is fetched from the registry (anonymously). The lock
-# is committed and the archive it resolves is not: `helmctl package` runs `helm dependency build` itself when the
-# dependency is missing, from this lock, and refuses a lock that disagrees with
-# Chart.yaml. Only the library is a path in this checkout; the infrastructure
-# chart's dependency needs the network.
-[doc("Refresh the Chart.lock of the charts that depend on the library chart")]
-chart-locks:
-    helm dependency update examples/url-shortener/charts/url-shortener
-    helm dependency update examples/url-shortener/charts/url-shortener-infra
-
-# Resolve what every chart that depends on the library declares, from its
-# committed lock, and fail if the lock no longer says what Chart.yaml does.
-# Run before anything here that renders url-shortener outside the Go tests
-# (which resolve it themselves).
-[doc("Resolve the library chart dependency from the committed lock")]
-chart-deps:
-    helm dependency build --skip-refresh examples/url-shortener/charts/url-shortener
-    helm dependency build --skip-refresh examples/url-shortener/charts/url-shortener-infra
-
-# Regenerate what every loader carries from `schemas/`.
-[doc("Regenerate the schemas the loaders carry")]
-schemas:
-    node hack/generate-schemas.mjs
-
-# Generated code is committed. A schema changed without regenerating would
-# leave the two loaders validating different documents, which is the one
-# thing this repository exists to prevent. Needs no network: the generator
-# reads this checkout and writes into it.
-[doc("Fail if generated code was not regenerated")]
-drift: schemas protos chart-schemas chart-deps
-    git diff --exit-code -- ts/src/schemas.generated.ts python/src/truvity_policy/schemas.py
-    # The RPC code too. It is committed rather than generated at build time,
-    # because a build step between a checkout and a compiler is a step that
-    # has to work on every machine forever — and the first thing it breaks
-    # is the editor, which cannot resolve a symbol that does not exist yet.
-    git diff --exit-code -- examples/url-shortener/internal/gen
-    # The service charts' values schemas, composed from their sources
-    # (docs/guides/charts.md): committed because a chart is published from the
-    # tree, and also held by a test that does not need this recipe to have run.
-    # `chart-deps` above is the lock's half: it fails when Chart.lock is stale,
-    # and rewrites nothing.
-    git diff --exit-code -- 'examples/url-shortener/charts/*/values.schema.json' \
-        'examples/url-shortener/charts/testdata/*/values.schema.json'
-
-# SHADOW PHASE of decision 0010 (docs/guides/pkl-shadow.md): the url-shortener's
-# data contracts are written in Pkl (examples/url-shortener/contract) and
-# generated beside the hand-written schemas, which stay authoritative. Pkl is
-# `bin/pkl`, a pinned, checksum-verified download (temporary: see the comment
-# in it); the contracts' packages are fetched from their GitHub release the
-# first time, so these need the network and are NOT part of `check`.
-#
-# Regenerate the shadow directory: JSON Schemas, each chart's values schema,
-# TypeScript with zod, Python with pydantic, the Markdown reference.
-[doc("Regenerate the Pkl contract's shadow artifacts")]
-shadow-generate:
-    hack/shadow-generate.sh
-
-# The name the fleet's Pkl pin-bump job looks for (truvity/ci-workflows
-# pkl-fleet): after it moves the contracts pin and resolves it, it runs the
-# repository's `generate` recipe, so a bump pull request carries regenerated
-# shadow artifacts and passes `shadow-generated`. It is a recipe and not an
-# `alias` because the job finds recipes with `just --summary`, which does not
-# list aliases.
-[doc("Regenerate the Pkl contract's shadow artifacts (the name the pin-bump job runs)")]
-generate: shadow-generate
-
-# Strict: the committed shadow artifacts are exactly what the contract
-# generates, the Pkl is in Pkl's canonical format, and the pinned packages are
-# resolved (PklProject.deps.json is current). Regenerates into a temporary
-# directory and compares.
-[doc("Fail if the committed shadow artifacts are not what the contract generates")]
-shadow-generated:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    bin/pkl format --diff-name-only examples/url-shortener/contract
-    bin/pkl project resolve examples/url-shortener/contract >/dev/null
-    git diff --exit-code -- examples/url-shortener/contract/PklProject.deps.json
-    tmp="$(mktemp -d)"
-    trap 'rm -rf "$tmp"' EXIT
-    hack/shadow-generate.sh "$tmp/generated" >/dev/null
-    diff -r "$tmp/generated" examples/url-shortener/contract/generated
-    echo "shadow-generated: examples/url-shortener/contract/generated is current"
-
-# REPORT ONLY. Generates afresh and compares with the hand-written schemas,
-# semantically: every difference with its category, class and cause, and a
-# count by category to track over the shadow phase. It fails only if
-# generation fails or a file it compares is missing, never on a difference. In
-# CI the report goes to the job summary.
-[doc("Report how the generated schemas differ from the hand-written ones (report only)")]
-shadow-diff:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    tmp="$(mktemp -d)"
-    trap 'rm -rf "$tmp"' EXIT
-    hack/shadow-generate.sh "$tmp/generated" >/dev/null
-    # The Python loader's own environment, from its lock: it has jsonschema and
-    # PyYAML, which the verdicts need, and nothing else is installed for it.
-    uv run --frozen --no-dev --project python python hack/shadow-diff.py "$tmp/generated" \
-        --report "$tmp/report.md" --summary "$tmp/summary.json"
-    cat "$tmp/report.md"
-    if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
-        cat "$tmp/report.md" >> "$GITHUB_STEP_SUMMARY"
-    fi
-
-# The TypeScript package: install, typecheck, test, build, and check what a
-# publish would ship. NOT part of `check`, which needs nothing but the
-# checkout: this fetches from a registry. CI runs it as its own job.
-[doc("The TypeScript package: install, typecheck, test, build")]
-ts:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    cd ts
-    yarn install --immutable
-    yarn typecheck
-    yarn test --run
-    rm -rf dist && yarn build
-
-    # What a publish would ship: the compiled package, and no test.
-    #
-    # The listing is captured ONCE rather than piped into `grep -q`. A `-q`
-    # grep exits at the first match, the writer gets EPIPE, and under
-    # `pipefail` the whole pipeline then fails — a check that reports a
-    # failure precisely when it finds what it was looking for.
-    shipped=$(yarn pack --dry-run 2>&1)
-    grep -q 'dist/index.js' <<<"$shipped"
-    ! grep -qE 'dist/.*\.test\.' <<<"$shipped"
-
-    # The front end, which depends on the package just built. LAST, because
-    # everything above is about the package itself and runs in its
-    # directory — a `cd` before the publish check above would run it against
-    # a different package, which is exactly what the first version of this
-    # did: `yarn pack --dry-run` in a private package with no dist, and a
-    # recipe that failed after every step had succeeded.
-    cd ../examples/url-shortener/web
-    yarn install --immutable
-    yarn typecheck
-    yarn test --run
-    yarn build
 
 # The rules that hold for every file in this repository.
 #
@@ -387,60 +77,19 @@ lint:
     # setting can spend releases doing nothing.
     golangci-lint config verify || fail=1
     GOTOOLCHAIN=local golangci-lint run ./... || fail=1
-    # The Python loader: one tool for lint and formatting, so formatting is
-    # never a second opinion, and a type checker, because an annotation
-    # nothing checks is a comment that rots.
-    # The Kotlin compiler with warnings as errors, which is where a JVM
-    # project's lint lives: there is no separate linter to run, and a
-    # warning nobody fails on is a warning nobody reads.
-    for jvm in kotlin examples/url-shortener/stat; do
-        ( cd "$jvm" && gradle compileKotlin compileTestKotlin --console=plain --quiet ) || fail=1
-    done
-
-    for py in python examples/url-shortener/log; do
-        ( cd "$py" \
-            && uv run --frozen ruff check . \
-            && uv run --frozen ruff format --check . \
-            && uv run --frozen mypy ) || fail=1
-    done
-    # The example carries the import ban too. A reference implementation
-    # exempt from the rules it demonstrates is a reference to nothing.
-    ( cd examples/url-shortener && GOTOOLCHAIN=local golangci-lint run ./... ) || fail=1
-
-    # The TypeScript in this repository: one tool for lint AND formatting
-    # (docs/canon/node.md), so a style disagreement is never a second
-    # opinion from a separate formatter. Each package's own biome.jsonc
-    # extends lint/biome.base.jsonc and excludes what it generates — see
-    # lint/README.md. Needs no `yarn install`: Biome reads source, not
-    # node_modules, which is what keeps this in the hermetic gate.
-    for tsdir in ts examples/url-shortener/web; do
-        ( cd "$tsdir" && biome check ) || fail=1
-    done
 
     # The whitespace rules every file holds to, whatever language it is
     # written in (lint/.editorconfig, copied to the root as this
     # repository's own copy — lint/README.md): a final newline, LF, UTF-8,
     # no stray trailing whitespace but a Markdown hard break. Indentation
-    # WIDTH is deliberately NOT checked here — that is gofmt's, Biome's,
-    # ruff's and ktlint's job, each already run above. A line-count check
-    # cannot tell a real violation from a raw string, a docstring or a
-    # template that legitimately indents differently, and this repository
-    # has all three; chasing that false-positive class file by file is not
-    # what a gate is for. The one exclusion is the chart goldens: rendered
-    # output the `golden` recipe regenerates byte for byte, never hand-edited.
-    editorconfig-checker -disable-indentation -disable-indent-size \
-        -exclude 'testdata/golden/' || fail=1
+    # WIDTH is deliberately NOT checked here — that is gofmt's job, already
+    # run above. A line-count check cannot tell a real violation from a raw
+    # string or a template that legitimately indents differently; chasing
+    # that false-positive class file by file is not what a gate is for.
+    editorconfig-checker -disable-indentation -disable-indent-size || fail=1
 
-    # The toolchain is declared once and resolves to what it declares.
-    # Node is the case that needs saying: corepack's shims take precedence
-    # over anything devbox installed and fetch their own yarn, so a pin can
-    # be correct, unused, and silently overridden all at once.
+    # The toolchain is declared once: every manifest entry names a version.
     python3 hack/toolchain-check.py || fail=1
-
-    # The two package manifests still hold the placeholder the release
-    # stamps over. A version edited by hand here ships as itself — and a
-    # package published at 0.0.0 cannot be taken back.
-    python3 hack/stamp-version.py --check || fail=1
 
     # Nothing built is committed. A binary in a public repository's history is
     # in every clone forever, and carries the build machine's paths. The

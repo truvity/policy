@@ -34,114 +34,27 @@ jobs:
       # `vuln` is not here: it runs in security.yaml, on a schedule, where a
       # new advisory is reported without turning every pull request red
       # (the component contract's C10).
-      recipes: '["build", "test", "lint", "drift", "leak-canary"]'
+      recipes: '["build", "test", "lint", "leak-canary"]'
       # GitHub's own cache (this repository runs on hosted runners and
-      # reaches no other): `cache-paths` keeps the Go build cache, the Go
-      # module cache and Gradle's dependency cache between runs, one cache
-      # per recipe, saved once per change of go.sum, a build.gradle.kts or
-      # devbox.lock. Without a cache bucket the shared workflow stores them
-      # through actions/cache.
+      # reaches no other): `cache-paths` keeps the Go build cache and the Go
+      # module cache between runs, one cache per recipe, saved once per
+      # change of go.sum or devbox.lock. Without a cache bucket the shared
+      # workflow stores them through actions/cache.
       cache-paths: |
         ~/.cache/go-build
         ~/go/pkg/mod
-        ~/.gradle/caches
       cache-key-files: |
         **/go.sum
-        **/build.gradle.kts
-        **/settings.gradle.kts
         devbox.lock
-
-  # The TypeScript package installs from a registry, which is why it is not in
-  # `check`: the gate must need nothing but the checkout.
-  ts:
-    uses: truvity/ci-workflows/.github/workflows/check.yaml@51bc0eb7d5d89931d336219f87bde091deaf48ed # v5.4.0
-    with:
-      recipes: '["ts"]'
-
-  # The committed renders, against the Kubernetes API's own schemas. It asks
-  # a question the chart tests do not: they check that a rendered file is one
-  # the BINARY accepts, and would pass just as happily for a Deployment with
-  # a misspelled field — because the API server ignores one rather than
-  # refusing it.
-  charts:
-    uses: truvity/ci-workflows/.github/workflows/check.yaml@51bc0eb7d5d89931d336219f87bde091deaf48ed # v5.4.0
-    with:
-      recipes: '["charts"]'
-
-  # The shadow phase of decision 0010 (docs/guides/pkl-shadow.md). Two
-  # recipes, each its own job: `shadow-generated` is STRICT (the committed
-  # artifacts generated from the Pkl contract are current) and `shadow-diff`
-  # is REPORT-ONLY (it writes every difference between the generated schemas
-  # and the hand-written ones to the job summary, and fails only if
-  # generation does). Neither is in `check`: they fetch Pkl and the contracts'
-  # packages from GitHub, and the gate needs nothing but the checkout.
-  shadow:
-    uses: truvity/ci-workflows/.github/workflows/check.yaml@51bc0eb7d5d89931d336219f87bde091deaf48ed # v5.4.0
-    with:
-      recipes: '["shadow-generated", "shadow-diff"]'
-
-  # The local cluster, stood up from nothing — servers only, no operator; see
-  # docs/decisions/0005-kind-is-the-gate.md and hack/kind/README.md — asked
-  # whether each server it carries is usable, and then made to run the
-  # example end to end, the example's own fixture standing in for the infra
-  # chart kind never installs.
-  #
-  # This is the gate decision 0005 describes. It runs on pull requests
-  # because it is now the only place several things are checked at all: that
-  # a migration can create what it owns, that the two database roles are
-  # actually separate, that an event crosses a broker, and that a consumer
-  # bound to a subject moves a counter it has rights on. Every one of those
-  # was broken here at some point while the example was built, and not one
-  # of them is visible to a renderer.
-  #
-  # The `test` step also turns on the application chart's PROBER and proves
-  # its journeys succeed from inside the cluster. The end-to-end suite itself
-  # runs here, from the product's own CI, through `example-smoke`.
-  #
-  # Through the shared integration workflow now, on its kind tier (this
-  # repository is public — see truvity/ci-workflows' docs/tiers.md): the
-  # workflow stands up the box itself, via truvity/ci-actions' `cluster`
-  # action, mode: kind, fetching THIS repository's own hack/kind/ at a
-  # pinned release tag — so the recipe this job runs is exactly what a
-  # laptop runs, one lane's build/install/test, and standing the box up
-  # is no longer this repository's own job to script.
-  #
-  # `check` below still names this job — a reusable workflow cannot supply
-  # a required status context of its own (the same comment lives in
-  # ci-workflows' integration.yaml), so the fan-in has to be the calling
-  # job, exactly as it already was.
-  cluster:
-    uses: truvity/ci-workflows/.github/workflows/integration.yaml@51bc0eb7d5d89931d336219f87bde091deaf48ed # v5.4.0
-    permissions:
-      contents: read
-      id-token: write
-    with:
-      policy-version: v1.28.7
-      gemaal-namespace: shortener
-      timeout-minutes: 30
-      lanes: |
-        [
-          {
-            "name": "example",
-            "build": "devbox run -- just example-snapshot",
-            "install": "devbox run -- just example-fixture && devbox run -- just example-install",
-            "test": "devbox run -- just example-smoke && devbox run -- just example-prober"
-          }
-        ]
 
   # Stable name for branch protection: the matrix reports as "recipes / lint"
   # and so on, so a required context called "check" would never arrive and
-  # every pull request would hang waiting for it. The cluster job gates merges:
-  # all tests, including the end-to-end suite, must be green.
+  # every pull request would hang waiting for it.
   check:
-    needs: [recipes, ts, charts, shadow, cluster]
+    needs: [recipes]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - run: |
-          [ "${{ needs.recipes.result }}" = "success" ] &&
-          [ "${{ needs.ts.result }}" = "success" ] &&
-          [ "${{ needs.charts.result }}" = "success" ] &&
-          [ "${{ needs.shadow.result }}" = "success" ] &&
-          [ "${{ needs.cluster.result }}" = "success" ]
+          [ "${{ needs.recipes.result }}" = "success" ]

@@ -1,13 +1,14 @@
 # Tag-triggered release.
 #
-# Three artifacts come out of one tag, which is the release contract's first
-# rule: the Go module (a tag is all the module proxy needs), the TypeScript
-# package on GitHub Packages, and the Python wheel as a Release asset.
+# Two artifacts come out of one tag, which is the release contract's first
+# rule: the Go module (a tag is all the module proxy needs) and the library
+# chart `service-lib`, published to the chart registry under the tag's
+# version. The GitHub Release and its changelog are cut by the same shared
+# workflow, through GoReleaser with every build skipped (.goreleaser.yaml).
 #
-# Neither the wheel nor the npm package is something goreleaser builds, so
-# the shared workflow cuts the Release and a second job attaches the rest to
-# it. That ordering is a dependency rather than a preference: `gh release
-# upload` needs a release to upload to.
+# The url-shortener example and the TypeScript, Python and Kotlin loaders
+# moved to their own repository, which releases its charts and images on its
+# own tags; nothing here ships them any more.
 name: Release
 
 on:
@@ -33,115 +34,12 @@ jobs:
       packages: write
     uses: truvity/ci-workflows/.github/workflows/release-public.yaml@51bc0eb7d5d89931d336219f87bde091deaf48ed # v5.4.0
     with:
-      # ONE job builds and pushes the images, then packages the charts
-      # from the digests it produced. The charts cannot be published
-      # before their images exist, because they are packaged from a file
-      # that does not exist until the images are pushed -- which is what
-      # makes the ordering impossible to get wrong rather than merely
-      # right today.
-      chart-images: goreleaser
-      image-repo: ghcr.io/truvity/policy/url-shortener
-      # And a chart whose images.* entries are not all digest-pinned is
-      # refused outright.
-      require-image-digests: true
-      # THREE charts, released under ONE version. The last is the library
-      # chart, `service-lib`, which renders nothing of its own: it is what
-      # url-shortener renders its components with (docs/guides/charts.md), and
-      # it is published beside it so that another repository's service chart
-      # can depend on the same bytes this one is tested against. It lives at the
-      # repository root, `charts/service-lib`, because it belongs to no
-      # example: an entry with a `/` is a path from the repository root, and
-      # `chart-root` does not apply to it. url-shortener depends on it through
-      # `file://` and its committed Chart.lock; `helmctl package` resolves it
-      # (`helm dependency build`) when it is missing from charts/.
-      #
-      # The first two are the product. url-shortener and
-      # url-shortener-infra are a pair rather than a chart and an extra —
-      # the split is an ordering requirement: Helm runs every hook before
-      # anything else in the same release, so the chart that migrates a
-      # database cannot be the chart that creates it. A consumer installing
-      # only the application would get a migration hook waiting on a
-      # database nobody made.
-      #
-      # The always-on prober is a workload of the application chart
-      # (`prober.enabled`), carrying its own image's digest the same way the
-      # components do. The end-to-end suite is not a chart: it runs from the
-      # product's own CI, against an ephemeral environment.
-      #
-      # They live with the components they deploy rather than at this
-      # repository's root — `chart-root` exists so that they can.
-      charts: '["url-shortener", "url-shortener-infra", "charts/service-lib"]'
-      chart-root: examples/url-shortener/charts
-      # The page's source maps, pushed right after GoReleaser in the same job
-      # to ghcr.io/<owner>/sourcemaps/url-shortener:<release version>. OFF
-      # until the repository variable SOURCEMAPS_ENABLED is `true`. The image
-      # is called `web`; the application (and the Faro app name) is
-      # `url-shortener`, hence the app override. See docs/guides/source-maps.md.
-      sourcemaps-image: ${{ vars.SOURCEMAPS_ENABLED == 'true' && 'web' || '' }}
-      sourcemaps-app: url-shortener
-
-  packages:
-    needs: [release]
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    permissions:
-      contents: write
-      packages: write
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - uses: jetify-com/devbox-install-action@8c6a66ed6273138b1915457069de78cb52fe3bd7 # v0.15.0
-        with:
-          enable-cache: "true"
-
-      # The TAG is the sole version authority. Both manifests carry a
-      # placeholder that never moves, and it is stamped here — a version
-      # committed to a manifest is a second place to forget.
-      #
-      # Edited in place rather than through each ecosystem's own command.
-      # `yarn version` refuses on a tag checkout — it looks for an ancestor
-      # among master/main to resolve a deferred bump against, and a release
-      # runs on a detached tag where there is none. Nothing about setting a
-      # field in a manifest needs to know what a branch is.
-      #
-      # Each edit asserts it matched. A substitution that matches nothing
-      # succeeds silently, and the failure would be a package published at
-      # the placeholder version — which cannot be taken back.
-      - name: The tag is the version
-        env:
-          REF_NAME: ${{ github.ref_name }}
-        run: |
-          set -euo pipefail
-          version="${REF_NAME#v}"
-          echo "VERSION=$version" >> "$GITHUB_ENV"
-          python3 hack/stamp-version.py "$version"
-
-      # One script, so that the same thing CI runs can be run outside it:
-      # `hack/publish.sh --dry-run <version>` stops in front of the two
-      # irreversible actions. Release machinery that can only be tested by
-      # tagging is tested the one way that costs a version.
-      #
-      # The npm token reaches yarn through ts/.yarnrc.yml, which
-      # interpolates it from the environment and never stores it. See the
-      # comment there for why it is keyed by registry and not by scope.
-      - name: The packages goreleaser does not build
-        env:
-          GITHUB_PACKAGES_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ github.ref_name }}
-        run: devbox run -- bash hack/publish.sh "$VERSION" "$TAG"
-
-      # Say where each one landed, because "the release succeeded" is not the
-      # same claim as "a consumer can install it".
-      - name: What shipped
-        env:
-          TAG: ${{ github.ref_name }}
-        run: |
-          {
-            echo "### $TAG"
-            echo
-            echo "| Artifact | Install |"
-            echo "|---|---|"
-            echo "| Go module | \`go get github.com/truvity/policy@$TAG\` |"
-            echo "| TypeScript | \`yarn add @truvity/policy@$VERSION\` (GitHub Packages) |"
-            echo "| Python | \`uv add https://github.com/truvity/policy/releases/download/$TAG/truvity_policy-$VERSION-py3-none-any.whl\` |"
-          } >> "$GITHUB_STEP_SUMMARY"
+      # ONE chart, the library chart `service-lib`. It renders nothing of its
+      # own: it is what another repository's service chart renders its
+      # components with (docs/guides/charts.md), published so that chart can
+      # depend on the same bytes this repository tests. It lives at the
+      # repository root, `charts/service-lib`: an entry with a `/` is a path
+      # from the repository root, and `chart-root` does not apply to it.
+      # No images are built here, so `chart-images` stays off and the chart
+      # is packaged from the tag.
+      charts: '["charts/service-lib"]'
