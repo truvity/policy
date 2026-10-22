@@ -2,7 +2,7 @@ module github.com/truvity/policy/examples/url-shortener
 
 go 1.27.0
 
-toolchain go1.27.2
+toolchain go1.27.3
 
 // The example always builds against the contracts in this checkout, not
 // against a published version of them. A change to a schema or a loader that
