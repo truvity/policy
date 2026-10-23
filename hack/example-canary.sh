@@ -131,16 +131,14 @@ else
     say "charts keep the service-lib they declare (URL_SHORTENER_LOCAL_LIB=1 swaps in this checkout's)"
 fi
 
-gate() {
-    set -euo pipefail
-    go build ./...
-    go test ./...
-}
+gate() { go build ./... && go test ./...; }
 
 say "go build ./... && go test ./... against this checkout"
 cd "$work"
 if [ -f devbox.json ] && command -v devbox >/dev/null 2>&1; then
-    devbox run -c "$work" -- bash -c "$(declare -f gate); gate"
+    # One line, no function body: devbox re-evaluates the command it is given
+    # and a multi-line string does not survive that.
+    devbox run -c "$work" -- bash -c 'go build ./... && go test ./...'
 else
     gate
 fi
