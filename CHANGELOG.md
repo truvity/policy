@@ -4,6 +4,10 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## v1.54.4 — 2026-10-23
+
+- Dependency updates.
+
 ## v1.54.3 — 2026-10-22
 
 - Dependency updates.
