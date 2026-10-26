@@ -1,13 +1,14 @@
-# Target-Cluster Resource Inventory (policy example `url-shortener-infra`)
+# Target-Cluster Resource Inventory (url-shortener product)
 
-Reviewed on 2026-10-20 against the rebased checkout after policy v1.54.1.
-This is the worked example's resource inventory, not a claim that every
-platform runs these operators.
+This is the [product][product]'s resource inventory, not a claim every platform
+runs these operators.
 Sources: [platform contract](https://github.com/truvity/policy/blob/master/docs/contracts/platform.md),
 [tenancy contract](https://github.com/truvity/policy/blob/master/docs/contracts/tenancy.md),
-the example's charts and their render tests. The tier gates the cloud resource
+the product's charts and render tests. Unqualified chart/runtime paths belong
+to that product repository. The tier gates the cloud resource
 chain; database ownership and credential generation are separate decisions.
-The kind tier supplies fixtures instead of installing this infra chart.
+Its current integration is a protected shared-cluster workflow. Policy's
+servers-only kind definition remains an option for other consumer test lanes.
 
 ## Exposure: Gateway API, NOT Ingress
 
@@ -34,7 +35,7 @@ example declares its runtime role in the Cluster instead and forbids a second
 DatabaseRole. **Known conformance gap:** this differs from the required kind;
 the matrix below inventories code, not an approved exception. Report it and
 propose a separate contract correction before adopting that departure. See
-the [contract-gap record](delivery-interface.md#current-implementation-and-contract-gaps).
+the contract-gap record in `delivery-interface.md`.
 
 Helm resolves subchart values before parent templates run. The platform states
 the applicable `cnpg-database` entry explicitly alongside `postgres`; the
@@ -59,12 +60,12 @@ For an explicit entry:
   to reconstruct its database host rather than accept the platform's value;
 - Helm replaces the roles list, so supply the complete applicable entry.
 
-**Adoption change since v1.53.0:** the old default role for one live install is
+**Historical adoption in policy v1.53.0:** the old default role for one live install is
 gone. Even that install now supplies a role entry in platform-owned mode, and
 an own-Cluster install that generates a password adds its password-only entry.
 `charts/testdata/infra-generated-password.yaml` is the latter's neutral fixture.
 The platform contract's menu still describes the older live-install defaults.
-That documented-input mismatch is also a [known gap](delivery-interface.md#current-implementation-and-contract-gaps):
+That documented-input mismatch is also a known gap recorded in `delivery-interface.md`:
 record current values, guards and changelog evidence, and propose a separate
 contract correction before adopting discrepant defaults as policy.
 
@@ -78,7 +79,7 @@ adoption does not rotate a password or introduce a second role owner.
 
 ### Database health and retry wiring
 
-The current example pins `truvity/cnpg/v2` **v2.32.0** in go.mod. This is the
+The cited product pins `truvity/cnpg/v2` **v2.36.0** in go.mod. This is the
 application's client version, distinct from the cnpg-database **chart** pin.
 Use its `clients/go/pgclient`: connection parts arrive through `PGHOST`,
 `PGPORT`, `PGDATABASE`, `PGUSER`, `PGSSLMODE=verify-full`, `PGSSLROOTCERT`,
@@ -109,7 +110,7 @@ render does not prove a live database switchover.
 ## Cloud identity: ACK + EKS Pod Identity in the example
 
 - CRs in `-infra`/`cloud.yaml`: `s3.services.k8s.aws Bucket`, `iam.services.k8s.aws Policy/Role`, `eks.services.k8s.aws PodIdentityAssociation`
-- Infra orders IAM Role 0 → PodIdentityAssociation 1 → ServiceAccount 2 with permanent `Prune=false,Delete=false`. Install infra healthy first, then the app renders `service-lib.identityCheck` for a cloud-identity component. `Synced` can precede webhook visibility; the check retries with a new pod, not a same-pod restart. Full contract, image ownership and check-specific egress: [identity admission](identity-admission.md).
+- Infra orders IAM Role 0 → PodIdentityAssociation 1 → ServiceAccount 2 with permanent `Prune=false,Delete=false`. Install infra healthy first, then the app renders `service-lib.identityCheck` for a cloud-identity component. `Synced` can precede webhook visibility; the check retries with a new pod, not a same-pod restart. Full contract, image ownership and check-specific egress: `identity-admission.md`.
 - `cloud.serviceAccountAnnotations` mirrors `serviceAccount.app.annotations` onto the identity account
 - Per-component ServiceAccounts `<release>-<component>` (step 6); the prober's `tls.peers` names components' own accounts, not a shared one
 - Least privilege down to the action actually issued; `permissionsBoundary` + tags where the deploy role demands them
@@ -124,7 +125,7 @@ into a claim that every platform retired other mechanisms.
 | Tier | Cloud store/identity resources | Database/stream and local testing |
 |------|----------------|----------|
 | `primary` | Bucket/Policy/Role/PIA and infra-owned identity ServiceAccount | database resources follow ownership mode; Stream follows the broker values |
-| `test` | no cloud store/role/association chain | the infra render can still contain CNPG/NATS kinds; kind supplies standing servers through the example fixture instead |
+| `test` | no cloud store/role/association chain | infra can still render CNPG/NATS kinds; the installing platform/harness supplies operators or a deliberately scoped fixture |
 
 - The tier gate is a cloud-provisioning boundary, not proof that no custom
   resource renders. Infra tests check the cloud kinds per tier. Operator-CR
@@ -152,8 +153,8 @@ ServiceAccount carries no external rights.
 The product may add its own allowed flows but cannot create/relabel the
 namespace, replace the baseline/quota/limits or grant itself cluster-wide
 rights. The tenancy contract's §8 is a render-review checklist; the platform
-must test its own admission refusals and baseline enforcement. A green kind
-lane does not prove those platform guarantees.
+must test its own admission refusals and baseline enforcement. A passing
+producer canary or render suite does not prove those platform guarantees.
 
 ## Dashboards and resource sizing
 
@@ -199,3 +200,5 @@ using the **file** source. Do not interpret config's `ssm`/`openbao` options as
 permission for Kubernetes workloads to bypass Secret objects. The platform
 provides population and rotation; values and fixture ConfigMaps carry names,
 never credentials.
+
+[product]: https://github.com/truvity/url-shortener/tree/76770607aa08baa58331668c228dacd62a13a89a

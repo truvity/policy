@@ -15,11 +15,10 @@ A pin is not conservatism. Three things go wrong without one, and all three are 
 The following versions are the reviewed manifest snapshot, not permanent minimums.
 When updating a skill copy, consult `devbox.json` and `devbox.lock` together.
 
-Reviewed on 2026-10-21 after policy v1.54.2. The current manifest declarations
-still match the excerpt below, but the rebased parity update moved lock
-resolutions: `nodejs@26` now resolves to **26.12.0**, and gopls retains its
-declared version on a different locked nixpkgs revision. A lock-only change is
-still a toolchain change; the major-line declaration is not the resolved patch.
+The separately versioned product owns Node/Yarn/uv/Gradle and the non-Go
+loaders; its declarations are not the policy manifest. A lock-only update is
+still a toolchain change; compare each repository's manifest, lock and
+module/toolchain directives together.
 
 | Tool | Version (the reference repository) |
 |---|---|
@@ -37,7 +36,11 @@ Check `go version` under the actual command's environment when diagnosing
 parity. The manifest check does not establish which compiler ran, and the
 module's `toolchain` directive is not a reason to silently rewrite a devbox pin.
 
-## Node and TypeScript
+## Node and TypeScript (consumer guidance)
+
+Policy no longer installs Node or Yarn. These canon patterns apply when the
+adopting product actually has Node components; do not add that runtime to a
+Go-only producer just to imitate this section.
 
 | Tool | Version |
 |---|---|
@@ -56,7 +59,9 @@ Node's types and the runtime's HTTP client vendor a shared package between them;
 
 ## Yarn is installed by the manifest, and node's plugin has to be off for that to be true
 
-A manifest that pins Node gets a set of corepack shims alongside it, and those shims go on the PATH *ahead of* everything the manifest installed. So `yarn` resolves to a shim, the shim reads `packageManager` out of the nearest `package.json`, and it downloads whatever version that names — while the pinned yarn sits unused in the store a directory away. Nothing fails. Every command succeeds, the lockfile is honoured, and the version that ran is simply not the version that was pinned:
+The historical co-located example exposed this silent failure: Node's plugin
+put corepack shims ahead of the pinned Yarn, and the shim downloaded the nearest
+package manifest's `packageManager` version instead. Every command succeeded:
 
     $ yarn --version
     4.18.0
@@ -73,7 +78,7 @@ Every repository declares its toolchain in a manifest that a single command mate
 
 ## The manifest's shape (excerpt)
 
-The reference's `devbox.json`, cut down to the shape — the manifest and its
+The policy producer's current `devbox.json`, cut down to the shape — the manifest and its
 committed lock are the authority, not this excerpt:
 
 ```jsonc
@@ -84,19 +89,20 @@ committed lock are the authority, not this excerpt:
     "just": "1.58.0",
     "lefthook": "2.1.10",
     "kubectl": "1.36.3",
-    "nodejs": { "version": "26", "disable_plugin": true },
-    "yarn-berry": "4.14.1",
     "python": "3.14.4",
-    "uv": "0.12.5"
+    "kubernetes-helm": "4.2.4",
+    "editorconfig-checker": "4.0.2"
   },
   "env": { "PATH": "$DEVBOX_PROJECT_ROOT/bin:$PATH" },
   "shell": { "init_hook": ["lefthook install >/dev/null 2>&1 || true"] }
 }
 ```
 
-The reference pins more than this shows — `govulncheck`, `kind`,
-`kubernetes-helm`, `ko`, `goreleaser`, the protoc plugins and others; C6
-checks them all. `devbox.lock` is committed; `.devbox/` is gitignored.
+Policy also pins `govulncheck`, `kind`, `gopls`, `just-lsp`, `openssl` and
+`goreleaser`; Python runs maintenance checks, not a policy Python loader.
+It no longer declares Node, Yarn, uv, Gradle/JDK, ko, buf/protoc plugins,
+kubeconform or Biome. Product-owned language/image/generation jobs declare
+those tools in the product's manifest. Commit each lock; ignore `.devbox/`.
 
 ## Moving a pin
 
@@ -109,25 +115,26 @@ A dependency bot proposes every bump and the whole gate runs against it. Bumps t
 
 A group that is wrong is discovered the same way every time: two pull requests that each cannot pass until the other merges.
 
-The reference's Renovate configuration leaves `devbox.json`, `devbox.lock`, the
-Go directive and Yarn's `packageManager` to the fleet's devbox parity updater.
+Policy's Renovate configuration leaves `devbox.json`, `devbox.lock` and the
+Go directive to the fleet's devbox parity updater. The Node product also
+coordinates Yarn's `packageManager`; that rule is not in policy's current preset.
 Confirm that updater is enrolled before disabling an existing update path in a
 migrating repository. Its job is to move the manifest, resolved lock and
 followers together, not to give two bots competing ownership.
 
 ## What checks it
 
-Run version and executable-resolution checks inside devbox when diagnosing
-parity: `go version`, `golangci-lint version`, `yarn --version` and
-`command -v yarn`. Keep `GOTOOLCHAIN=local` on the reference's golangci-lint
+Run version and executable-resolution checks inside the owning devbox when
+diagnosing parity: Go/linter versions, and Yarn/path checks only for a Node
+consumer. Keep `GOTOOLCHAIN=local` on the reference's golangci-lint
 invocations. An installed but shadowed binary is not the tool that ran.
 
-The reference also omits a Gradle wrapper: the environment manifest supplies
-Gradle, and a wrapper downloading a second copy would reopen the same
-"which version actually runs" problem. Keep the manifest as its authority.
+For a Gradle consumer, an environment-supplied Gradle and a wrapper fetching a
+second copy reopen the same "which version actually runs" problem. Choose one
+declared authority; this is not a claim policy still has a Gradle build.
 
 - **C6** (`policy-conformance`, mechanical): every entry of `packages` in `devbox.json` names a version — `name@X…` in the list form, a non-empty version other than `latest` in the map form.
-- **The reference repository's own `hack/toolchain-check.py`**, run by `just lint`: `nodejs` has `disable_plugin` set; `ts/package.json`'s `packageManager` agrees with the `yarn-berry` pin.
+- **Policy's `hack/toolchain-check.py`**, run by `just lint`, checks package version declarations only. The removed `ts/package.json` and Node plugin/Yarn comparison are no longer checked here. A Node consumer needs its own corresponding parity check; do not credit policy's check with coverage it no longer has.
 - **Runtime parity is a separate observation.** That Python check reads manifests;
   it does not run Go, golangci-lint or Yarn. The current lint recipe invokes
   golangci-lint with `GOTOOLCHAIN=local`. Check versions and executable paths in

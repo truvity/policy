@@ -40,13 +40,24 @@ are observations in the gap table below, not alternative requirements.
 | 12 | `alerts` | application | product's own rules as a `VMRule` (`alerts.enabled`, off by default); `alerts.remote.*` renders the rule object alone for cross-cluster evaluation |
 | 13 | `tier` on the application chart | application, infra | identity SA rendered by `-infra` AFTER its PodIdentityAssociation (sync-waves: IAM Role 0 → PIA 1 → SA 2, `Prune=false,Delete=false` permanent); platform passes `tier` to BOTH charts, same value (app default `test`); `-infra`'s `cloud.serviceAccountAnnotations` mirrors `serviceAccount.app.annotations` |
 | 14 | `availability` | application | the platform's statement of the CLUSTER's redundancy, one word: `single` (default when absent — one replica, no budget that blocks a drain) or `high` (at least two replicas, a `maxUnavailable: 1` budget). The chart sizes its replicas and PodDisruptionBudget from it; an explicit `replicas.<component>` or `disruption.enabled` still wins; a platform no longer carries a per-product `replicas` stanza |
-| 15 | the database runtime role by default; migration credentials under their own key | application, infra | the product connects as a separate RUNTIME role (DML on its own schema, no DDL); the infra chart always renders a DatabaseRole and refuses the role opt-out. Long-running workloads get `database.app.role`/`database.app.passwordSecret` only. The owner's credential: `database.migration.passwordSecret` (with `.role`, `.passwordKey`, defaulted), passed only to a product declaring `postgres.migrations: true`, mounted ONLY in migration Jobs — `conformance.MigrationSecretOnlyInJobs` fails other manifests naming it. `database.owner.*` is deprecated for it |
+| 15 | the database runtime role by default; migration credentials under their own key | application, infra | runtime `DatabaseRole` by default; owner credentials are migration-only — details below |
+
+### Step 15: runtime and migration credentials
+
+The product connects as a separate RUNTIME role (DML on its own schema, no
+DDL); the infra chart always renders a `DatabaseRole` and refuses the role
+opt-out. Long-running workloads get `database.app.role` /
+`database.app.passwordSecret` only. The owner's credential is
+`database.migration.passwordSecret` (with `.role`, `.passwordKey`, defaulted),
+passed only to a product declaring `postgres.migrations: true`, and mounted
+ONLY in migration Jobs — `conformance.MigrationSecretOnlyInJobs` fails any
+other manifest naming it. `database.owner.*` is deprecated for it.
 
 ## Current implementation and contract gaps
 
-Reviewed on 2026-10-20 against the rebased checkout after v1.54.1. The
-example's charts declare 15, but an annotation and passing tests are not
-proof that every normative requirement is satisfied.
+The product charts still declare 15; that is independent of their own release
+version and their adopted policy/service-lib pin. A passing annotation test
+does not prove every normative requirement is satisfied.
 
 | Normative requirement / source | Observed implementation | Known gap |
 |---|---|---|
@@ -54,6 +65,7 @@ proof that every normative requirement is satisfied.
 | Step 3 and rule 3: an e2e chart is part of the product's chart set | the example stopped publishing it in v1.48.0, moved the prober into the app chart and runs its suite from CI | the chart-set requirement and the interface-15 example disagree |
 | First-release table: steps 14–15 are “not yet” adopted | the charts declare 15 and the changelog records adoption in v1.48.0 | registry release metadata needs correction |
 | Platform §10: cnpg-database values default to one live install's role | current values use empty roles and guards require explicit entries in the relevant modes | the documented defaults no longer describe the published example's inputs |
+| C15/older chart guide: library dependency is `0.0.0` through co-located `file://`; ADR 0014: the extracted consumer uses released versions | the product resolves OCI service-lib 1.54.2, equal to its policy Go module v1.54.2, and groups their bumps | reconcile the remaining dependency wording with extraction; do not erase either normative rule or present a vendored second library as current behavior |
 
 **Handling rule:** report the conflict with its source paths and render/release
 evidence. Propose a separate contract correction before adopting behavior the
@@ -68,7 +80,7 @@ cnpg-database dependency, optional dashboards and `identityCheck.expectAccount`
 do not advance its annotation. The account assertion still requires a checker
 image that understands it (v0.34.0+); an unchanged interface number is not a
 binary-compatibility check.
-See [identity admission](identity-admission.md) and [platform resources](cluster-resources.md).
+See `identity-admission.md` and `cluster-resources.md`.
 
 ## Adding a step
 

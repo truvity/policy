@@ -1,7 +1,9 @@
 # Cloud Identity at Pod Admission
 
-Self-contained summary of platform contract 1.4 §11 and decision 0013,
-reviewed on 2026-10-20 after policy v1.54.1. Sources: [platform](https://github.com/truvity/policy/blob/master/docs/contracts/platform.md),
+Self-contained summary of platform contract 1.4 §11 and decision 0013.
+This file owns the checker **v0.34.0+** minimum. The worked include/tests
+belong to [url-shortener][product].
+Sources: [platform](https://github.com/truvity/policy/blob/master/docs/contracts/platform.md),
 [decision 0013](https://github.com/truvity/policy/blob/master/docs/decisions/0013-pods-are-admitted-with-their-identity.md),
 and `charts/service-lib/templates/_identity_check.tpl` in the reference checkout.
 
@@ -40,7 +42,7 @@ Pass the component's `context`, `name`, `platform`, plus:
 | `expectAccount` | optional AWS account identifier, a quoted 12-digit string; malformed nonempty values fail the render when the check is enabled; absent/empty adds no flag |
 | `image` | optional pinned image override; otherwise top-level `images.identity-check` |
 
-The example's include is:
+The product's [include][product-include] is:
 
 ```gotemplate
 {{- $log := include "url-shortener.platform" (dict "root" $ "component" "log") | fromJson }}
@@ -75,9 +77,9 @@ the earlier behavior.
 
 The command and image are owned/released by
 [truvity/k8s](https://github.com/truvity/k8s), not policy or the adopting product.
-The reviewed example pins v0.34.0 with a multi-architecture digest in
-`images.identity-check`; preserve a verified tag+digest pair rather than asking
-the product release to rebuild or stamp its own version onto that image.
+The selected product's `images.identity-check` owns the exact tag/digest pin;
+v0.34.0 is the minimum for `expectAccount`, not an instruction to downgrade a
+newer verified pin. The product release does not rebuild or restamp this image.
 
 ## Selectors and network access
 
@@ -93,14 +95,18 @@ Service selector or by injecting cloud credentials in the chart.
 
 ## Checks and limits
 
-Reference `charts/identity_check_test.go` checks the hook, account, fresh-pod
+The product's `charts/identity_check_test.go` checks the hook, account, fresh-pod
 retries, tier behavior, waves and selector exclusion. Infra renders include
 check-specific egress. `TestExpectAccountIsPassedToTheCheckOnlyWhenSet` checks
 optional flag forwarding; `TestAMalformedExpectAccountFailsTheRender` checks
 refusal at render time. The command's account/ARN comparison tests belong to
 `truvity/k8s`, not these template tests.
 
-The local kind tier has no EKS admission webhook or IAM association. Render
-tests prove the wiring; a shared-cluster install proves injected credentials.
+Policy's Go tests and advisory canary are not a live identity test. The product
+render tests prove wiring; its protected shared-cluster integration can prove
+injected credentials. A consumer's kind tier has no EKS admission webhook/IAM.
 The hook measures admission at that moment, not the correctness of a later
 association change and not every permission the application will need.
+
+[product]: https://github.com/truvity/url-shortener/tree/76770607aa08baa58331668c228dacd62a13a89a
+[product-include]: https://github.com/truvity/url-shortener/blob/76770607aa08baa58331668c228dacd62a13a89a/charts/url-shortener/templates/identity-check.yaml
