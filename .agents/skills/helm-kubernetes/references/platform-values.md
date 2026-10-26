@@ -2,6 +2,13 @@
 
 What the `platform` block accepts (the schema service-lib reads) and what a platform passes each chart by name. Self-contained; normative sources (need network): [schemas/fragments/platform.json](https://github.com/truvity/policy/blob/master/schemas/fragments/platform.json), [docs/contracts/platform.md §10](https://github.com/truvity/policy/blob/master/docs/contracts/platform.md).
 
+Example-specific delivery keys and the echo fixture are in
+[url-shortener][product-charts], which consumes policy/service-lib v1.54.2; the
+product's schema bundle/tests use that adopted version, so do not assume a
+latest producer checkout is its pin.
+
+[product-charts]: https://github.com/truvity/url-shortener/tree/76770607aa08baa58331668c228dacd62a13a89a/charts
+
 ## The `platform` block (per component)
 
 Nothing here is the service's own configuration — that is the `config` block, rendered verbatim. Strict throughout: `additionalProperties: false`.
@@ -47,7 +54,7 @@ do not create a new numbered step by themselves.
 | `postgres.scheduling` | which pool a database may run on |
 | `postgres.backup.objectStoreName`, `.serverName` | which archive, and who this is inside it |
 | `postgres.serverTLS.secretName`, `.caSecretName` | what the server presents — two Secrets the chart must NOT create |
-| `postgres.runtimePasswordSecret` | name of the runtime credential Secret, populated externally or generated once; step 15 requires a DatabaseRole. The standalone example's Cluster-managed role differs from that wording; see the [contract-gap record](delivery-interface.md#current-implementation-and-contract-gaps) |
+| `postgres.runtimePasswordSecret` | name of the runtime credential Secret, populated externally or generated once; step 15 requires a DatabaseRole. The standalone example's Cluster-managed role differs from that wording; see the contract-gap record in `delivery-interface.md` |
 | `events.storage`, `.replicas`, `.maxAge` | how durable the stream is |
 | `events.account` OR `events.url` | who this is to the broker, or which broker — alternatives, not a pair |
 
@@ -80,7 +87,7 @@ do not create a new numbered step by themselves.
   its roles list defaults empty, not to one live install. State the complete
   applicable entry explicitly; `databaseRole: false` is required when the parent
   Cluster already manages the role. Render guards reject disagreement and
-  duplicate owners. See [platform resources](cluster-resources.md).
+  duplicate owners. See `cluster-resources.md`.
 
 The expected-account value is another platform input, not a new numbered
 delivery-interface step. A blank value sends no command flag; a nonempty one
@@ -96,9 +103,9 @@ material never goes in values, ConfigMaps, chart defaults or workflow YAML.
 
 Two blocks and the image map; the chart adds nothing between them:
 
-This source schema is the reference `service-example` chart's: its local
+This source schema is the product's `charts/testdata/service-example` chart's: its local
 `echo.schema.json` defines the service configuration and requires `listen`
-and `greeting`. Use it with the complete [echo render values](chart-patterns.md#two-block-values),
+and `greeting`. Use it with the complete echo render values in `chart-patterns.md`,
 not a differently named image entry. The committed `values.schema.json`
 bundles these references for offline Helm validation.
 
@@ -131,4 +138,7 @@ bundles these references for offline Helm validation.
 }
 ```
 
-Generate `values.schema.json` by bundling every `$ref` under `$defs` (the policy repo's recipe is `just chart-schemas`; any JSON-Schema bundler resolving the `$ids` works offline). `.helmignore` the source. Helm validates offline against the very schema the binary loads at start-up.
+Generate `values.schema.json` in the product with `just chart-schemas`, using
+the shared schemas at its policy pin; bundle refs under `$defs` and ignore the
+source when packaging. Policy provides the composer/schema, not this root
+recipe anymore. Helm validates offline against the binary's same schema.

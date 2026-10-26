@@ -2,6 +2,12 @@
 
 What `helm upgrade --install` provides that a GitOps controller's `helm template` + apply does not, and the rules that keep a chart portable across both. Persistent Applications and environment values are the platform's; product CI can install ephemeral test releases. Condensed and self-contained; sources: [testing guide](https://github.com/truvity/policy/blob/master/docs/guides/testing.md), [conformance guide](https://github.com/truvity/policy/blob/master/docs/guides/conformance.md), and the example's `charts/conformance_test.go`.
 
+The example/test paths are in [url-shortener][product], not policy. The product consumes a released policy
+module and OCI service-lib; policy's current Go gate does not run its chart
+render suite.
+
+[product]: https://github.com/truvity/url-shortener/tree/76770607aa08baa58331668c228dacd62a13a89a
+
 ## What differs
 
 `helm upgrade --install` can use Helm's Kubernetes connection to query the live
@@ -41,7 +47,11 @@ The portability prohibition on `lookup` is unchanged by this explanation.
 
 ## A plain Job under both paths
 
-The worked example renders no test Job at all any more: the e2e suite runs from the product's own CI, which creates the Job (with the ServiceAccount and read-only grants it needs) in its own ephemeral environment — a product's chart carries what runs for the life of the release and nothing that exists only to test it. A chart that DOES render a plain (non-hook) Job applies it the same way by both paths, and holds to:
+The product chart renders no suite Job: its current protected workflow runs
+the Go suite from a hosted runner against an ephemeral install. A different
+harness could create a scoped in-cluster Job, but that is not this snapshot's
+workflow. A chart that does render a plain Job needs an explicit replay and
+immutable-spec policy that works under both installers:
 
 - **Its name folds in the chart's own version**: a Job's spec is immutable, so re-applying an upgraded chart under the same name would be refused rather than converge. Each release of the chart is therefore a Job nothing before it ever created; the one before it is left for the NEXT version's apply to prune, or for `helm uninstall`.
 - **`ttlSecondsAfterFinished` is unset by default** — see the table above.
@@ -60,5 +70,8 @@ The controller cannot distinguish install from upgrade — every operation is a 
 For a cloud-identity component, the library's identity check precedes migration
 at weight **-20**, runs as the infra-owned account and uses `restartPolicy: Never`.
 It proves admission by retrying with fresh pods. Ordinary resource waves do not
-close the binding's eventual-consistency gap. See [identity admission](identity-admission.md).
-Only a live platform test proves injection; the kind lane proves template wiring.
+close the binding's eventual-consistency gap. See `identity-admission.md`.
+Only a live platform test proves injection; render tests prove template wiring.
+Policy's advisory Go canary retains released service-lib unless explicitly
+overridden, so it cannot be presented as proof of a new library render or a
+live install. The cited product's integration is separate from its fork PR gate.
