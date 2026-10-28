@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/truvity/policy/schemas/calls.json",
+  "title": "calls",
+  "description": "The who-calls-whom catalog for workload mutual TLS: for each callee, the identities outside its own release that may call it, per environment. It renders as the `peers` of the `tls` fragment (fragments/tls.json). Grants only: a chart grants its own release's account to itself.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["services"],
+  "properties": {
+    "services": {
+      "type": "object",
+      "description": "Keyed by '<project>/<component>': the project that owns the chart and the key the chart exposes as 'tls.peers.<component>'.",
+      "propertyNames": { "pattern": "^[a-z0-9]([a-z0-9-]*[a-z0-9])?/[a-z0-9]([a-z0-9-]*[a-z0-9])?$" },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["environments"],
+        "properties": {
+          "gateway_fronted": {
+            "type": "boolean",
+            "default": false,
+            "description": "An edge terminates TLS and forwards cleartext to this component, so it can never be strict."
+          },
+          "environments": {
+            "type": "object",
+            "description": "Keyed by environment name. List an environment even with no peers: an empty list says somebody looked and granted nobody; an absent one says nobody has.",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "strict": {
+                  "type": "boolean",
+                  "default": false,
+                  "description": "Run this component with tls mode strict where the estate enforces it. Inert elsewhere."
+                },
+                "peers": {
+                  "type": "array",
+                  "items": { "$ref": "#/$defs/peer" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9]([a-z0-9-]*[a-z0-9])?$",
+      "description": "One account or project name, never a pattern."
+    },
+    "peer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["serviceAccount", "why"],
+      "properties": {
+        "project": { "$ref": "#/$defs/name", "description": "A project of the estate; its namespace is its own name, so none is stated." },
+        "platform": { "$ref": "#/$defs/name", "description": "A caller that is not a project (an ingress gateway, say); it states its own namespace." },
+        "namespace": { "$ref": "#/$defs/name" },
+        "serviceAccount": { "$ref": "#/$defs/name" },
+        "why": { "type": "string", "minLength": 1, "description": "Required: a grant with no reason is the shape a stale grant takes." }
+      },
+      "oneOf": [
+        { "required": ["project"], "not": { "required": ["namespace"] } },
+        { "required": ["platform", "namespace"] }
+      ]
+    }
+  }
+}

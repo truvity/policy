@@ -4,6 +4,23 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+### Added
+
+- **The who-calls-whom catalog for mutual TLS has a home.** New package
+  `transport/catalog` and schema `schemas/calls.json`: for each callee (a
+  component exposing `tls.peers.<component>`), the identities outside its own
+  release that may call it, per environment. `catalog.Parse` checks a catalog
+  file against the schema and validates it (bare names, a reason on every
+  grant, exactly one of project or platform, no duplicate grant, no strict on
+  a gateway-fronted component); `ValidateEstate` binds it to an estate you
+  describe through the small `catalog.Estate` interface (known projects and
+  environments, workload identity, enforcement) and refuses a strict
+  component that omits a caller granted on a sibling; `TLSPeers` derives a
+  release's `tls.peers` values; `Peer.Resolve` takes the trust domain as an
+  argument. Nothing in it names an estate.
+
 ## v1.54.5 — 2026-10-26
 
 - Dependency updates.
