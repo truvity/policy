@@ -25,6 +25,12 @@ else.
 
 The configuration is the [`tls`](../../schemas/fragments/tls.json) fragment.
 
+Who may call whom, across releases, is kept in one catalog
+([`calls.json`](../../schemas/calls.json)), read by
+[`transport/catalog`](../../transport/catalog/): it validates the grants,
+checks them against the platform's projects and renders each release's
+`tls.peers`. A release's own internal calls are granted by its chart, not here.
+
 ## What the platform must attest
 
 **A certificate whose identity the workload asserts is worth nothing.** If a
