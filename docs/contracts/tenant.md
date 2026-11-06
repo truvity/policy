@@ -191,6 +191,7 @@ newer one with `unknown-interface`. Interface 1 is the first.
 | §1 shapes, unknown fields, bare names | the section schemas under `schemas/tenant.v1/`, loaded by the `tenant` package |
 | §1.4, §3 codes | one refusal fixture per code, each a valid bundle with one change, asserting the code and the path; a sweep guard fails if a code has no fixture |
 | §2 registration | the `tenant` package's `Check`, against an `Estate` the caller implements |
+| §1, §3 and §5 from a company's own CI | the `tenant-validate` command (`go run github.com/truvity/policy/cmd/tenant-validate@<version> <dir>`): `Load`, `Validate` and `Digest` over the directory, every failure printed with its code, exit status 1 for a refused bundle and 2 when the check could not run. It does not run `Check`: the registration is the platform's record, not the company's |
 | §5 digest | tests that `Digest` equals what `ocictl digest` prints for the same files, that it is stable under file order, modes and times, and that a source date changes it; golden digests pin the packing to the `ocictl` version in `go.mod` |
 | §4 source-hosting rows beyond the organisation key | **unchecked here**: the applying tool's own check, run by the company's CI |
 | §4 effect of a merged row | **unchecked here**: the access service |
