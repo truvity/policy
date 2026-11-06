@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json",
+  "title": "tenant.v1 definitions",
+  "description": "The scalar shapes the tenant.v1 sections share. Not a document: a section references these by $ref.",
+  "$defs": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 63,
+      "pattern": "^[a-z0-9]([a-z0-9-]*[a-z0-9])?$",
+      "description": "One bare name, never a pattern: a glob in a name is a grant to everything it matches, including what does not exist yet."
+    },
+    "host": {
+      "type": "string",
+      "maxLength": 253,
+      "pattern": "^([a-z0-9]([a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9]([a-z0-9-]*[a-z0-9])?$",
+      "description": "One DNS name, never a wildcard."
+    },
+    "email": {
+      "type": "string",
+      "maxLength": 254,
+      "pattern": "^[A-Za-z0-9._%+-]+@[a-z0-9]([a-z0-9.-]*[a-z0-9])?$",
+      "description": "One address, never a pattern."
+    },
+    "redirectUri": {
+      "type": "string",
+      "maxLength": 2048,
+      "pattern": "^(https://[^*\\s]+|http://(localhost|127\\.0\\.0\\.1)(:[0-9]+)?(/[^*\\s]*)?)$",
+      "description": "An https URL, or a plain-http loopback URL for a native client. No wildcard: a pattern in a redirect is an open redirect."
+    }
+  }
+}

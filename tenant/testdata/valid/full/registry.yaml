@@ -1,0 +1,4 @@
+projects:
+  - project: shop
+    registry: shared
+    repositories: [web, worker]

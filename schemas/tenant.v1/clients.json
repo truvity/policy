@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/truvity/policy/schemas/tenant.v1/clients.json",
+  "title": "tenant.v1 clients",
+  "description": "tenant/clients.yaml: the OIDC clients a company asks the platform's identity provider to register. A client belongs to one of the company's own projects. A client's secret is never in the bundle.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "clients": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "project", "kind"],
+        "properties": {
+          "name": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/name" },
+          "project": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/name", "description": "A project this bundle defines." },
+          "kind": { "enum": ["web", "spa", "native", "service"] },
+          "redirect_uris": { "type": "array", "items": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/redirectUri" } },
+          "post_logout_redirect_uris": { "type": "array", "items": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/redirectUri" } }
+        }
+      }
+    }
+  }
+}

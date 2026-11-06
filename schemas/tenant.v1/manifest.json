@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/truvity/policy/schemas/tenant.v1/manifest.json",
+  "title": "tenant.v1 manifest",
+  "description": "tenant/tenant.yaml: which company the bundle is for and which interface it was written for. The company must match the platform's registration; the checker refuses a bundle whose manifest says otherwise.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "company", "interface"],
+  "properties": {
+    "schema": { "const": "tenant.v1", "description": "The bundle format." },
+    "company": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/name", "description": "The company's slug, as the platform registered it." },
+    "interface": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The interface revision the bundle was written for. It only grows and a step only adds; a checker reads its own revision and the one before it, and refuses a newer one."
+    }
+  }
+}

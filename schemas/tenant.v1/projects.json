@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/truvity/policy/schemas/tenant.v1/projects.json",
+  "title": "tenant.v1 projects",
+  "description": "tenant/projects.yaml: the projects a company runs and the endpoints each publishes. A project name is unique across the platform, not only within the company.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "projects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name"],
+        "properties": {
+          "name": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/name" },
+          "description": { "type": "string", "maxLength": 500 },
+          "environments": {
+            "type": "array",
+            "items": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/name" },
+            "description": "The environments the project runs in. Omitted means the platform's default set."
+          },
+          "endpoints": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["name", "host"],
+              "properties": {
+                "name": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/name" },
+                "host": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/host", "description": "Must be in a zone the company owns; the checker refuses it otherwise." },
+                "visibility": { "enum": ["internal", "public"], "default": "internal" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

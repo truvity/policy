@@ -1,0 +1,13 @@
+clients:
+  - name: shop-web
+    project: shop
+    kind: web
+    redirect_uris:
+      - https://shop.acme.example/callback
+    post_logout_redirect_uris:
+      - https://shop.acme.example/
+  - name: shop-cli
+    project: shop
+    kind: native
+    redirect_uris:
+      - http://127.0.0.1:8123/callback

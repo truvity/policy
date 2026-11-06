@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/truvity/policy/schemas/tenant.v1/access.json",
+  "title": "tenant.v1 access",
+  "description": "tenant/access.yaml: groups of people, and the grants those groups hold on the company's own projects. A grant is a request, bounded by the company's access ceiling; it is not the access itself.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name"],
+        "properties": {
+          "name": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/name" },
+          "members": {
+            "type": "array",
+            "items": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/email" },
+            "description": "Each address must be in an e-mail domain the company holds; the checker refuses it otherwise."
+          }
+        }
+      }
+    },
+    "grants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["group", "project", "scope"],
+        "properties": {
+          "group": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/name", "description": "A group this bundle defines." },
+          "project": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/name", "description": "A project this bundle defines." },
+          "scope": { "enum": ["read", "write", "admin"] },
+          "why": {
+            "type": "string",
+            "description": "Required, and refused when empty. It is checked by the validator rather than the schema so that a missing reason is reported with its own code (missing-reason) and not as a generic shape failure."
+          }
+        }
+      }
+    }
+  }
+}

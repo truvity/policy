@@ -1,0 +1,5 @@
+entities:
+  - name: storefront
+    project: shop
+    title: Storefront
+    endpoint: web

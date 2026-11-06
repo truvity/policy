@@ -1,0 +1,5 @@
+requests:
+  - name: shop-build
+    project: shop
+    repository: acme-org/shop
+    environments: [stage, prod]
