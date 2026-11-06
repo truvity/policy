@@ -164,6 +164,9 @@ they fit together. The contracts:
 - [platform](docs/contracts/platform.md) — what a service asks of what runs it
 - [delivery interface](docs/contracts/delivery-interface.md) — the one number a
   chart declares so a platform hands it only what it can take
+- [tenant bundle](docs/contracts/tenant.md) — what a company hands a shared
+  platform as its configuration, and what the platform checks before it
+  accepts it
 - [release](docs/contracts/release.md) — one tag, what a version means
 - [component](docs/contracts/component.md) — the rules C1–C18 for every
   public repository that ships charts, images, libraries, CLIs or actions

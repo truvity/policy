@@ -32,3 +32,4 @@ sales pitch.
 | [0012](0012-stabilization-amendments.md) | accepted | Documents carry a product group; secrets are named and resolved through one source; a service may read a policy document; presets are defined; a stabilizing product may break in a minor (amends 0002, 0011) |
 | [0013](0013-pods-are-admitted-with-their-identity.md) | accepted | A pod is admitted with its cloud identity, and a hook Job proves it before the workloads exist |
 | [0014](0014-the-worked-example-lives-in-its-own-repository.md) | accepted | The worked example and the TypeScript, Python and Kotlin loaders live in their own repository; this one keeps a downstream canary |
+| [0015](0015-a-companys-configuration-is-a-pinned-validated-bundle.md) | accepted | A company's configuration is a validated bundle, accepted whole and pinned by digest |

@@ -50,6 +50,14 @@ log stream and a drain on SIGTERM, held to
 is held to the same boundary where it applies. A component may ship a
 service; most ship mechanism around someone else's.
 
+**Tenant.** Two uses, both "who the platform serves":
+
+- *A tenant namespace* — a project's footprint on a shared cluster, held to
+  [tenancy.md](contracts/tenancy.md).
+- *A tenant bundle* — the data rows a company hands a shared platform as its
+  configuration, held to [tenant.md](contracts/tenant.md). A company's bundle
+  asks for tenant namespaces; it is not one.
+
 **Preset.** A named bundle of a service's adapter or deployment choices that
 expands at load time into the keys it stands for, and names only choices
 that are implemented ([config.md §9](contracts/config.md)). Not a **profile**:
