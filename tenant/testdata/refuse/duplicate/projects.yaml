@@ -1,0 +1,15 @@
+projects:
+  - name: shop
+    description: The storefront.
+    environments: [stage, prod]
+    endpoints:
+      - name: web
+        host: shop.acme.example
+        visibility: public
+      - name: admin
+        host: admin.shop.acme.example
+  - name: ledger
+    endpoints:
+      - name: api
+        host: ledger.acme.example
+  - name: shop

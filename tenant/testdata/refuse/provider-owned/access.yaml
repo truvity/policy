@@ -1,0 +1,17 @@
+groups:
+  - name: platform-admins
+    members:
+      - ada@acme.example
+      - grace@acme.example
+  - name: ledger-team
+    members:
+      - alan@acme.example
+grants:
+  - group: platform-admins
+    project: shop
+    scope: write
+    why: The team that ships the storefront.
+  - group: ledger-team
+    project: ledger
+    scope: read
+    why: Reads the ledger to reconcile the storefront's orders.

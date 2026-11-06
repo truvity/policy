@@ -7,6 +7,7 @@ toolchain go1.27.3
 require (
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3
 	github.com/stretchr/testify v1.12.1
+	github.com/truvity/ocictl v0.12.0
 	go.opentelemetry.io/contrib/exporters/autoexport v0.71.0
 	go.opentelemetry.io/contrib/instrumentation/runtime v0.71.0
 	go.opentelemetry.io/otel v1.47.0
@@ -49,7 +50,6 @@ require (
 	github.com/prometheus/common v0.70.1 // indirect
 	github.com/prometheus/otlptranslator v1.0.0 // indirect
 	github.com/prometheus/procfs v0.21.1 // indirect
-	github.com/truvity/ocictl v0.12.0 // indirect
 	github.com/urfave/cli/v3 v3.10.1 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/bridges/prometheus v0.71.0 // indirect
@@ -78,4 +78,7 @@ require (
 	oras.land/oras-go/v2 v2.6.2 // indirect
 )
 
-tool github.com/truvity/ocictl/cmd/helmctl
+tool (
+	github.com/truvity/ocictl/cmd/helmctl
+	github.com/truvity/ocictl/cmd/ocictl
+)

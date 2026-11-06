@@ -30,8 +30,31 @@ subjects under them are the GitHub Release's own list.
   rest of its shape stays with the tool that applies it. A grant's `why` is
   deliberately left to the validator, so a missing reason has its own code.
   They are embedded in `policy.Schemas` and load with `config.Validate`; no
-  existing schema changes. The checker that uses them arrives in a later
-  change.
+  existing schema changes.
+- **New package `tenant`: the checker for a company's configuration bundle.**
+  `tenant.Load(fs.FS)` checks each section against its schema, decodes it
+  strictly and refuses a file the contract does not name or an interface newer
+  than it reads. `Bundle.Validate()` checks what needs no platform: bare
+  names, no duplicate, a reason on every grant, every reference defined in the
+  bundle. `Bundle.Check(Registration, Estate)` checks the bundle against what
+  the platform holds about the company (zones, e-mail domains, registries, the
+  organisation, reserved names, and one opaque ceiling per domain that the
+  `Estate` enforces; an omitted ceiling admits nothing). A refusal is
+  all-or-nothing and aggregated: every failure is returned as `tenant.Errors`,
+  each with a stable code (`unknown-field`, `invalid`, `unknown-interface`,
+  `duplicate`, `missing-reason`, `cross-company-ref`, `provider-owned`,
+  `ceiling-exceeded`, `wrong-org`), a file, a path and a reason. `Digest`
+  gives the pin: the OCI manifest digest of the bundle as `ocictl static push`
+  packs it (ocictl's own deterministic packer, the default artifact shape, no
+  annotation and no source date), so a company publishes with
+  `ocictl static push`, checks with `ocictl digest <dir>`, and the platform
+  pins the real manifest digest a registry reports. It is unchanged by file
+  modes, times or order. The module now requires `github.com/truvity/ocictl`
+  (v0.12.0) and lists its `ocictl` command as a tool; a new ocictl can move
+  every pin, and the golden digests in the tests say so. A file holds one YAML
+  document and is a regular file, no two names differ only in case, a host is
+  claimed once, and a receiver's target is a bare secret name or one address.
+  Nothing links the package yet, so a pin bump changes no behaviour.
 
 ## v1.55.1 — 2026-11-02
 
