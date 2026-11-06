@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/truvity/policy/schemas/tenant.v1/registry.json",
+  "title": "tenant.v1 registry",
+  "description": "tenant/registry.yaml: container-registry project rows the platform hosts for a company. A row names a registry the company holds; the checker refuses one it does not.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "projects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["project", "registry"],
+        "properties": {
+          "project": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/name", "description": "A project this bundle defines." },
+          "registry": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/name", "description": "One of the registries in the company's registration." },
+          "repositories": { "type": "array", "items": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/name" } }
+        }
+      }
+    }
+  }
+}

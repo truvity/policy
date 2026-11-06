@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/truvity/policy/schemas/tenant.v1/ci.json",
+  "title": "tenant.v1 ci",
+  "description": "tenant/ci.yaml: requests for the platform's CI to run for one of the company's projects, from one repository, for the named environments.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "requests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "project", "repository"],
+        "properties": {
+          "name": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/name" },
+          "project": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/name", "description": "A project this bundle defines." },
+          "repository": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$",
+            "description": "owner/name. The owner must be the company's registered source-hosting organisation."
+          },
+          "environments": { "type": "array", "items": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/name" } }
+        }
+      }
+    }
+  }
+}

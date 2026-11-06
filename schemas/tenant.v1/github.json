@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/truvity/policy/schemas/tenant.v1/github.json",
+  "title": "tenant.v1 github",
+  "description": "tenant/github.yaml: source-hosting rows. Only the organisation key is checked here; the rest of the shape belongs to the tool that applies the rows, which has its own loader and its own refusals. The additional properties are therefore allowed on purpose.",
+  "type": "object",
+  "required": ["organization"],
+  "properties": {
+    "organization": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 39,
+      "pattern": "^[A-Za-z0-9]([A-Za-z0-9-]*[A-Za-z0-9])?$",
+      "description": "The organisation name. It must equal the one in the company's registration (wrong-org)."
+    }
+  },
+  "additionalProperties": true
+}

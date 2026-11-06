@@ -1,0 +1,13 @@
+receivers:
+  - name: oncall
+    kind: email
+    target: oncall@acme.example
+  - name: pager
+    kind: webhook
+    target: acme-pager-webhook
+routes:
+  - project: shop
+    receiver: oncall
+  - project: ledger
+    receiver: pager
+    severity: critical

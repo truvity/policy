@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/truvity/policy/schemas/tenant.v1/status.json",
+  "title": "tenant.v1 status",
+  "description": "tenant/status.yaml: the entities a company shows on the platform's status page, each tied to one of its projects.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "project", "title"],
+        "properties": {
+          "name": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/name" },
+          "project": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/name", "description": "A project this bundle defines." },
+          "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "endpoint": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/name", "description": "An endpoint of that project; the entity reports that endpoint's health." }
+        }
+      }
+    }
+  }
+}

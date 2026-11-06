@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/truvity/policy/schemas/tenant.v1/alerts.json",
+  "title": "tenant.v1 alerts",
+  "description": "tenant/alerts.yaml: where a company's alerts go. A route sends one project's alerts to a receiver the bundle defines. A receiver's credentials are never in the bundle: a webhook receiver names the secret that holds its address.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "receivers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "kind", "target"],
+        "properties": {
+          "name": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/name" },
+          "kind": { "enum": ["email", "webhook"] },
+          "target": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 254,
+            "description": "An e-mail address for kind email; the NAME of a secret holding the address for kind webhook."
+          }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "kind": { "const": "webhook" } }, "required": ["kind"] },
+            "then": { "properties": { "target": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/name" } } }
+          },
+          {
+            "if": { "properties": { "kind": { "const": "email" } }, "required": ["kind"] },
+            "then": { "properties": { "target": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/email" } } }
+          }
+        ]
+      }
+    },
+    "routes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["project", "receiver"],
+        "properties": {
+          "project": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/name", "description": "A project this bundle defines." },
+          "receiver": { "$ref": "https://github.com/truvity/policy/schemas/tenant.v1/defs.json#/$defs/name", "description": "A receiver this bundle defines." },
+          "severity": { "enum": ["info", "warning", "critical"], "description": "Omitted means every severity." }
+        }
+      }
+    }
+  }
+}

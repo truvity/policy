@@ -18,6 +18,21 @@ subjects under them are the GitHub Release's own list.
   the glossary now tells the two apart. Nothing a consumer runs changes: the
   schemas and the checker arrive in later changes.
 
+### Added
+
+- **Schemas for a company's configuration bundle:** `schemas/tenant.v1/`.
+  One strict schema per section file (`manifest`, `projects`, `clients`,
+  `access`, `alerts`, `status`, `ci`, `registry`, `github`) plus the `defs`
+  they share. A name is one bare name and never a pattern, a redirect never has
+  a wildcard, a webhook receiver's target is the name of a secret and never a
+  URL, an e-mail receiver's target is one address, and an unknown field is
+  refused. The `github` section is checked for its organisation key only; the
+  rest of its shape stays with the tool that applies it. A grant's `why` is
+  deliberately left to the validator, so a missing reason has its own code.
+  They are embedded in `policy.Schemas` and load with `config.Validate`; no
+  existing schema changes. The checker that uses them arrives in a later
+  change.
+
 ## v1.55.1 — 2026-11-02
 
 - Dependency updates.

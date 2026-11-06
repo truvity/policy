@@ -15,6 +15,7 @@ tool which reads a configuration is not a special case.
 | [fragments/nats-consumer.json](fragments/nats-consumer.json) | what a consumer binds to |
 | [calls.json](calls.json) | the who-calls-whom catalog that renders as `tls.peers` (not a fragment: a platform file, read by [`transport/catalog`](../transport/catalog/)) |
 | [fragments/platform.json](fragments/platform.json) | what the platform provides one component of a service chart (the `platform` block of its values; not part of a configuration file) |
+| [tenant.v1/](tenant.v1/) | a company's configuration bundle, one schema per section file (`manifest`, `projects`, `clients`, `access`, `alerts`, `status`, `ci`, `registry`, `github`) and the `defs` they share; the contract is `docs/contracts/tenant.md` |
 
 **Telemetry is deliberately absent.** It is configured by OpenTelemetry's own
 environment variables, in every language, which is the one exception to
