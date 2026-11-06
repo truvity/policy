@@ -4,6 +4,20 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+### Contracts
+
+- **New: the tenant bundle contract** ([contracts/tenant.md](docs/contracts/tenant.md),
+  [decision 0015](docs/decisions/0015-a-companys-configuration-is-a-pinned-validated-bundle.md)).
+  What a company hands a shared platform as its configuration: a directory of
+  strict YAML sections plus a manifest, checked against the platform's record
+  of that company, accepted whole or refused with stable codes, and pinned by
+  the OCI manifest digest of the bundle as `ocictl static push` publishes it.
+  It is distinct from the tenancy contract, which describes a tenant namespace;
+  the glossary now tells the two apart. Nothing a consumer runs changes: the
+  schemas and the checker arrive in later changes.
+
 ## v1.55.1 — 2026-11-02
 
 - Dependency updates.

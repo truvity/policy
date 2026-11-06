@@ -18,6 +18,9 @@ The index, by what you are here to do.
 - [contracts/tenancy.md](contracts/tenancy.md) — what a tenant namespace on
   a shared cluster must be: labels, Pod Security, baseline NetworkPolicy, quota,
   roles and identity, and who provides each.
+- [contracts/tenant.md](contracts/tenant.md) — what a company hands a shared
+  platform as its configuration: a bundle of data rows, what the platform checks
+  before accepting it, and how the accepted bundle is pinned.
 - [contracts/delivery-interface.md](contracts/delivery-interface.md) — the
   order in which the platform contract's menu grew, and the one number a
   chart declares so that a platform hands it only what it can take.
