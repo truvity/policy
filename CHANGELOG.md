@@ -4,6 +4,20 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+### Added
+
+- **A command for a company's CI: `cmd/tenant-validate`.**
+  `tenant-validate [-digest] DIR` runs `tenant.Load`, `Bundle.Validate` and
+  `Digest` over the bundle in `DIR` and prints the company and the pin
+  (`-digest`: the pin alone), which is the digest `ocictl digest DIR` prints.
+  A refused bundle prints every failure, one per line with its code, and
+  exits 1; a check that could not run (a bad flag, no directory) exits 2. It
+  does not run `Check`, which needs the platform's record of the company.
+  Run it with `go run github.com/truvity/policy/cmd/tenant-validate@<version>`.
+  Nothing existing changes.
+
 ## v1.56.0 — 2026-11-06
 
 ### Contracts
