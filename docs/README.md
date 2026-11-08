@@ -45,6 +45,8 @@ The index, by what you are here to do.
 - [landscape.md](landscape.md) — the other direction: every public
   repository this contract applies to today, grouped by layer, and how they
   fit together.
+- [delegation-model.md](delegation-model.md) — who runs what when a company
+  shares a platform, and how to ask the platform for something.
 
 ## Reviewing a service
 
