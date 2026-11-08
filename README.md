@@ -156,7 +156,9 @@ versions: each consumer's own pin is the record of that.
 authoring a component, reviewing one, operating one.
 [`docs/landscape.md`](docs/landscape.md) is the other direction: one page
 naming every public repository the contracts below apply to today, and how
-they fit together. The contracts:
+they fit together. [`docs/delegation-model.md`](docs/delegation-model.md) is
+the short page on who runs what when a company shares a platform. The
+contracts:
 
 - [repository](docs/contracts/repository.md) — layout, toolchain, the gate
 - [service](docs/contracts/service.md) — the process boundary
