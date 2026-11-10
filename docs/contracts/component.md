@@ -1,6 +1,6 @@
 # The component contract
 
-Version: 1.1 · Effective: 2026-10-02 · Changes: see [CHANGELOG](../../CHANGELOG.md)
+Version: 1.2 · Effective: 2026-11-10 · Changes: see [CHANGELOG](../../CHANGELOG.md)
 
 **Normative.** What a public repository that ships *mechanism* looks like,
 so that a stranger who has read one can install, audit and change the next
@@ -266,8 +266,11 @@ next lesson; an override with no reason is one nobody dares remove
 ## C8. The README answers a newcomer's questions, in order
 
 **What.** `README.md` opens with the title, one sentence saying what this
-is, and the table of what ships and where it is published. Then these
-`## ` headings, in this order (others may sit between them):
+is, and the table of what ships and where it is published. The table needs no
+statement of the latest version: a number typed into a README goes stale, and
+a link to the releases stays true (amended 2026-11-10). Then these `## `
+headings, in this order (others may sit between them). Two are optional and
+are marked so; a README passes with or without them:
 
 1. `Who it is for` — the platform it assumes, and what it deliberately
    does not install.
@@ -276,21 +279,27 @@ is, and the table of what ships and where it is published. Then these
    file or snippet with **neutral values** (`example.com`,
    `eu-example-1`, the cloud's own documented placeholder account) that
    renders or compiles as written.
-4. `Consumers` — who uses this and through which surface (chart, Go
-   module, action, CLI). The one place a consuming repository is named;
-   never a version, an environment or a cluster.
-5. `Neighbours` — the repositories a reader must know about, one line
+4. `Platform part and company part` — what the platform admin applies and
+   what a company's SRE applies, for a component that has both (see
+   [below](#the-platform-part-and-the-company-part)). **Optional today;
+   required from a later version of this contract.**
+5. `Consumers` — **optional** (amended 2026-11-10). Who uses this and through
+   which surface (chart, Go module, action, CLI). Prefer to leave it out when
+   it would not be kept true. If it is present, it is the one place a
+   consuming repository is named; never a version, an environment or a
+   cluster.
+6. `Neighbours` — the repositories a reader must know about, one line
    each, with the boundary between them.
-6. `Documentation` — links into `docs/`.
-7. `The rule that makes this repository public` — mechanism only, and that
+7. `Documentation` — links into `docs/`.
+8. `The rule that makes this repository public` — mechanism only, and that
    `hack/leak-canary.sh` enforces it.
-8. `Status` — what is true today. A "pending", "not yet" or "next" is
+9. `Status` — what is true today. A "pending", "not yet" or "next" is
    checked against the releases and the tree, and deleted or made true.
-9. `Development` — `devbox shell`, `just check`, how to regenerate
-   goldens.
-10. `Releasing` — the release mode in a sentence or two: whether
+10. `Development` — `devbox shell`, `just check`, how to regenerate
+    goldens.
+11. `Releasing` — the release mode in a sentence or two: whether
     auto-release is armed, and that minors and majors are manual.
-11. `Licence`.
+12. `Licence`.
 
 `docs/` holds the reference: `adoption.md` (install order, the zero-diff
 gate, every breaking upgrade), `safety.md` (each refusal and the failure
@@ -311,10 +320,43 @@ inside it. A change that renames a value is a major for every consumer
 listed and a patch for none, and the author cannot tell which without the
 list. Naming the consuming repository and the surface — not the version
 it pins, which lives with the consumer's own pin — is the smallest thing
-that answers the question.
+that answers the question. It became optional on 2026-11-10, because a
+list nobody keeps true misleads more than no list. A review that day found
+the `Consumers` section and the latest-version statement stale in about ten
+READMEs each. A reader who needs the blast radius can ask the consuming
+side, which holds the pins.
 
-**Conformance.** The file exists and contains each of the eleven headings
-as a `## ` line, in this order.
+**Conformance.** The file exists and contains each of the ten required
+headings as a `## ` line, in this order. `Platform part and company part`
+and `Consumers` may be present or absent. When `Platform part and company
+part` is present, its shape is the one described below. The checker lives in
+`truvity/ci-actions`, not in this repository. It still asks for `Consumers`
+and does not look at the new section until it is changed to match this text.
+A repository that keeps `Consumers` passes either way, so no repository that
+passes today fails.
+
+### The platform part and the company part
+
+A component the platform runs has two parts, as the
+[delegation model](../delegation-model.md#the-platform-and-a-company-meet-at-the-box)
+describes. The README states both, under a `## Platform part and company part`
+heading that sits after `Install and a worked example`. The section holds two
+labelled paragraphs or lists, in this order:
+
+- `**Platform part.**` What the platform admin applies: the chart or stack,
+  where it runs, and which settings the platform owns.
+- `**Company part.**` What a company's SRE applies: the documents the company
+  writes into its box for this component, and where it writes them. A
+  component with no company part says so in one line: `**Company part.** None.`
+
+Each label opens a non-empty paragraph or list. The section links to the
+reference in `docs/` for the detail instead of copying it.
+
+**Required from a later version.** The section is optional in version 1.2 so
+that no repository that passes today fails. A later version of this contract
+will make it required, once each repository has had its README pull request.
+That version will say its date, and the CHANGELOG will announce it before the
+checker starts to ask for it.
 
 ## C9. The licence is MIT, at the root
 
@@ -736,6 +778,10 @@ break. Naming the repository and the surface, and nothing else, recovers
 that without publishing anything a consumer's own pin does not already
 say.
 
+Amended 2026-11-10: the `Consumers` section is optional, as [C8](#c8-the-readme-answers-a-newcomers-questions-in-order)
+says. The map was found stale in about ten READMEs, and a stale map is worse
+than none.
+
 ## Applies to
 
 The scope is the rule in [Scope](#scope); this list is that rule applied on
@@ -776,7 +822,7 @@ later is in scope by the rule, not by being added here.
 | C5 CHANGELOG | `policy-conformance`: heading grammar, order, one `Unreleased`, a heading for the latest tag unless it is an automatic patch (Z > 0, `X.Y` of the newest heading) |
 | C6 devbox pins | `policy-conformance`: no `latest` in `devbox.json` |
 | C7 renovate | `policy-conformance`: extends the shared preset; every override has a `description` |
-| C8 README | `policy-conformance`: the eleven headings, in order |
+| C8 README | `policy-conformance`: the required headings, in order; `Consumers` and `Platform part and company part` are optional, and the second is checked for shape when present |
 | C9 licence | `policy-conformance`: `LICENSE` is MIT, unless a fork is [exempted](#exemptions) |
 | C10 security workflow | `policy-conformance`: `security.yaml` exists with `go.mod`; `vuln` in no other workflow's recipes, and not reachable from the `Justfile`'s `check` |
 | C11 image names | `policy-conformance`: no image repository ends in `<repo>/<repo>` with nothing published beside it |

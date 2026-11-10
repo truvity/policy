@@ -101,6 +101,9 @@ public repositories:
 - the **platform part**, applied by the platform admin;
 - the **company part**, applied by the company's SRE.
 
+A component's README states both parts, and says in one line when there is no
+company part ([component contract, C8](contracts/component.md#the-platform-part-and-the-company-part)).
+
 ### The one pattern
 
 The company writes a typed document into a named place in its own box. A
