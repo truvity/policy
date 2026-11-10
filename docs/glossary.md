@@ -72,8 +72,8 @@ The two sides meet at the box
 
 **Platform part, company part.** The two halves of a public component. The
 *platform part* is applied by the platform admin. The *company part* is applied
-by the company's SRE. A contract between them is kept in the public
-repositories.
+by the company's SRE. Either may be empty. A contract between them is kept in
+the public repositories.
 
 **Platform admin.** A person on the platform team who applies the platform part
 of a component, by hand, from the platform repository.
@@ -94,8 +94,9 @@ ships it only in a major ([release.md §2](contracts/release.md)).
 **Consumer.** A repository that installs, imports or calls a released
 artifact at a pinned version, and whose pin bump carries the evidence that
 adopting it changes only what the release announced
-([release.md §6](contracts/release.md)). A component's README names its
-consumers and the surface each uses ([component.md C8](contracts/component.md)).
+([release.md §6](contracts/release.md)). A component's README may name its
+consumers and the surface each uses ([component.md C8](contracts/component.md));
+the `Consumers` section is optional since contract 1.2.
 
 **kernel, devel, stage, prod.** The environment names an estate's clusters
 commonly carry, and the order a release is promoted through. The contracts
