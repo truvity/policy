@@ -28,7 +28,7 @@ agents work together is in the [working agreement](working-agreement.md).
 
 | Repository | Holds | Applied by |
 |---|---|---|
-| the platform repository (private) | the platform | platform SREs, by hand |
+| the platform repository (private) | the platform | platform admins, by hand |
 | `{company}/nexus` | the company's own accounts and zones | company SREs, by hand |
 | `{company}/gitops` | the company's applications | Argo CD |
 | public `truvity/*` components | generic building blocks used by all of the above | nobody: they are consumed at a pinned version |
@@ -37,16 +37,18 @@ A `{company}/nexus` repository keeps its data apart from its code:
 
 - `cfg/` holds plain YAML: `company.yaml` (what the company tells the platform,
   such as status-page entries and alert receivers), `cloudflare.yaml`,
-  `aws.yaml`, `github.yaml`.
-- One folder per component (`cloudflare/`, `aws/`, `github/`), each its own
+  `aws.yaml`, `github.yaml` (planned).
+- One folder per component (`cloudflare/`, `aws/`, `github/` (planned)), each its own
   Pulumi project that reads its file in `cfg/`, run by hand with
   `just preview <component> <stack>` and `just up <component> <stack>`.
 - State lives under a prefix per company and component.
 
 The project stacks (registries, release roles and limit roles) and the GitHub
-organisation stack are the company's, in its nexus. The permission boundaries
-stay with the platform. A company names its boundary in a block the platform
-approves and guards with code owners.
+organisation stack move to the company's nexus, step by step. Until a stack has
+moved, it is applied where it is applied today. The permission boundaries stay
+with the platform. A company names its boundary in a block the platform
+approves and guards with code owners. A guard in the AWS organisation comes
+first: until it exists, only the platform team applies these stacks.
 
 A `{company}/gitops` repository holds one folder per project:
 
@@ -74,8 +76,8 @@ There are twelve areas.
 | Observability | [observability](https://github.com/truvity/observability) | stores, Alertmanager, Grafana; stamps the owner label | none | dashboards and rules, in its charts | owner label set by the platform |
 | Delivery | [cd](https://github.com/truvity/cd), [gemaal](https://github.com/truvity/gemaal) | Argo CD, Kargo; the company's Argo project | none | apps, versions, values, promotions | one Argo project per company |
 | CI | [ci-workflows](https://github.com/truvity/ci-workflows), [ci-actions](https://github.com/truvity/ci-actions), [grun](https://github.com/truvity/grun) | runners, caches | none | its repositories call the shared CI | one runner group per GitHub organisation |
-| Source hosting | [github-structure](https://github.com/truvity/github-structure) | the company's GitHub organisation and its repositories | its GitHub organisation stack | none | one GitHub organisation per company |
-| Foundation | aws-structure | the clusters and the accounts they run in; company and project registration | none | none | a company exists on the platform only when the platform registers it |
+| Source hosting | [github-structure](https://github.com/truvity/github-structure) | the github-structure program, and the GitHub organisation stack until it moves to the company's nexus | its GitHub organisation stack, once it has moved | none | one GitHub organisation per company |
+| Foundation | aws-structure | the clusters and the accounts they run in; company and project registration | none | none | the platform registers each company and each project |
 
 ### Edge
 
@@ -87,7 +89,11 @@ cluster, and sets no WAF defaults for a company's zones.
 ## The platform and a company meet at the box
 
 The platform repository and a company's repositories do not depend on each
-other at source level. Neither reads the other's files. They meet at the box.
+other at source level. Neither imports code from the other or pins a commit of
+the other. The platform reads what a company writes only in the places listed
+in the table below, and a company reads what the platform publishes about
+its box. People may read any repository they have access to. The two sides
+meet at the box.
 
 Each public component has two parts with a contract between them, kept in the
 public repositories:
@@ -147,7 +153,7 @@ something is yours, it is not: ask.
 ## How to ask the platform for something
 
 Open an issue or a pull request against the platform repository. Say what
-you need, in which environment, and why. Platform SREs review it and apply
+you need, in which environment, and why. Platform admins review it and apply
 it by hand. If you cannot read the repository, open the issue through your
 platform contact and name the area from the table above. The
 [working agreement](working-agreement.md) says how to write the question down.

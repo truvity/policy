@@ -9,8 +9,8 @@ and the facts of a particular box arrive as inputs
 ([repository.md §7](repository.md)).
 
 It follows the [delegation model](../delegation-model.md#the-platform-and-a-company-meet-at-the-box):
-the platform repository and a company's repositories do not read each other,
-and they meet at the box.
+the platform repository and a company's repositories do not depend on each
+other at source level, and they meet at the box.
 
 The test is the platform contract's: **a second platform, run by someone else,
 should be able to give a company the same box without a patch to the company's
@@ -58,12 +58,10 @@ Every place a company writes to needs:
 3. **A guard that the platform owns.** An allow-list, an admission policy, a
    listener that admits only the company's names, or a schema check. A company
    cannot edit its own guard.
-4. **Feedback to the company on whether its document was taken.** A refused
-   document says which row was refused and why. A company that has to ask the
-   platform whether its change worked will stop trusting the mechanism.
+4. **Feedback to the company on whether its document was taken.** How a config
+   document reports back is an open question (see below).
 
-A place that lacks one of the four is a gap. Record the gap in the table of
-the delegation model rather than describing the place as complete.
+A place that lacks one of the four is not ready for a company to write to.
 
 ## 4. The store follows the reader
 
@@ -75,7 +73,7 @@ Where the reader runs outside the clusters, the document is a config document
 under the company's path. A schema that the platform owns types it, and the
 path's access policy guards it.
 
-Do not store one kind of document in both places.
+One reader uses one store: the one where it runs.
 
 ## 5. How this relates to the tenant contract
 
@@ -110,7 +108,8 @@ check is a preference, and this contract says so about itself.
 1. **Where are the facts of a box published?** The candidates are a file in
    the platform repository that a company is allowed to read, a config document
    in the company's own box, and a release artifact of the platform. Each of
-   them changes what "do not read each other" means in practice.
+   them changes what "do not depend on each other at source level" means in
+   practice.
 2. **How does a config document report back?** A resource kind has a status
    that the reader writes. A config document has nowhere to hold one. The
    candidates are a status document beside it, a check in the company's CI that
