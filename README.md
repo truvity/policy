@@ -157,8 +157,9 @@ authoring a component, reviewing one, operating one.
 [`docs/landscape.md`](docs/landscape.md) is the other direction: one page
 naming every public repository the contracts below apply to today, and how
 they fit together. [`docs/delegation-model.md`](docs/delegation-model.md) is
-the short page on who runs what when a company shares a platform. The
-contracts:
+the short page on who runs what when a company shares a platform, and
+[`docs/working-agreement.md`](docs/working-agreement.md) is how people and
+agents work on one. The contracts:
 
 - [repository](docs/contracts/repository.md) — layout, toolchain, the gate
 - [service](docs/contracts/service.md) — the process boundary
@@ -169,6 +170,8 @@ contracts:
 - [tenant bundle](docs/contracts/tenant.md) — what a company hands a shared
   platform as its configuration, and what the platform checks before it
   accepts it
+- [box](docs/contracts/box.md) — proposed: what a shared platform publishes
+  about a company's box, and where the company writes inside it
 - [release](docs/contracts/release.md) — one tag, what a version means
 - [component](docs/contracts/component.md) — the rules C1–C18 for every
   public repository that ships charts, images, libraries, CLIs or actions

@@ -58,6 +58,24 @@ service; most ship mechanism around someone else's.
   configuration, held to [tenant.md](contracts/tenant.md). A company's bundle
   asks for tenant namespaces; it is not one.
 
+**Box.** What a shared platform gives one company: its namespaces, its gateway
+port, its path in secrets, its state prefix and its registry accounts. The
+platform defines the box and its rules. The company decides its own things
+inside it. The platform and a company's repositories do not read each other;
+they meet at the box ([delegation model](delegation-model.md#the-platform-and-a-company-meet-at-the-box),
+[box.md](contracts/box.md)).
+
+**Platform part, company part.** The two halves of a public component. The
+*platform part* is applied by the platform admin. The *company part* is applied
+by the company's SRE. A contract between them is kept in the public
+repositories.
+
+**Platform admin.** A person on the platform team who applies the platform part
+of a component, by hand, from the platform repository.
+
+**Company SRE.** A person who applies a company's own stacks, by hand, from the
+company's nexus repository, with a one-hour token from the identity issuer.
+
 **Preset.** A named bundle of a service's adapter or deployment choices that
 expands at load time into the keys it stands for, and names only choices
 that are implemented ([config.md §9](contracts/config.md)). Not a **profile**:
