@@ -8,6 +8,14 @@ subjects under them are the GitHub Release's own list.
 
 ### Contracts
 
+- **The component contract is 1.2: a README states its platform part and its
+  company part.** C8 gains an optional `Platform part and company part`
+  section, with a stated shape, after `Install and a worked example`. The
+  `Consumers` section and the latest-version statement in the table become
+  optional, because nobody keeps them true. The new section becomes required
+  in a later version of the contract, after each repository has had its README
+  pull request. Nothing a repository passes today fails; the checker in the
+  shared actions is changed separately.
 - **Proposed: the box contract** ([contracts/box.md](docs/contracts/box.md)).
   What a shared platform publishes about a company's box, the places a company
   writes to, and the four things each place needs. It is a proposal with two
