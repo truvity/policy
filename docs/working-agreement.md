@@ -47,15 +47,22 @@ default. The person who answers can then see what to undo.
 
 - Prefer one pull request per repository per step.
 - Preview first and read the preview. Apply as a separate step.
-- A state handover shows a preview with no difference, or it stops. A
-  difference means the old and the new side disagree about what exists.
+- When Pulumi state moves from one stack or repository to another (a state
+  move), preview on the new side first. The preview shows no difference. If it
+  shows a difference, stop and do not apply: the old and the new side disagree
+  about what exists. Say so on the work item.
 - Prefer moving what exists to building a new mechanism. A move keeps what
   already works and has a preview that can be read.
 
 ## Boundaries
 
-The platform repository and a company's repositories do not read each other.
-They meet at the box, which is described in
+The platform repository and a company's repositories do not depend on each
+other at source level. Neither imports code from the other or pins a commit of
+the other. The platform reads what a company writes only in the places listed
+in the delegation model, and a company reads what the platform publishes about
+its box. People may read any repository they have access to. The two sides
+meet at the box.
+The box is described in
 [the delegation model](delegation-model.md#the-platform-and-a-company-meet-at-the-box).
 
 To change something that another holder owns, ask. Open an issue or a pull
