@@ -21,6 +21,9 @@ The index, by what you are here to do.
 - [contracts/tenant.md](contracts/tenant.md) — what a company hands a shared
   platform as its configuration: a bundle of data rows, what the platform checks
   before accepting it, and how the accepted bundle is pinned.
+- [contracts/box.md](contracts/box.md) — proposed: what a shared platform
+  publishes about a company's box, where the company writes inside it, and
+  what each place needs.
 - [contracts/delivery-interface.md](contracts/delivery-interface.md) — the
   order in which the platform contract's menu grew, and the one number a
   chart declares so that a platform hands it only what it can take.
@@ -47,6 +50,9 @@ The index, by what you are here to do.
   fit together.
 - [delegation-model.md](delegation-model.md) — who runs what when a company
   shares a platform, and how to ask the platform for something.
+- [working-agreement.md](working-agreement.md) — how people and agents work on
+  a shared platform: who decides, where facts live, pull requests, secrets and
+  handover.
 
 ## Reviewing a service
 
@@ -75,8 +81,8 @@ The index, by what you are here to do.
 - [decisions/](decisions/README.md) — the decision records behind the
   contracts.
 - [glossary.md](glossary.md) — the words these documents use narrowly:
-  estate, platform, ring, tier, lane, component, service, preset, consumer, and
-  the environment names.
+  estate, platform, box, ring, tier, lane, component, service, preset, consumer,
+  and the environment names.
 
 ## How a contract changes
 

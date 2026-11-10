@@ -4,6 +4,24 @@ What changed for someone consuming this repository, newest first, one
 heading per tag. The prose bullets are written for a consumer; the commit
 subjects under them are the GitHub Release's own list.
 
+## Unreleased
+
+### Contracts
+
+- **Proposed: the box contract** ([contracts/box.md](docs/contracts/box.md)).
+  What a shared platform publishes about a company's box, the places a company
+  writes to, and the four things each place needs. It is a proposal with two
+  open questions and changes nothing a consumer runs.
+
+### Added
+
+- **A working agreement** ([working-agreement.md](docs/working-agreement.md)):
+  how people and agents work on a shared platform. The
+  [delegation model](docs/delegation-model.md) now lists twelve areas, shows the
+  per-project gitops layout, and has a section on how the platform and a
+  company meet at the box. The glossary defines box, platform part, company
+  part, platform admin and company SRE.
+
 ## v1.57.0 — 2026-11-06
 
 ### Added
