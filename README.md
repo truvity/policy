@@ -129,14 +129,15 @@ component proves.
 ## Platform part and company part
 
 **Platform part.** None is applied from this repository: it installs nothing
-on a cluster. A platform that accepts a company's bundle runs the `tenant`
-package of the Go module over it, which checks the bundle against the
-platform's record of that company ([tenant.md](docs/contracts/tenant.md)).
+on a cluster. The `tenant` package of the Go module and the `tenant-validate`
+command check a company's configuration bundle, and no platform component
+reads one yet ([tenant.md](docs/contracts/tenant.md)).
 
-**Company part.** A company's SRE writes its configuration as a `tenant/`
-bundle in its own repository, checks it with `tenant-validate` and publishes it
-with `ocictl static push` ([tenant.md](docs/contracts/tenant.md)). Its services
-follow the contracts here and render the library chart `service-lib`.
+**Company part.** A company's services follow the contracts here, and their
+charts render the library chart `service-lib`
+([the chart guide](docs/guides/charts.md)). The company writes nothing into
+its box for this repository. The tenant bundle contract is released and no
+company publishes a bundle yet.
 
 ## Consumers
 
