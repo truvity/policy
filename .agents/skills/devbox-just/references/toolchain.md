@@ -29,7 +29,7 @@ module/toolchain directives together.
 These three move as one. The linter and the vulnerability scanner each compile the code with a Go of their own, and a mismatch shows up as a failure that names the wrong thing: syntax the linter cannot parse, or a scanner that cannot resolve the standard library. The language line is capped by whatever the linter can build; the patch is the newest of that line; the `go` directive in `go.mod` moves with them.
 
 The root module now declares **`go 1.27.0`** and requests
-**`toolchain go1.27.3`**, while devbox still declares Go 1.27.0. These are
+**`toolchain go1.27.4`**, while devbox still declares Go 1.27.0. These are
 different declarations: with automatic toolchain selection Go can select or
 download the requested toolchain; `GOTOOLCHAIN=local` prevents that selection.
 Check `go version` under the actual command's environment when diagnosing
@@ -121,6 +121,11 @@ coordinates Yarn's `packageManager`; that rule is not in policy's current preset
 Confirm that updater is enrolled before disabling an existing update path in a
 migrating repository. Its job is to move the manifest, resolved lock and
 followers together, not to give two bots competing ownership.
+
+The shared preset (`github>truvity/ci-workflows`) also runs lock-file
+maintenance weekly, on Monday, so transitive security fixes arrive without a
+direct bump. A migrating repository that extends the preset gets it; do not add
+a second lock-maintenance schedule of its own.
 
 ## What checks it
 

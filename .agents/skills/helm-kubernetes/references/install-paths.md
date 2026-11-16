@@ -6,7 +6,7 @@ The example/test paths are in [url-shortener][product], not policy. The product 
 module and OCI service-lib; policy's current Go gate does not run its chart
 render suite.
 
-[product]: https://github.com/truvity/url-shortener/tree/76770607aa08baa58331668c228dacd62a13a89a
+[product]: https://github.com/truvity/url-shortener/tree/cca3535663f73369c9fba47417b9119ddc191425
 
 ## What differs
 

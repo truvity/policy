@@ -28,12 +28,12 @@ Siblings: `devbox-just` owns the gate and toolchain; `helm-kubernetes` owns char
 
 ## Snapshot
 
-Reviewed 2026-10-26 against policy `v1.54.5` and [url-shortener][product]. Both
-callers pin ci-workflows **v5.5.0** at `f0f75f715a4feef8ab1e4e6222e84708bb32f6cd`;
+Reviewed 2026-11-16 against policy `v1.57.0` and [url-shortener][product]. Both
+callers pin ci-workflows **v5.13.0** at `81bc1cd3003294d9bdc0f141956a432b8b33d423`;
 verify every placeholder SHA before use. Not pin authority: if this date
 predates the checkout's CHANGELOG head, re-verify pins before relying on them.
 
-[product]: https://github.com/truvity/url-shortener/tree/76770607aa08baa58331668c228dacd62a13a89a
+[product]: https://github.com/truvity/url-shortener/tree/cca3535663f73369c9fba47417b9119ddc191425
 
 External source of truth (needs network): [github.com/truvity/policy](https://github.com/truvity/policy) — reference implementation: [`.github/workflows/`](https://github.com/truvity/policy/tree/master/.github/workflows). Normative: [component contract](https://github.com/truvity/policy/blob/master/docs/contracts/component.md) (C1-C18 and each rule's conformance mechanism), [repository contract](https://github.com/truvity/policy/blob/master/docs/contracts/repository.md) §2 (recipes by name), §5 (required checks), §6 (bot bumps), §7 (public repositories), [release contract](https://github.com/truvity/policy/blob/master/docs/contracts/release.md). The shared workflows: [truvity/ci-workflows](https://github.com/truvity/ci-workflows) over [truvity/ci-actions](https://github.com/truvity/ci-actions).
 

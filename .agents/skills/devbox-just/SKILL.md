@@ -23,13 +23,13 @@ Siblings: `github-ci` owns workflow wiring; `helm-kubernetes` owns charts.
 
 ## Snapshot
 
-Reviewed 2026-10-26 against policy `v1.54.5` (source `c24f403`) and
+Reviewed 2026-11-16 against policy `v1.57.0` (source `48892ea`) and
 [url-shortener][product]. Policy produces contracts/Go modules/library; the
 product owns the example, non-Go loaders and generated-code lanes (ADR 0014);
 paths in each reference name their owner. Not pin authority: if this date
 predates the checkout's CHANGELOG head, re-verify pins before relying on them.
 
-[product]: https://github.com/truvity/url-shortener/tree/76770607aa08baa58331668c228dacd62a13a89a
+[product]: https://github.com/truvity/url-shortener/tree/cca3535663f73369c9fba47417b9119ddc191425
 
 External source of truth (needs network): [github.com/truvity/policy](https://github.com/truvity/policy) — reference implementation: the repository's own [`devbox.json`](https://github.com/truvity/policy/blob/master/devbox.json) and [`Justfile`](https://github.com/truvity/policy/blob/master/Justfile). Normative: [repository contract](https://github.com/truvity/policy/blob/master/docs/contracts/repository.md) §2 (the gate) and §3 (the declared toolchain), [component contract](https://github.com/truvity/policy/blob/master/docs/contracts/component.md) C6 (pins) and C10 (vuln), [canon/toolchain.md](https://github.com/truvity/policy/blob/master/docs/canon/toolchain.md), [conformance guide](https://github.com/truvity/policy/blob/master/docs/guides/conformance.md). Consumer repositories may vendor this skill under a different root; adjust paths accordingly.
 

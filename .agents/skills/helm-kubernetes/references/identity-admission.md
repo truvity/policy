@@ -108,5 +108,5 @@ injected credentials. A consumer's kind tier has no EKS admission webhook/IAM.
 The hook measures admission at that moment, not the correctness of a later
 association change and not every permission the application will need.
 
-[product]: https://github.com/truvity/url-shortener/tree/76770607aa08baa58331668c228dacd62a13a89a
-[product-include]: https://github.com/truvity/url-shortener/blob/76770607aa08baa58331668c228dacd62a13a89a/charts/url-shortener/templates/identity-check.yaml
+[product]: https://github.com/truvity/url-shortener/tree/cca3535663f73369c9fba47417b9119ddc191425
+[product-include]: https://github.com/truvity/url-shortener/blob/cca3535663f73369c9fba47417b9119ddc191425/charts/url-shortener/templates/identity-check.yaml

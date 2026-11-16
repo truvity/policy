@@ -1,11 +1,27 @@
 # Workflow Skeletons (Truvity policy, copy-sheet)
 
-Both callers use **ci-workflows v5.5.0**, `f0f75f715a4feef8ab1e4e6222e84708bb32f6cd`;
+Both callers use **ci-workflows v5.13.0**, `81bc1cd3003294d9bdc0f141956a432b8b33d423`;
 this file owns that pin.
 These are role-specific skeletons: replace every placeholder with that
 dependency's verified SHA, actual artifact/recipe names and the default branch.
 Private consumers select the supported private workflow/tier inputs; do not
 invent authentication inputs from a public example.
+
+Inputs a private caller may need, none of which a public repository passes:
+
+- **Private Go modules** (since v5.10): `check` and `integration` take
+  `module-app`, `module-app-repositories` and `access-roster-issuer`, and the
+  job exchanges them for a short-lived, read-only token. Since v5.11 there is
+  no path that relies on a stored private key: a caller still passing
+  `go-modules-client-id` or a `GO_MODULES_APP_PRIVATE_KEY` secret to
+  `renovate-fleet` is passing inputs that no longer exist.
+- **Runner sizes** (since v5.13): `check` and `integration` take
+  `runner-sizes`, a JSON object from recipe (or lane) to size, for example
+  `'{"build":"XLARGE","lint":"LARGE"}'`. It is read only when the caller's
+  `runner` is one of the organisation's sized labels; a hosted label is used as
+  given. The rows for named repositories in the shared `runner-sizes.yaml` are
+  deprecated and leave in the next major, so a caller relying on one copies it
+  into its own `runner-sizes` input rather than adding a new row there.
 
 The pinned shared workflows declare the input names used below. `ci-actions`
 remains behind them; consumers do not add direct action pins just to follow its
@@ -128,7 +144,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   recipes:
-    uses: truvity/ci-workflows/.github/workflows/check.yaml@<sha> # v5.5.0
+    uses: truvity/ci-workflows/.github/workflows/check.yaml@<sha> # v5.13.0
     with:
       policy-conformance: true
       policy-conformance-strict: true
@@ -153,7 +169,7 @@ jobs:
       recipes: '["charts"]'
 
   shadow:
-    uses: truvity/ci-workflows/.github/workflows/check.yaml@<sha> # v5.5.0
+    uses: truvity/ci-workflows/.github/workflows/check.yaml@<sha> # v5.13.0
     with:
       recipes: '["shadow-generated", "shadow-diff"]'
   check:
@@ -260,7 +276,7 @@ jobs:
     permissions:
       contents: write
       packages: write
-    uses: truvity/ci-workflows/.github/workflows/release-public.yaml@<sha> # v5.5.0
+    uses: truvity/ci-workflows/.github/workflows/release-public.yaml@<sha> # v5.13.0
     with:
       chart-images: goreleaser
       image-repo: ghcr.io/<owner>/<repo>
@@ -356,4 +372,4 @@ pre-commit:
         - run: "! command -v just"
 ```
 
-[integration]: https://github.com/truvity/url-shortener/blob/76770607aa08baa58331668c228dacd62a13a89a/.github/workflows/integration.yaml
+[integration]: https://github.com/truvity/url-shortener/blob/cca3535663f73369c9fba47417b9119ddc191425/.github/workflows/integration.yaml
