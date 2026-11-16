@@ -5,7 +5,7 @@ product-relative paths below are not policy paths. Historical adoption of
 interface 15 was in **policy v1.48.0**; the product now has its own release
 tags and consumes a released policy version.
 
-[product-charts]: https://github.com/truvity/url-shortener/tree/76770607aa08baa58331668c228dacd62a13a89a/charts
+[product-charts]: https://github.com/truvity/url-shortener/tree/cca3535663f73369c9fba47417b9119ddc191425/charts
 
 ## Observed example shape: two charts, one number
 

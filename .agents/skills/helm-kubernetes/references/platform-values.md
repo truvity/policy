@@ -7,7 +7,7 @@ Example-specific delivery keys and the echo fixture are in
 product's schema bundle/tests use that adopted version, so do not assume a
 latest producer checkout is its pin.
 
-[product-charts]: https://github.com/truvity/url-shortener/tree/76770607aa08baa58331668c228dacd62a13a89a/charts
+[product-charts]: https://github.com/truvity/url-shortener/tree/cca3535663f73369c9fba47417b9119ddc191425/charts
 
 ## The `platform` block (per component)
 

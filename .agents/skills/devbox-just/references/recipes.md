@@ -6,7 +6,7 @@ The policy [Justfile](https://github.com/truvity/policy/blob/master/Justfile) an
 product [Justfile][product-justfile] are different implementations, not
 interchangeable command inventories.
 
-[product-justfile]: https://github.com/truvity/url-shortener/blob/76770607aa08baa58331668c228dacd62a13a89a/Justfile
+[product-justfile]: https://github.com/truvity/url-shortener/blob/cca3535663f73369c9fba47417b9119ddc191425/Justfile
 
 ## The fixed names, and why they are fixed
 

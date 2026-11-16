@@ -79,7 +79,7 @@ adoption does not rotate a password or introduce a second role owner.
 
 ### Database health and retry wiring
 
-The cited product pins `truvity/cnpg/v2` **v2.36.0** in go.mod. This is the
+The cited product pins `truvity/cnpg/v2` **v2.39.2** in go.mod. This is the
 application's client version, distinct from the cnpg-database **chart** pin.
 Use its `clients/go/pgclient`: connection parts arrive through `PGHOST`,
 `PGPORT`, `PGDATABASE`, `PGUSER`, `PGSSLMODE=verify-full`, `PGSSLROOTCERT`,
@@ -113,6 +113,7 @@ render does not prove a live database switchover.
 - Infra orders IAM Role 0 → PodIdentityAssociation 1 → ServiceAccount 2 with permanent `Prune=false,Delete=false`. Install infra healthy first, then the app renders `service-lib.identityCheck` for a cloud-identity component. `Synced` can precede webhook visibility; the check retries with a new pod, not a same-pod restart. Full contract, image ownership and check-specific egress: `identity-admission.md`.
 - `cloud.serviceAccountAnnotations` mirrors `serviceAccount.app.annotations` onto the identity account
 - Per-component ServiceAccounts `<release>-<component>` (step 6); the prober's `tls.peers` names components' own accounts, not a shared one
+- `tls.peers` for calls from inside the release are granted by the chart. Calls from another release are not written into the chart by hand: they live in the platform's call catalog (`schemas/calls.json`, read by policy's `transport/catalog` since v1.55.0), which validates each grant (bare names, a reason, exactly one of project or platform, no strict mode on a gateway-fronted component) and derives each release's `tls.peers` values. A chart that hard-codes another release's account bypasses that check
 - Least privilege down to the action actually issued; `permissionsBoundary` + tags where the deploy role demands them
 - Persistent data: `services.k8s.aws/deletion-policy: retain` on primary-tier Buckets + preserve tags
 
@@ -201,4 +202,4 @@ permission for Kubernetes workloads to bypass Secret objects. The platform
 provides population and rotation; values and fixture ConfigMaps carry names,
 never credentials.
 
-[product]: https://github.com/truvity/url-shortener/tree/76770607aa08baa58331668c228dacd62a13a89a
+[product]: https://github.com/truvity/url-shortener/tree/cca3535663f73369c9fba47417b9119ddc191425

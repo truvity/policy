@@ -29,14 +29,14 @@ Siblings: `devbox-just` owns the gate and toolchain; `github-ci` owns workflow w
 
 ## Snapshot
 
-Reviewed 2026-10-26: policy `v1.54.5` owns contracts, schemas and service-lib;
+Reviewed 2026-11-16: policy `v1.57.0` owns contracts, schemas and service-lib;
 [url-shortener][product] owns the worked charts/tests. The checker image
 `truvity/k8s` **v0.34.0+** is required before using `identityCheck.expectAccount`.
 Not pin authority: if this date predates the checkout's CHANGELOG head,
 re-verify pins before relying on them. References defer here.
 
-[product]: https://github.com/truvity/url-shortener/tree/76770607aa08baa58331668c228dacd62a13a89a
-[product-charts]: https://github.com/truvity/url-shortener/tree/76770607aa08baa58331668c228dacd62a13a89a/charts
+[product]: https://github.com/truvity/url-shortener/tree/cca3535663f73369c9fba47417b9119ddc191425
+[product-charts]: https://github.com/truvity/url-shortener/tree/cca3535663f73369c9fba47417b9119ddc191425/charts
 
 External sources: [product charts/tests][product-charts], policy's [library](https://github.com/truvity/policy/tree/master/charts/service-lib), [delivery interface](https://github.com/truvity/policy/blob/master/docs/contracts/delivery-interface.md), [platform](https://github.com/truvity/policy/blob/master/docs/contracts/platform.md), [chart guide](https://github.com/truvity/policy/blob/master/docs/guides/charts.md), and [extraction decision 0014](https://github.com/truvity/policy/blob/master/docs/decisions/0014-the-worked-example-lives-in-its-own-repository.md). Product-relative paths below belong to url-shortener, not this checkout.
 

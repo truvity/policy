@@ -25,7 +25,7 @@ That is an ORDERING requirement before it is a preference. A digest exists only 
 
 The ordering is made impossible to get wrong rather than merely written down: **one job** builds and pushes the images and then packages the charts from the file that build produced (`chart-images: goreleaser`, `require-image-digests: true`). And the release refuses outright to package a chart whose image entries are not all digest-pinned.
 
-**Two tools, and nothing of ours between them.** The build tool builds and pushes; the registry tool (`helmctl`, from the fleet's ocictl) reads what was pushed, bakes the digests into the charts and pushes those. A script in this path is a third thing to keep correct. Each language's own compiler still runs as a build hook; that is a build, not a release step: nothing there publishes anything.
+**Two tools, and nothing of ours between them.** The build tool builds and pushes; the registry tool (`helmctl`, from the fleet's ocictl) reads what was pushed, bakes the digests into the charts and pushes those (`release-public` runs helmctl 0.12.0 and smctl 0.12.0 since ci-workflows v5.12; neither needs a caller input). A script in this path is a third thing to keep correct. Each language's own compiler still runs as a build hook; that is a build, not a release step: nothing there publishes anything.
 
 **ONE destination per repository.** Public artifacts to a public registry, private to a private one, never both. What varies between a local loop, a CI loop and a release is *where* — one environment variable — and never *what is built*.
 
