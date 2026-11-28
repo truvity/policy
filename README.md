@@ -16,14 +16,17 @@ than by assertion.
 | the contracts, canons, guides, decisions and [glossary](docs/glossary.md) | [`docs/`](docs/README.md) | the tagged source |
 | configuration schemas (JSON Schema) | [`schemas/`](schemas/README.md) | the tagged source, and inside every loader |
 | the Go configuration loader, conformance helpers and chart schema composer | `config/`, `conformance/`, `chartschema/` | Go module `github.com/truvity/policy` |
+| the Go packages for telemetry start-up, transport security, the mutual-TLS who-calls-whom catalog and a company's configuration bundle | `telemetry/`, `transport/`, `transport/catalog/`, `tenant/` | Go module `github.com/truvity/policy` |
+| the bundle checker command | `cmd/tenant-validate` | `go run github.com/truvity/policy/cmd/tenant-validate@<version>` |
 | the TypeScript, Python and Kotlin loaders | [`ts/`](https://github.com/truvity/url-shortener/tree/master/ts), [`python/`](https://github.com/truvity/url-shortener/tree/master/python), [`kotlin/`](https://github.com/truvity/url-shortener/tree/master/kotlin) in the url-shortener repository | moved there on 2026-10-22; this repository no longer publishes `@truvity/policy` or the wheel (versions up to v1.54.2 stay where they were published) |
 | the shared lint configuration | [`lint/`](lint/README.md) | the tagged source, copied into a repository |
 | the local cluster the example is tested on | [`hack/kind/`](hack/kind/README.md) | the tagged source, fetched at a pinned tag |
 | the library chart service charts render with | [`charts/service-lib`](charts/service-lib/Chart.yaml) | chart `service-lib` under `oci://ghcr.io/truvity/charts`; embedded for tests by the Go package `charts/` |
 | the worked example, a URL shortener | [truvity/url-shortener](https://github.com/truvity/url-shortener/blob/master/README.md) | moved there on 2026-10-22: charts `url-shortener` and `url-shortener-infra` under `oci://ghcr.io/truvity/charts`, released from that repository's own tags (up to v1.54.2 they were released from here, images under `ghcr.io/truvity/policy/url-shortener/`) |
 
-One tag stamps all of them: `vX.Y.Z` releases the documents, the schemas, the
-Go module and the library chart together. A consumer pins one version.
+One tag stamps the documents, the schemas, the Go module and the library
+chart: `vX.Y.Z` releases them together. A consumer pins one version of them.
+The worked example has its own tags.
 
 ## Who it is for
 
@@ -67,12 +70,14 @@ documents use narrowly — estate, platform, ring, tier, lane.
 
 ## Install and a worked example
 
-Pin one version; every artifact carries the same one. v1.29.0 is the latest
-tag at the time of writing — the
+Pin one version of this repository; the documents, the schemas, the Go module
+and the library chart carry the same one. The
 [releases page](https://github.com/truvity/policy/releases) lists every one.
+The example's charts are versioned by the
+[url-shortener releases](https://github.com/truvity/url-shortener/releases).
 
 ```sh
-go get github.com/truvity/policy@v1.29.0
+go get github.com/truvity/policy@v1.57.0
 ```
 
 The TypeScript, Python and Kotlin loaders are not installed from here any
@@ -90,7 +95,7 @@ if err := config.Load(path, schemaBytes, &cfg); err != nil {
 ```
 
 The [worked example](https://github.com/truvity/url-shortener) runs every contract end to end, and its application
-chart renders from the release with only the names it refuses to guess —
+chart renders from its release with only the names it refuses to guess —
 the database's host, the root its certificate chains to and the two Secrets
 holding its credentials, the broker, the bucket:
 
@@ -101,7 +106,7 @@ database:
   tls:
     rootCA:
       configMapName: pg-root-ca
-  owner:
+  migration:
     passwordSecret: owner
   app:
     passwordSecret: app
@@ -113,13 +118,26 @@ archive:
 ```
 
 ```sh
-helm template example oci://ghcr.io/truvity/charts/url-shortener --version 1.29.0 -f values.yaml
+helm template example oci://ghcr.io/truvity/charts/url-shortener --version 1.55.2 -f values.yaml
 ```
 
 What provides those names is the infrastructure chart's job, installed per
 install beside it ([platform.md §11](docs/contracts/platform.md));
 [the example's README](https://github.com/truvity/url-shortener/blob/master/README.md) walks what each
 component proves.
+
+## Platform part and company part
+
+**Platform part.** None is applied from this repository: it installs nothing
+on a cluster. The `tenant` package of the Go module and the `tenant-validate`
+command check a company's configuration bundle, and no platform component
+reads one yet ([tenant.md](docs/contracts/tenant.md)).
+
+**Company part.** A company's services follow the contracts here, and their
+charts render the library chart `service-lib`
+([the chart guide](docs/guides/charts.md)). The company writes nothing into
+its box for this repository. The tenant bundle contract is released and no
+company publishes a bundle yet.
 
 ## Consumers
 
@@ -130,7 +148,7 @@ versions: each consumer's own pin is the record of that.
 |---|---|
 | `truvity/ci-actions` | the `cluster` action fetches `hack/kind/` at a pinned release tag |
 | 14 repositories | copy [`lint/golangci-depguard.yaml`](lint/golangci-depguard.yaml) into their `.golangci.yaml` |
-| `truvity/gitops` | deploys the url-shortener example's charts (released from the url-shortener repository) |
+| the maintainers' platform repository | requires the Go module, and deploys the url-shortener example's charts (released from the url-shortener repository) |
 | every public component repository | is held to [the component contract](docs/contracts/component.md) |
 
 ## Neighbours
@@ -142,9 +160,6 @@ versions: each consumer's own pin is the record of that.
 - **[ci-actions](https://github.com/truvity/ci-actions)** holds the `cluster`
   action that fetches `hack/kind/` from a policy release; the box is defined
   here and nowhere else.
-- **[gemaal](https://github.com/truvity/gemaal)** provides the `harness`
-  package the url-shortener example's end-to-end suite reaches every Service
-  through.
 - **[ocictl](https://github.com/truvity/ocictl)** provides `helmctl`, which
   bakes image digests into the url-shortener example's charts at its release.
 - Every other public component repository is held to the contracts here;
@@ -192,8 +207,9 @@ a cluster ([component.md C8](docs/contracts/component.md)).
 ## Status
 
 Used in production by its maintainers. Released from `v0.1.0`; tags follow
-semver from `v1.25.0` ([release.md §2](docs/contracts/release.md)). Every
-contract is at version 1.0, effective 2026-09-29.
+semver from `v1.25.0` ([release.md §2](docs/contracts/release.md)). Each
+contract states its own version and effective date at its head; the
+[box contract](docs/contracts/box.md) is a proposal.
 
 In progress: the url-shortener's data contracts are also written in Pkl and
 generated beside the hand-written schemas, which stay authoritative
